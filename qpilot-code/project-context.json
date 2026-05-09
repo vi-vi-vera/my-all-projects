@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0",
+  "platform_name": "QPilot Code Agent",
+  "one_liner": "面向企业的 AI 编程平台，把设计稿和自然语言需求转成可预览、可部署的多框架前端代码。",
+  "domain": "AI 编程辅助",
+  "platform_tech_stack": {
+    "languages": ["TypeScript", "JavaScript", "SQL"],
+    "frameworks": [
+      "Express", "Drizzle ORM",
+      "Claude Agent SDK", "Model Context Protocol (MCP)",
+      "React 18", "React Router 6", "Zustand",
+      "Radix UI", "Tailwind CSS",
+      "Vite", "Vitest",
+      "Sandpack", "CodeMirror 6"
+    ],
+    "infra": [
+      "PostgreSQL", "Redis",
+      "Docker / docker-compose", "Kubernetes",
+      "OpenTelemetry / Langfuse / Galileo",
+      "Tencent COS",
+      "e2b / 自研沙箱（OpenSandbox）",
+      "nginx 反向代理"
+    ]
+  },
+  "sub_projects": [
+    {
+      "name": "backagent",
+      "path": "backagent",
+      "scope": "backend",
+      "tech_stack": {
+        "language": "TypeScript",
+        "runtime": "Node.js",
+        "frameworks": ["Express", "Claude Agent SDK", "MCP SDK", "Drizzle ORM"],
+        "infra": ["PostgreSQL (drizzle-orm + pg)", "Redis", "Tencent COS", "e2b 沙箱", "OpenTelemetry + Langfuse"]
+      },
+      "modules": [
+        { "name": "api",        "path": "src/api",        "responsibility": "Express 路由层，承载 SSE 流式接口、会话管理、沙箱、git、部署等 REST 端点。" },
+        { "name": "services",   "path": "src/services",   "responsibility": "核心业务服务层：AgentExecutor、SandboxManager、Git（Sandbox/WOA）、build-preview 部署代理、用户配置等。" },
+        { "name": "bootstrap",  "path": "src/bootstrap",  "responsibility": "进程启动装配：依赖注入、OpenTelemetry/Langfuse 初始化、健康检查、优雅退出。" },
+        { "name": "database",   "path": "src/database",   "responsibility": "Drizzle ORM 模型与迁移；会话、消息、工件、用户配置表的持久化。" },
+        { "name": "config",     "path": "src/config",     "responsibility": "运行时配置中心（feature flag 白名单、沙箱池、k8s 集群凭证、域名）。" },
+        { "name": "logger",     "path": "src/logger",     "responsibility": "结构化日志 + W3C Trace Context 注入，串联 SSE 与 LLM 调用链。" },
+        { "name": "utils",      "path": "src/utils",      "responsibility": "通用工具：错误归一化、密钥脱敏、限流/合并请求、SSE 编解码辅助。" }
+      ],
+      "active_areas": [
+        "src/services/git-sandbox.service.ts",
+        "src/services/git-woa.service.ts",
+        "src/services/git-write.types.ts",
+        "src/services/build-preview/sandbox-deploy.service.ts",
+        "src/services/build-preview/deploy-proxy.service.ts",
+        "src/config/feature-whitelist.ts"
+      ]
+    },
+    {
+      "name": "backagent-web",
+      "path": "backagent-web",
+      "scope": "frontend",
+      "tech_stack": {
+        "language": "TypeScript",
+        "framework": "React 18 + Vite",
+        "state": "Zustand",
+        "ui": ["Radix UI", "Tailwind CSS"],
+        "code_runtime": ["Sandpack", "CodeMirror 6"],
+        "design_runtime": ["Pixi.js", "tldraw"],
+        "streaming": ["@microsoft/fetch-event-source"]
+      },
+      "modules": [
+        { "name": "pages/Chat",            "path": "src/pages/Chat",         "responsibility": "Chat 主页：消息流、ToolDetail、Preview 与 Deploy Tab 协调，是产品主战场。" },
+        { "name": "components/preview",    "path": "src/pages/Chat/components/preview", "responsibility": "Sandpack 预览面板与 H5 预览生命周期管理（启动/HMR/postMessage origin 校验）。" },
+        { "name": "components/deploy",     "path": "src/pages/Chat/components/deploy",  "responsibility": "部署 Tab：白名单 Pod 内存配置双态展示、子域名 vite base 修正、运行时错误面板。" },
+        { "name": "stores",                "path": "src/stores",             "responsibility": "Zustand 全局状态：登录、主题、Agent 记录、Editor/Preview store。" },
+        { "name": "hooks",                 "path": "src/hooks",              "responsibility": "useAgent / useEditorFileStore / usePreviewStore 等业务 hook，封装 SSE 订阅与文件同步。" },
+        { "name": "services",              "path": "src/services",           "responsibility": "前端 API 层：与 backagent SSE 接口对接，含错误归一化与 fetch-event-source 配置。" },
+        { "name": "components/ToolDetail", "path": "src/components/ToolDetail", "responsibility": "工具调用详情面板：流式渲染 Tool input/output diff、Token 用量。" }
+      ],
+      "active_areas": [
+        "src/pages/Chat/components/deploy/DeployTabPanel.tsx",
+        "src/pages/Chat/components/preview/H5Preview.tsx",
+        "src/hooks/useAgent.ts",
+        "src/hooks/useFileSync.ts",
+        "src/hooks/useH5PreviewRefresh.ts",
+        "src/stores/usePreviewStore.ts"
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "title": "SSE + MCP 的实时 AI Agent 链路（前后端协同）",
+      "scope": "fullstack",
+      "summary": "后端基于 Claude Agent SDK + MCP 暴露 SSE 流；前端用 @microsoft/fetch-event-source 接收并按 tool_use / tool_result 分片渲染。配套的 nginx proxy_buffering / X-Accel-Buffering 调优让流式首字节稳定，是平台的核心体验载体。"
+    },
+    {
+      "title": "用户级沙箱与跨 Pod 状态权威源（Redis + DB 兜底）",
+      "scope": "backend",
+      "summary": "每个 session 一个隔离工作区，支持 e2b / 自研 OpenSandbox 双后端；跨 Pod 共享状态以 Redis 为权威源、DB 兜底，沙箱预热 + 亲和性路由把首字节预览启动从冷启动改为秒级。"
+    },
+    {
+      "title": "Git 接口性能优化：合并沙箱命令减少 RTT",
+      "scope": "backend",
+      "summary": "针对 7 个 Git 接口在沙箱内的多步骤执行，合并为单次复合命令，显著减少跨网络 RTT；同时修复了 untracked 文件触发的 pull 假冲突等多个一致性 bug。"
+    },
+    {
+      "title": "H5 预览生命周期与 console 协议演进",
+      "scope": "frontend",
+      "summary": "iframe 预览从轮询式重构为状态机驱动；postMessage origin 校验、并发启动保护、HMR 感知刷新、运行时错误面板与一键修复，覆盖了真实的端侧观测难点。"
+    },
+    {
+      "title": "白名单 feature flag 驱动的渐进式发布",
+      "scope": "fullstack",
+      "summary": "Pod 内存配置等高风险能力以白名单 + per-user feature flag 灰度，前端做双态（已保存值 vs 运行中值）展示防止用户配置错乱；blast radius 可控，是常态化能力发布的范式。"
+    },
+    {
+      "title": "可观测性：OpenTelemetry + Langfuse 串联 LLM 调用",
+      "scope": "backend",
+      "summary": "用 OTel Node SDK 注入 W3C Trace Context，结合 Langfuse 把 LLM prompt / tool call / token 用量并入分布式 trace，把 LLM 应用的可观测性纳入和后端服务一致的体系。"
+    }
+  ]
+}

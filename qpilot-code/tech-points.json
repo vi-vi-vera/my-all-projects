@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0",
+  "role": "全栈",
+  "level": "中级",
+  "points": [
+    {
+      "id": "tp-001",
+      "topic": "SSE 流式接口的端到端协议设计与可恢复性",
+      "scope": "fullstack",
+      "primary_dimension": "architecture",
+      "evidence": [
+        "backagent/src/services/resumableStreamService.ts",
+        "backagent/src/services/streamManager.ts",
+        "backagent-web/src/hooks/useAgent.ts"
+      ],
+      "depth_tags": ["architecture", "sse", "stream", "resumable"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-002",
+      "topic": "Claude Agent SDK + MCP 工具链：Tool 注册、调用与结果分片渲染",
+      "scope": "fullstack",
+      "primary_dimension": "feature",
+      "evidence": [
+        "backagent/src/services/mcp-catalog.service.ts",
+        "backagent-web/src/hooks/useAgent.ts"
+      ],
+      "depth_tags": ["feature", "mcp", "tool-use", "agent"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-003",
+      "topic": "用户级沙箱：双后端（e2b / OpenSandbox）抽象与生命周期管理",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "primary_dimension": "architecture",
+      "evidence": [
+        "backagent/src/services/sandbox-manager.service.ts",
+        "backagent/src/services/sandbox-coordinator.ts"
+      ],
+      "depth_tags": ["architecture", "sandbox", "abstraction"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-004",
+      "topic": "沙箱预热池与亲和性路由：把冷启动转为秒级首字节",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "primary_dimension": "performance",
+      "evidence": [
+        "backagent/src/services/sandbox-warm-pool.service.ts",
+        "backagent/src/services/sandbox-proxy.service.ts"
+      ],
+      "depth_tags": ["performance", "warm-pool", "affinity"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-005",
+      "topic": "跨 Pod 状态权威源：Redis 主、DB 兜底的一致性策略",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "primary_dimension": "reliability",
+      "evidence": [
+        "backagent/src/services/sandbox-state.repository.ts",
+        "backagent/src/services/sandbox-coordinator.ts"
+      ],
+      "depth_tags": ["reliability", "state-of-truth", "fallback"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-006",
+      "topic": "Git 接口性能优化：合并沙箱命令减少跨网络 RTT",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "primary_dimension": "performance",
+      "evidence": [
+        "backagent/src/services/git-sandbox.service.ts",
+        "backagent/src/services/git-woa.service.ts",
+        "backagent/src/services/checkpoint-git.service.ts"
+      ],
+      "depth_tags": ["performance", "rtt", "git", "batch"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-007",
+      "topic": "白名单 feature flag 驱动的高风险能力灰度",
+      "scope": "fullstack",
+      "primary_dimension": "security",
+      "evidence": [
+        "backagent/src/config/feature-whitelist.ts",
+        "backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx"
+      ],
+      "depth_tags": ["security", "feature-flag", "gradual-rollout"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-008",
+      "topic": "构建产物部署代理：从沙箱构建到子域名 vite base 修正",
+      "scope": "fullstack",
+      "primary_dimension": "feature",
+      "evidence": [
+        "backagent/src/services/build-preview/sandbox-deploy.service.ts",
+        "backagent/src/services/build-preview/deploy-proxy.service.ts",
+        "backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx"
+      ],
+      "depth_tags": ["feature", "deploy", "subdomain", "vite-base"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-009",
+      "topic": "H5 预览生命周期：从轮询到状态机 + postMessage origin 校验",
+      "scope": "frontend",
+      "sub_project": "backagent-web",
+      "primary_dimension": "reliability",
+      "evidence": [
+        "backagent-web/src/pages/Chat/components/preview/H5Preview.tsx",
+        "backagent-web/src/hooks/useH5PreviewRefresh.ts",
+        "backagent-web/src/stores/usePreviewStore.ts",
+        "backagent/src/services/h5-preview.service.ts"
+      ],
+      "depth_tags": ["reliability", "state-machine", "postmessage"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-010",
+      "topic": "前端文件同步与 SSE 订阅：useAgent / useFileSync 的边界划分",
+      "scope": "frontend",
+      "sub_project": "backagent-web",
+      "primary_dimension": "architecture",
+      "evidence": [
+        "backagent-web/src/hooks/useAgent.ts",
+        "backagent-web/src/hooks/useFileSync.ts"
+      ],
+      "depth_tags": ["architecture", "hooks", "sse-subscription"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-011",
+      "topic": "OpenTelemetry + Langfuse 串联 LLM 调用：把 token/工具用量纳入分布式 trace",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "primary_dimension": "observability",
+      "evidence": [
+        "backagent/src/services/mcp-catalog.service.ts",
+        "backagent/src/services/streamManager.ts"
+      ],
+      "depth_tags": ["observability", "otel", "langfuse", "llm-trace"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-012",
+      "topic": "Express SSE 路由层：会话、沙箱、git、deploy 端点的协议规范",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "primary_dimension": "feature",
+      "evidence": [
+        "backagent/src/api/routes.ts"
+      ],
+      "depth_tags": ["feature", "express", "sse-endpoints"],
+      "interview_value": "中"
+    }
+  ]
+}

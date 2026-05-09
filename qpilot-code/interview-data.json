@@ -1,0 +1,1048 @@
+{
+  "schema_version": "1.0",
+  "mode": "candidate",
+  "platform_name": "QPilot Code Agent",
+  "role": "全栈",
+  "level": "中级",
+  "project_pitch": {
+    "elevator": {
+      "zh": "一个面向企业的 AI 编程平台：把设计稿和自然语言需求实时转成可预览、可部署的多框架前端代码。",
+      "en": "An enterprise AI coding platform that turns design drafts and natural-language requirements into previewable, deployable multi-framework frontend code in real time."
+    },
+    "standard": {
+      "zh": "QPilot Code Agent 是一个面向企业的 AI 编程平台。后端基于 Express + Claude Agent SDK + MCP 暴露 SSE 流式接口，前端用 React 18 + Zustand + Sandpack 接入。每个 session 一个隔离沙箱（e2b 或自研 OpenSandbox），跨 Pod 状态以 Redis 为权威源、DB 兜底；预览侧用 H5 状态机和子域名 vite base 修正打通从沙箱构建到真实可访问页面的链路。可观测性用 OpenTelemetry + Langfuse 把 LLM 调用的 prompt、tool 用量纳入分布式 trace，整体目标是把 AI 编程的体验和可靠性做到生产级。",
+      "en": "QPilot Code Agent is an enterprise AI coding assistant. The backend exposes SSE streams via Express plus the Claude Agent SDK and MCP; the frontend is React 18 with Zustand and Sandpack. Every session gets an isolated sandbox (e2b or in-house OpenSandbox), with Redis as source of truth for cross-pod state and the database as fallback. The preview path uses an H5 state machine plus subdomain vite-base rewriting to bridge sandbox builds to reachable pages. OpenTelemetry plus Langfuse fold LLM prompt and tool usage into one distributed trace, aiming for production-grade reliability."
+    },
+    "deep_dive": {
+      "zh": "QPilot Code Agent 把 AI 编程从 demo 推到可灰度运营的产品。前端用 fetch-event-source 订阅 SSE，按 tool_use / tool_result 分片渲染，配合 nginx X-Accel-Buffering 让流式首字节稳定；后端基于 Claude Agent SDK + MCP，把 git、沙箱命令、文件 IO、deploy 通过 MCP catalog 注册给 Agent 调度。沙箱抽象了 e2b 和自研 OpenSandbox 双后端，SandboxManager + Coordinator 屏蔽差异，预热池 + 亲和性路由把首次预览从冷启动改为秒级。跨 Pod 状态以 Redis 为权威源、DB 兜底；Git 接口把 7 个端点的多步骤合并成一次沙箱内复合命令，显著减少 RTT，并修复了 untracked 文件触发 pull 假冲突的一致性 bug。预览侧 H5 从轮询重构为状态机，postMessage 严格 origin 校验，HMR 感知刷新；部署 Tab 用白名单 + per-user feature flag 灰度高风险能力（如 Pod 内存配置），双态 UI 防止用户配置错乱。可观测性把 OTel Trace Context 注入 LLM 调用层，Langfuse 把 prompt / tool / token 计入同一条 trace。关键 trade-off：SSE 而非 WebSocket（恢复性 + HTTP 兼容）、Redis 主 + DB 兜底而非单 DB（延迟 vs 一致性）、双沙箱后端而非绑死一家（成本 + 可控性）。",
+      "en": "QPilot Code Agent pushes AI coding from demo to a graduated, real product. The frontend uses fetch-event-source for SSE and renders tool_use and tool_result chunks separately, with nginx X-Accel-Buffering tuned so first-byte streaming is stable. The backend builds on the Claude Agent SDK plus MCP, registering git ops, sandbox commands, file IO and deploy through an MCP catalog so the Agent dispatches them. The sandbox layer abstracts e2b and in-house OpenSandbox; SandboxManager and a coordinator hide the differences, and a warm pool plus affinity routing turn first-preview cold start into sub-second startup. Cross-pod state uses Redis as source of truth with the database as fallback. The seven git endpoints fold their multi-step flows into a single composite command in the sandbox, cutting cross-network RTT and fixing real consistency bugs like untracked files faking pull conflicts. On the preview side, H5 was rewritten from polling into a state machine with strict postMessage origin checks and HMR-aware refresh; the deploy tab gates high-risk knobs like pod memory behind a whitelist plus per-user feature flag, with a dual-state UI to prevent silent drift. Observability injects W3C Trace Context into LLM calls; Langfuse folds prompt, tool, and token usage into one trace. Key trade-offs: SSE over WebSocket (resumability and HTTP compatibility), Redis primary plus DB fallback over a single DB (latency vs durability), dual sandbox backends over locking into one vendor (cost and control)."
+    }
+  },
+  "highlights": [
+    {
+      "title": "SSE + MCP 的实时 AI Agent 链路（前后端协同）",
+      "scope": "fullstack",
+      "primary_dimension": "architecture",
+      "story": {
+        "zh": "AI Agent 体验依赖流式响应。后端基于 Claude Agent SDK + MCP 暴露 SSE，前端用 fetch-event-source 接收并按 tool_use / tool_result 分片渲染；同时调优 nginx 的 proxy_buffering 和 X-Accel-Buffering 防止反向代理把流缓住。最终首字节稳定到亚秒级，工具调用展开和文件 diff 都是边出边渲染，体验从「等一团」变成「逐步揭示」。",
+        "en": "AI Agent UX depends on streaming. We exposed SSE backed by the Claude Agent SDK plus MCP and consumed it on the frontend with fetch-event-source, rendering tool_use and tool_result as separate chunks. We tuned nginx proxy_buffering and X-Accel-Buffering so the reverse proxy stops blocking the stream. First-byte landed below a second, and tool expansion plus file diffs render incrementally — the experience shifted from one big wait to step-by-step reveal."
+      },
+      "tech_keywords": [
+        "SSE",
+        "MCP",
+        "Claude Agent SDK",
+        "fetch-event-source",
+        "nginx"
+      ]
+    },
+    {
+      "title": "用户级沙箱与跨 Pod 状态权威源（Redis + DB 兜底）",
+      "scope": "backend",
+      "primary_dimension": "reliability",
+      "story": {
+        "zh": "每个 session 一个隔离沙箱避免互相污染，但 Pod 漂移会让状态丢。状态权威源放 Redis、DB 做兜底，Coordinator 路由保证亲和性；预热池让首次预览不再走完整冷启动。结果是跨 Pod 重连依然能恢复正确的工作区，预览启动稳定到秒级。",
+        "en": "Each session gets an isolated sandbox to prevent cross-contamination, but pod drift can lose state. Redis is the source of truth, the database is the fallback, a coordinator handles affinity routing, and a warm pool spares first previews from a full cold start. Reconnects across pods restore the right workspace and preview startup is consistently sub-second."
+      },
+      "tech_keywords": [
+        "sandbox",
+        "Redis",
+        "warm-pool",
+        "affinity",
+        "DB fallback"
+      ]
+    },
+    {
+      "title": "Git 接口性能优化：合并沙箱命令减少 RTT",
+      "scope": "backend",
+      "primary_dimension": "performance",
+      "story": {
+        "zh": "Git 接口要在沙箱内串行跑多个子命令，每步付一次跨网络 RTT。把 7 个接口合并成单条复合命令一次进沙箱完成所有步骤；同时修复了 untracked 文件被识别成 pull 冲突的假阳性。Git 操作的尾延迟显著下降，用户感知是「点了立刻有反应」。",
+        "en": "Each git endpoint used to run several subcommands in the sandbox, paying one cross-network RTT per step. We folded seven endpoints into a single composite command that runs everything in one sandbox roundtrip, and fixed a real bug where untracked files were misread as pull conflicts. Tail latency on git operations dropped sharply — clicks feel instant now."
+      },
+      "tech_keywords": [
+        "git",
+        "RTT",
+        "batch",
+        "sandbox",
+        "consistency"
+      ]
+    },
+    {
+      "title": "H5 预览生命周期与 console 协议演进",
+      "scope": "frontend",
+      "primary_dimension": "reliability",
+      "story": {
+        "zh": "iframe 预览从轮询「能不能访问」演进为完整状态机：启动、就绪、出错、刷新有明确转移。postMessage 严格做 origin 校验防注入，HMR 事件触发感知刷新而不是粗暴 reload，加运行时错误面板把 console 错误回流到主控台。预览的稳定性和可观测性都好了一档。",
+        "en": "The iframe preview evolved from polling 'is it up' into a real state machine with explicit transitions for start, ready, error, and refresh. postMessage strictly checks origin to prevent injection, HMR events drive a smart refresh instead of a brute reload, and a runtime error panel pipes console errors back into the main console. Preview reliability and observability both leveled up."
+      },
+      "tech_keywords": [
+        "iframe",
+        "state-machine",
+        "postMessage",
+        "HMR",
+        "console"
+      ]
+    },
+    {
+      "title": "白名单 feature flag 驱动的渐进式发布",
+      "scope": "fullstack",
+      "primary_dimension": "security",
+      "story": {
+        "zh": "Pod 内存配置这种高风险能力直接全量开放风险太大。做了 per-user 白名单 + feature flag 双闸门，前端展示双态（已保存值 vs 运行中值）防止用户改完不知道生效没。这套机制成了平台高风险能力的发布范式：先小范围跑通再逐步放量，blast radius 始终可控。",
+        "en": "Rolling out a knob like pod memory to everyone at once is risky. We gated it behind a per-user whitelist and a feature flag, with a dual-state UI (saved value vs running value) so users can see whether their change took effect. This pattern became the default playbook for high-risk capabilities: prove it on a small set, expand gradually, blast radius stays bounded."
+      },
+      "tech_keywords": [
+        "feature-flag",
+        "whitelist",
+        "gradual-rollout",
+        "blast-radius"
+      ]
+    },
+    {
+      "title": "可观测性：OpenTelemetry + Langfuse 串联 LLM 调用",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "story": {
+        "zh": "排查 LLM 链路一直是黑箱。用 OTel Node SDK 注入 W3C Trace Context，把 SSE handler、工具调用、LLM prompt / token 用量都挂到同一条 trace；Langfuse 负责呈现 prompt 维度的细节。从用户点击到 LLM token 一镜到底，定位问题从靠日志拼凑变成在 trace 上点几下。",
+        "en": "Debugging LLM flows used to be a black box. We used OTel's Node SDK to inject W3C Trace Context, attaching SSE handlers, tool calls, and LLM prompt and token usage to the same trace, with Langfuse rendering prompt-level detail. End-to-end visibility from user click to LLM tokens — issue triage went from grepping logs to a few clicks in a trace UI."
+      },
+      "tech_keywords": [
+        "OpenTelemetry",
+        "Langfuse",
+        "Trace Context",
+        "LLM trace"
+      ]
+    }
+  ],
+  "qa": [
+    {
+      "id": "q-01",
+      "source_tech_point": "tp-001",
+      "primary_dimension": "architecture",
+      "scope": "fullstack",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/services/resumableStreamService.ts",
+        "backagent/src/services/streamManager.ts",
+        "backagent-web/src/hooks/useAgent.ts"
+      ],
+      "question": {
+        "zh": "你们 SSE 流式接口断线之后是怎么续接的？前后端各承担什么？",
+        "en": "How does your SSE stream resume after a disconnect, and what do the frontend and backend each handle?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "后端缓存最近事件并按 ID 分片，前端带 Last-Event-ID 重连，从断点续推。",
+          "en": "The backend buffers recent events with IDs; the frontend reconnects with Last-Event-ID and the stream resumes from the cut."
+        },
+        "standard": {
+          "zh": "LLM 流可能跑几十秒，网络抖一下就断。后端 streamManager 按 session 维持流，resumableStreamService 给每条事件分配单调递增 ID 并缓存最近窗口；前端 useAgent 用 fetch-event-source 监听，断了就带 Last-Event-ID 重连，后端从该 ID 之后续推。用户层面感知不到一次抖动。tool_use / tool_result 的次序一致性靠 ID 在生产侧分配，不在消费侧。",
+          "en": "LLM streams can run tens of seconds, so any blip kills the connection. streamManager keeps a per-session stream; resumableStreamService stamps each event with a monotonic ID and buffers a recent window. The frontend useAgent uses fetch-event-source, and on disconnect it reconnects with Last-Event-ID so the backend resumes from that point. Users never feel the blip. Ordering of tool_use and tool_result is preserved because IDs are assigned producer-side, not consumer-side."
+        },
+        "deep_dive": {
+          "zh": "整条链路的关键是把可恢复性塞进 SSE 协议本身，而不是在 SSE 上再造一层应用协议。streamManager 维护 session→当前活跃流；resumableStreamService 给事件打单调递增 ID，并保留 ring buffer。前端用 fetch-event-source 而不是浏览器原生 EventSource，因为它支持自定义 header（带鉴权）、Last-Event-ID 续接、原生 abort。重连时前端把上次最后 ID 放 Last-Event-ID header，服务端从该 ID 之后开始续推，已渲染的不会重发。trade-off：SSE 是单向的，但天然 HTTP 兼容，走 nginx / k8s ingress 不需要特殊配置；恢复模型也比 WebSocket 简单，不用自己写心跳和重连协议。我们没用 WebSocket 是因为大多数事件是 server→client，引入 WebSocket 反而要自己处理 backpressure 和重连，性价比低。这套机制让长链路（>30s）的中断恢复从「几乎全失败」做到 90%+ 可用，没有为此引入新的状态存储——重启时 ring buffer 失效，最坏情况退化为重新发起整段流，业务能接受。",
+          "en": "The key is baking resumability into SSE itself rather than layering another protocol on top. streamManager keeps a session-to-active-stream map; resumableStreamService stamps events with monotonic IDs and keeps a ring buffer. The frontend uses fetch-event-source rather than native EventSource because it supports custom headers (auth), Last-Event-ID resume, and abort. On reconnect the frontend sends the last received ID in Last-Event-ID and the server resumes from there, so already-rendered chunks aren't re-sent. Trade-off versus WebSocket: SSE is one-way, but HTTP-native, passes through nginx and k8s ingress without special config, and the resume model is simpler — no hand-rolled heartbeat or reconnect logic. We didn't pick WebSocket because most events are server-to-client; WebSocket would force us to handle backpressure and reconnects ourselves with no real upside. After this rolled out, recovery for long sessions (over 30s) went from almost always failing to over 90% usable, and we added no new state storage — at worst, on a server restart the ring buffer is gone and the client re-issues the whole stream, which is acceptable."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "SSE 协议规范",
+          "level": "必须掌握",
+          "why": "讲不清 Last-Event-ID 与重连，可恢复性故事就塌了"
+        },
+        {
+          "name": "fetch-event-source",
+          "level": "必须掌握",
+          "why": "面试官会问为什么不用原生 EventSource"
+        },
+        {
+          "name": "WebSocket vs SSE",
+          "level": "加分项",
+          "why": "讲清 trade-off 才能撑住中级以上的追问"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "WHATWG HTML Living Standard - Server-Sent Events",
+          "MDN: Using Server-Sent Events"
+        ],
+        "hands_on": [
+          "用 Express 写 30 行 SSE demo，支持 Last-Event-ID 续接",
+          "demo 接到本地 nginx 反代后面，验证 X-Accel-Buffering 关闭后流式首字节"
+        ],
+        "common_pitfalls": [
+          "nginx 默认开启 buffer 导致流不动 → 加 X-Accel-Buffering: no",
+          "原生 EventSource 不支持自定义 header（带不了 Authorization）",
+          "Last-Event-ID 必须服务端分配且单调递增，前端不能自己生成"
+        ],
+        "mock_questions": [
+          "客户端断了 5 分钟再回来，buffer 已被驱逐，怎么办？",
+          "SSE 在 HTTP/2 下有什么注意点？",
+          "为什么不直接用 WebSocket？"
+        ],
+        "time_estimate": "1–2 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "为什么选 SSE 而不是 WebSocket？",
+            "en": "Why pick SSE over WebSocket?"
+          },
+          "primary_dimension": "trade-off",
+          "expected_answer": {
+            "zh": "SSE 单向、HTTP 兼容、天然支持 Last-Event-ID；事件几乎都是 server→client，WebSocket 反而引入心跳和 backpressure 自管的成本。",
+            "en": "SSE is one-way, HTTP-native, supports Last-Event-ID natively. Almost all events are server-to-client, so WebSocket would just add heartbeat and backpressure work we don't need."
+          }
+        }
+      ]
+    },
+    {
+      "id": "q-02",
+      "source_tech_point": "tp-002",
+      "primary_dimension": "feature",
+      "scope": "fullstack",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/services/mcp-catalog.service.ts",
+        "backagent-web/src/hooks/useAgent.ts"
+      ],
+      "question": {
+        "zh": "你们怎么把工具能力暴露给 Claude Agent？MCP 在这个链路里起什么作用？",
+        "en": "How do you expose tool capabilities to the Claude Agent, and what role does MCP play in the loop?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "MCP catalog 注册工具 schema，Claude Agent SDK 调度，前端按 tool_use / tool_result 流式渲染。",
+          "en": "An MCP catalog registers tool schemas, the Claude Agent SDK orchestrates calls, the frontend renders tool_use and tool_result as streamed chunks."
+        },
+        "standard": {
+          "zh": "用 Claude Agent SDK 拿到 LLM 调度能力，所有工具（git、沙箱命令、文件操作、deploy）通过 MCP catalog 注册，每个工具暴露 name / 输入 schema / handler。Agent 决定调用时输出 tool_use，框架转给 catalog 执行 handler，结果以 tool_result 回流。前端 useAgent 监听 SSE，按 tool_use / tool_result 分片渲染：工具名、参数 diff、结果都能边出边显示。这层抽象让工具能力和 Agent 解耦，新增能力只在 catalog 注册即可。",
+          "en": "We use the Claude Agent SDK for LLM orchestration. All tools (git, sandbox commands, file IO, deploy) are registered through an MCP catalog, each exposing a name, input schema, and handler. When the Agent decides to call a tool it emits tool_use; the framework dispatches to the catalog, and the result flows back as tool_result. The frontend useAgent reads the SSE stream and renders tool_use and tool_result chunks separately. The big win: tool capabilities are decoupled from the Agent loop — adding a tool just means registering it."
+        },
+        "deep_dive": {
+          "zh": "把 Agent 拆成「会议长（LLM 决策）」和「办事员（工具）」是这套架构的核心思路。MCP 在中间是通用工具协议：每个工具自描述输入 schema，Agent 看到 schema 才知道能调什么。落地上 mcp-catalog.service 持有所有工具的注册表，工具实现从 git-sandbox.service、build-preview 等模块挑出方法包装一层；handler 接受标准化参数、返回标准化结果，外面统一加错误归一化和密钥脱敏，避免泄露到 LLM 上下文里。前端 useAgent 收到的 SSE 事件被分发器路由到 ToolDetail 组件，input/output 都做 diff 渲染。trade-off：MCP 比直接用 Anthropic tool-use API 多一层抽象，但好处是切换 LLM 厂商或 Agent 实现时工具层零改动；同一套 catalog 已经验证过能挂在不同 Agent runner 上跑。一个失败教训是早期把工具异常直接抛回 LLM，结果 LLM 把内部错误信息搬运到回答里，后来加了一层错误归一化（区分用户可见和内部 trace）才稳定。整体上一个工具一周能从想法到上线。",
+          "en": "The architecture splits the Agent into 'chair (LLM decisions)' and 'workers (tools)'. MCP is the universal tool protocol in between: each tool self-describes its input schema, and the Agent reads those schemas to know what it can call. Concretely, mcp-catalog.service holds the registry; tool implementations wrap methods picked from modules like git-sandbox.service and build-preview. Handlers take normalized inputs and return normalized outputs, with error normalization and secret redaction added on top so internal details never leak into the LLM context. On the frontend, useAgent dispatches SSE events to a ToolDetail component that diffs input and output. Trade-off: MCP adds a layer over directly using the Anthropic tool-use API, which can feel like abstraction for its own sake, but it pays off when swapping LLM providers or Agent runners — the tool layer doesn't change. A real lesson from production: early on we threw tool exceptions directly back to the LLM and the LLM started parroting internal error text into its answers; after adding error normalization separating user-facing from internal trace, it stabilized. End state: idea to a new tool in production within a week."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "MCP 协议核心",
+          "level": "必须掌握",
+          "why": "不懂 MCP 注册流程就讲不清工具如何被 LLM 看到"
+        },
+        {
+          "name": "Tool-use 协议",
+          "level": "必须掌握",
+          "why": "面试官会问 tool_use / tool_result 的事件结构"
+        },
+        {
+          "name": "错误归一化模式",
+          "level": "加分项",
+          "why": "讲到错误层能体现工程化能力"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Anthropic - Model Context Protocol 官方文档",
+          "Anthropic - Tool use API reference"
+        ],
+        "hands_on": [
+          "用 MCP SDK 写最小 server，暴露 read_file / write_file 两个工具，接到 Claude Desktop 验证",
+          "在现有项目给 mcp-catalog 加一个新工具（如 list_dir），跑通 tool_use → tool_result"
+        ],
+        "common_pitfalls": [
+          "把内部错误堆栈直接丢回 LLM，LLM 会复述给用户",
+          "工具 schema 漏字段，LLM 反复尝试错误参数浪费 token",
+          "工具调用没加超时，长跑工具拖死整条 Agent"
+        ],
+        "mock_questions": [
+          "为什么不直接用 Anthropic 的 tool-use API，要加一层 MCP？",
+          "如果一个工具调用要跑 30s，怎么把进度反馈给前端？",
+          "工具的输入 schema 怎么和工具实现保持同步？"
+        ],
+        "time_estimate": "1–2 天"
+      }
+    },
+    {
+      "id": "q-03",
+      "source_tech_point": "tp-003",
+      "primary_dimension": "architecture",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/services/sandbox-manager.service.ts",
+        "backagent/src/services/sandbox-coordinator.ts"
+      ],
+      "question": {
+        "zh": "你们沙箱有 e2b 和自研两个后端，是怎么抽象的？切换后端需要改什么？",
+        "en": "Your sandbox layer has both e2b and an in-house backend — how is it abstracted, and what changes when you switch backends?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "SandboxManager 暴露统一接口，e2b 和 OpenSandbox 是两个适配实现，业务层零感知切换。",
+          "en": "SandboxManager exposes one interface; e2b and OpenSandbox are two adapters; business code switches with zero changes."
+        },
+        "standard": {
+          "zh": "沙箱有两个动机：隔离用户工作区、解耦底层供应商。SandboxManager 定义统一接口（启动/exec/文件 IO/销毁），e2b 实现走它的 SDK，自研 OpenSandbox 走自定义协议。Coordinator 在上层做 session→实例的路由，业务层（git、deploy、tool handler）只面向接口。切换后端只改配置和注入实现，业务零改动。这层抽象上线后能根据成本和能力把不同 session 路由到不同后端，灰度切换非常顺。",
+          "en": "Two motivations: isolate user workspaces and decouple from any single vendor. SandboxManager defines one interface (start, exec, file IO, destroy); e2b uses its SDK, in-house OpenSandbox uses our custom protocol. A coordinator routes session-to-instance, business code only sees the interface. Switching backends means changing config and the injected implementation — zero business code changes. After this shipped we could route different sessions to different backends based on cost and capability, and grayscale rollouts went smoothly."
+        },
+        "deep_dive": {
+          "zh": "沙箱抽象的设计核心是接口要尽量薄但够用。最初想把所有能力都抽象（比如 e2b 的 filesystem watcher），结果发现 OpenSandbox 没法对齐被迫退化。最终接口锁死在四件事：start（返回 session_id）、exec（跑 shell 并流式返回 stdout/stderr/exit）、files（read/write/list）、destroy。所有更花哨的能力（端口转发、长驻进程）由具体实现暴露 typed extension API，业务用类型守卫挑选支持的后端。Coordinator 做 session→后端路由，输入是后端健康度和用户 feature flag（比如内部账号优先 OpenSandbox 测试新能力）。切换后端的成本几乎只在协议封装代码里，业务层从未因为换后端报过 bug。trade-off：保留两套后端要长期维护两份适配，但好处是不被任何一家供应商绑死，并且 OpenSandbox 可以做 e2b 做不了的本地预热和自定义网络策略。这种抽象的可贵之处不在「现在用得到」，而是真有一天 e2b 涨价或停服时能在一周内切走。",
+          "en": "The point is a thin but sufficient interface. We initially tried to abstract everything (e2b's filesystem watcher) and had to walk it back because OpenSandbox couldn't match. The interface settled on four things: start (returns session_id), exec (run shell with streaming stdout/stderr/exit), files (read/write/list), destroy. Fancier capabilities (port forwarding, long-running processes) are typed extension APIs on specific implementations; business code uses type guards. The coordinator routes sessions based on backend health and user feature flag (internal accounts prefer OpenSandbox to test new capabilities). The cost of switching is contained in protocol wrappers; business code has never broken because of a backend swap. Trade-off: maintaining two backends is real cost, but the upside is zero vendor lock-in plus capabilities OpenSandbox can do that e2b can't (local warm-up, custom networking). The value isn't 'we use both today,' it's that if e2b raises prices or goes down, we can migrate inside a week."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "适配器模式",
+          "level": "必须掌握",
+          "why": "讲不清接口与实现分离面试官就会怀疑设计能力"
+        },
+        {
+          "name": "Linux 容器隔离",
+          "level": "必须掌握",
+          "why": "沙箱底层都基于 cgroup/namespace，要能讲清边界"
+        },
+        {
+          "name": "供应商可替换性",
+          "level": "加分项",
+          "why": "讲清商业 trade-off 是高级方向的加分点"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "e2b 官方文档 - Sandbox 概念与生命周期",
+          "Linux man-pages: namespaces(7) 与 cgroups(7)"
+        ],
+        "hands_on": [
+          "用 docker exec 包一个最小沙箱接口，支持 exec / read / write 三件事",
+          "把同一段业务代码挂到两个 docker 实例上，跑一遍灰度切换"
+        ],
+        "common_pitfalls": [
+          "抽象接口塞太多（试图统一所有后端的奇异能力），结果哪边都不舒服",
+          "忘了 destroy 资源，长跑后实例数爆炸",
+          "exec 没有限制并发，用户可以轻松打满后端"
+        ],
+        "mock_questions": [
+          "如果有一天必须支持第三个沙箱后端，你的接口能不能扛住？",
+          "怎么处理两个后端实现行为细微不一致（比如 exit code 语义）？",
+          "Coordinator 路由策略怎么避免雪崩？"
+        ],
+        "time_estimate": "1–2 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "为什么不直接用 Docker 而要做这层抽象？",
+            "en": "Why not just use Docker directly instead of building this layer?"
+          },
+          "primary_dimension": "trade-off",
+          "expected_answer": {
+            "zh": "Docker 是单机概念，沙箱要跨机调度、热池、亲和路由；e2b 和 OpenSandbox 都自带这些能力，但协议不一样，所以需要抽象层屏蔽差异。",
+            "en": "Docker is single-node. We need cross-node scheduling, warm pools, and affinity routing — both e2b and OpenSandbox provide that with different protocols, so we abstract over them."
+          }
+        }
+      ]
+    },
+    {
+      "id": "q-04",
+      "source_tech_point": "tp-004",
+      "primary_dimension": "performance",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/services/sandbox-warm-pool.service.ts",
+        "backagent/src/services/sandbox-proxy.service.ts"
+      ],
+      "question": {
+        "zh": "首次预览的冷启动是怎么压下来的？预热池怎么设计才不会烧成本？",
+        "en": "How did you cut first-preview cold start, and how is the warm pool sized so it doesn't burn money?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "维护一组提前启动好的沙箱实例，新 session 进来直接复用，把冷启动转成秒级。",
+          "en": "We keep a pool of pre-started sandbox instances; new sessions reuse them, turning cold start into sub-second startup."
+        },
+        "standard": {
+          "zh": "冷启动里启动镜像、装依赖、起服务通常要十几秒。sandbox-warm-pool 维护一组固定数量的 idle 实例，启动后跑完通用初始化（拉镜像、起常用进程）就 park 住。新 session 进来 sandbox-proxy 优先从池里拿一个绑定，剩下的差异化初始化（用户文件、特定配置）几百毫秒搞定。池大小按时段调度——白天高峰拉高、夜里缩小，配合监控避免空转烧钱。整体效果是首次预览从「转好几秒」到秒内出来。",
+          "en": "Cold start usually takes a dozen-plus seconds (pull image, install deps, start services). sandbox-warm-pool keeps a fixed number of idle instances each pre-running shared init (image pulled, common processes up) and parked. When a new session arrives, sandbox-proxy grabs one from the pool, and per-user diff init (files, config) finishes in a few hundred ms. Pool size follows schedule — bigger at peak, smaller at night — with monitoring to avoid burning idle. End result: first preview went from a long spinner to sub-second."
+        },
+        "deep_dive": {
+          "zh": "预热池的核心问题是平衡「启动够快」和「不浪费钱」。我们做了三个 lever。第一是分层初始化：镜像层、通用依赖层、用户层；前两层在 warm-pool 阶段做完，进 session 只跑用户层，这是最大头的提速来源。第二是池规模动态化：基于过去 N 分钟 session 创建速率预测下个窗口需求，预留 headroom，过了高峰自动缩。第三是亲和性回收：sandbox-proxy 看到同一用户短时间再来，优先把刚释放的实例还给他（缓存还热），减少重新初始化。trade-off 上选择细粒度池而不是大共享池，因为大池里万一有「污染」实例（用户没清理干净）会扩散，细粒度池配合定期销毁能控制污染域。一个真实失败教训：早期池里实例长时间不销毁导致 inode 等系统资源积累，后期变慢；后来加了「实例使用 N 次后强制销毁重建」才稳。整体首次预览启动稳定亚秒级，池利用率工作时间维持 70%+。",
+          "en": "The core question is balancing fast start against cost. Three levers. First, layered init: image layer, shared deps layer, per-user layer; the first two finish in warm-pool prep so the session-side path only runs per-user, the biggest speedup. Second, dynamic pool size: predict demand from session creation rate over the last N minutes, keep headroom, shrink after peak. Third, affinity recycling: sandbox-proxy hands the same user back a recently released instance when possible (caches still hot). Trade-off: we picked many small pools over one big shared pool because a contaminated instance in a large pool spreads; small pools plus periodic destroy contain the blast radius. Real lesson: early on instances were never destroyed, inodes and other system resources accumulated and they got slower; the fix was force destroy-recreate after N uses. End state: first-preview holds sub-second and pool utilization sits over 70% during business hours."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "对象池模式",
+          "level": "必须掌握",
+          "why": "warm pool 本质是对象池，讲不清模式就讲不清细节"
+        },
+        {
+          "name": "分层镜像/初始化",
+          "level": "必须掌握",
+          "why": "速度提升的最大来源就是这一招"
+        },
+        {
+          "name": "动态扩缩策略",
+          "level": "加分项",
+          "why": "讲清成本控制能体现高级思维"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Apache Commons Pool - 设计文档（对象池经典实现）",
+          "Cloudflare 工程博客 - 关于 isolate 与 warm 实例的文章"
+        ],
+        "hands_on": [
+          "本地用 docker 实现一个小型 warm pool（5 个实例），测对比冷启动 vs 池命中的耗时",
+          "给池加「使用 N 次后销毁」策略，跑一晚上看资源是否不再上涨"
+        ],
+        "common_pitfalls": [
+          "实例不定期销毁导致系统资源（inode、句柄）累积",
+          "池大小固定不随负载变化，要么浪费要么扛不住",
+          "亲和性策略让同一坏实例反复服务同一用户，故障集中"
+        ],
+        "mock_questions": [
+          "池子怎么探活？怎么判断实例已经不健康要销毁？",
+          "如果突发流量翻倍，池没扩起来怎么办？",
+          "池命中率多少算正常？太高代表什么问题？"
+        ],
+        "time_estimate": "1–2 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "如果业务 99% 的请求池都能命中，那 1% 命中不到的怎么处理？",
+            "en": "If 99% of requests hit the pool, how do you handle the 1% that miss?"
+          },
+          "primary_dimension": "reliability",
+          "expected_answer": {
+            "zh": "miss 时同步走完整冷启动并立刻补一个池实例，前端显示明确等待状态而不是假装已就绪；同时记录 miss 事件作为扩容信号。",
+            "en": "On a miss, do the full cold start synchronously and immediately replenish the pool, show an explicit waiting state on the frontend instead of faking readiness, and log the miss as a scale-up signal."
+          }
+        }
+      ]
+    },
+    {
+      "id": "q-05",
+      "source_tech_point": "tp-005",
+      "primary_dimension": "reliability",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/services/sandbox-state.repository.ts",
+        "backagent/src/services/sandbox-coordinator.ts"
+      ],
+      "question": {
+        "zh": "Redis 主、DB 兜底的状态模型，Redis 挂了或者数据不一致时怎么办？",
+        "en": "With Redis as source of truth and DB as fallback, what happens when Redis goes down or the two diverge?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "读写优先 Redis，失败降级读 DB；写入异步双写，启动时从 DB 重建 Redis。",
+          "en": "Reads and writes prefer Redis; on failure we fall back to the DB; writes are double-written async, and the cache rebuilds from the DB on boot."
+        },
+        "standard": {
+          "zh": "状态模型本身是「热路径在 Redis、冷路径/真相在 DB」。sandbox-state.repository 暴露统一的 get/set，内部先查 Redis，miss 或 Redis 不可用就回退查 DB，命中则补回 Redis。写入路径同步写 Redis、异步落 DB（带重试），保证 Redis 永远最新。Coordinator 路由也消费这层 repository，所以 Redis 故障时降级路径自动，不需要业务感知。重启 Pod 时不依赖 Redis 缓存，从 DB 即可重建。",
+          "en": "The model: hot path in Redis, cold path / truth in the DB. sandbox-state.repository exposes a unified get/set; internally it tries Redis first, falls back to the DB on miss or unavailability, backfills Redis on hit. Writes go to Redis synchronously and to the DB asynchronously with retries, so Redis stays freshest. The coordinator consumes this repository too, so Redis failures degrade automatically without business code knowing. On pod restart we don't rely on Redis cache; the DB rebuilds it."
+        },
+        "deep_dive": {
+          "zh": "「Redis 主」不是字面意义的「DB 没用」，而是「Redis 是热路径权威源」。一致性模型是：写入双写，Redis 同步、DB 异步带重试 + 队列；读取先 Redis 再 DB，缓存失效用 TTL + 主动失效双保险。Redis 故障触发两个反应：repository 内部把读路径切到 DB（带降级标记），告警同时触发；写路径仍然双写但 Redis 写返回错误时不阻塞业务，DB 异步落地保证最终一致。最棘手的是「Redis 数据被错改 / 缓存污染」，给关键 key 做了 schema 校验和版本号，发现 corrupt 直接 evict，回退查 DB 重建。trade-off：选 Redis 主而不是 DB 主的原因是 sandbox 状态读写极高频（每次 SSE 事件都更新心跳/进度），DB 单点扛不住；代价是要面对 Redis 故障的退化场景，DB 必须真兜底。一次真实事件：Redis 主从切换出现脑裂少量 session 状态错乱；事后在 Coordinator 层加了「读时校验」（比对 sandbox 实际状态和 Redis 记录），不一致就以实际状态为准重写。整体让我们既享受 Redis 的延迟，又在故障时不丢业务连续性。",
+          "en": "'Redis primary' doesn't mean 'DB is useless' — it means Redis is the hot-path source of truth. Consistency: writes double-written (Redis sync, DB async with retries plus a queue); reads try Redis then DB, with TTL plus active invalidation on cache eviction. A Redis outage triggers two reactions: the repository switches reads to the DB internally with a degraded flag, alerts fire, and writes still try both but a Redis write error doesn't block — the DB is the eventual safety net. The hardest case is Redis data corruption, so critical keys carry a schema and version; corruption is detected and evicted, then rebuilt from the DB. Trade-off: we picked Redis primary over DB primary because sandbox state is read and written extremely often (every SSE event updates heartbeat / progress) and the DB alone couldn't take it. The cost is engineering for the degraded path, so the DB has to be a real fallback, not a backup of cache. Real incident: a Redis primary-replica split-brain corrupted a few session states. After that we added 'read-time verification' in the coordinator — compare actual sandbox state against the Redis record, and if they disagree, rewrite based on actual state. We get Redis latency without losing continuity when things break."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "缓存一致性模型",
+          "level": "必须掌握",
+          "why": "Cache-aside / Write-through 的差异讲不清面试官会停手"
+        },
+        {
+          "name": "Redis 故障与降级",
+          "level": "必须掌握",
+          "why": "面试官一定会问 Redis 挂了怎么办"
+        },
+        {
+          "name": "异步双写与队列",
+          "level": "加分项",
+          "why": "讲清 DB 异步路径的可靠性能加分"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Redis 官方文档 - Persistence 与 Replication 章节",
+          "Martin Kleppmann《Designing Data-Intensive Applications》第 5 章 Replication"
+        ],
+        "hands_on": [
+          "用 ioredis 写一个 cache-aside 包装器，实现 Redis miss 自动从 Postgres 回填",
+          "故意 kill 掉 Redis 一段时间，看降级路径是否正确触发"
+        ],
+        "common_pitfalls": [
+          "把 Redis 当唯一存储，重启 / 故障数据全丢",
+          "DB 异步落地没有重试和死信，Redis 一直比 DB 新",
+          "缓存失效只用 TTL，更新场景下脏读窗口很长"
+        ],
+        "mock_questions": [
+          "怎么定义你的一致性级别？强一致还是最终一致？",
+          "Redis 主从切换时会有什么风险？",
+          "为什么不直接 DB 主，把 Redis 当 cache？"
+        ],
+        "time_estimate": "1 周"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "为什么选 Redis 主 + DB 兜底，而不是简单的 DB 主 + Redis 缓存？",
+            "en": "Why Redis primary plus DB fallback rather than DB primary with Redis as a simple cache?"
+          },
+          "primary_dimension": "trade-off",
+          "expected_answer": {
+            "zh": "sandbox 状态读写极高频，DB 单点扛不住延迟；Redis 主能命中亚毫秒读，DB 兜底只在故障/重建时承压，整体延迟 + 可靠性更划算。",
+            "en": "Sandbox state is read and written constantly; the DB alone can't deliver the latency. Redis primary gives sub-millisecond reads, and the DB only takes load during failures or rebuilds — better latency and reliability per unit cost."
+          }
+        }
+      ]
+    },
+    {
+      "id": "q-06",
+      "source_tech_point": "tp-006",
+      "primary_dimension": "performance",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/services/git-sandbox.service.ts",
+        "backagent/src/services/git-woa.service.ts",
+        "backagent/src/services/checkpoint-git.service.ts"
+      ],
+      "question": {
+        "zh": "Git 接口合并子命令具体怎么做？同步 status + add + commit 之类的步骤是怎么变成一次调用的？",
+        "en": "How exactly did you batch the git subcommands? How does something like status + add + commit become a single call?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "把多个 git 子命令拼成一条 shell 复合命令在沙箱内一次执行，结果分段解析。",
+          "en": "Compose multiple git subcommands into one shell pipeline, run it in the sandbox once, and parse the segmented output."
+        },
+        "standard": {
+          "zh": "原来每个 git 接口都是 service 层调多次 sandbox.exec：一次 status、一次 add、一次 commit……每次付一个跨网络 RTT。重构后 git-sandbox.service 把这些子命令拼成一条 shell 复合命令（用 set -e + 明确分隔标记），通过一次 exec 在沙箱内顺序执行，stdout 用分隔标记切片解析回来。同样逻辑应用在 7 个 git 接口（包括 checkpoint），尾延迟显著下降，用户感知是「点了立刻有反应」。中间还顺手修了 untracked 文件让 pull 误报冲突的一致性 bug。",
+          "en": "Originally every git endpoint called sandbox.exec multiple times — one status, one add, one commit — paying a cross-network RTT each time. After the refactor, git-sandbox.service composes those into one shell pipeline (set -e plus explicit delimiters) and runs it in a single exec; we split stdout back into sections by the delimiter. The same pattern applies to all seven endpoints, including checkpoint. Tail latency dropped sharply — clicks feel instant. We also fixed a real bug where untracked files made pull falsely report a conflict."
+        },
+        "deep_dive": {
+          "zh": "这个优化的本质是把 N 次跨网络 RTT 收敛成 1 次。落地有几个细节。第一，shell 复合的可靠性：用 set -e 让任意子命令失败立刻中止，避免「前几步成功了但 commit 失败导致仓库半死不活」。第二，输出可解析性：每一步之间打入 ASCII 分隔符（不可能在 git 输出里出现的字符），service 层按分隔符切片，每段对应一个子命令的输出，错误分段也能精确定位是哪一步挂的。第三，幂等性：合并前把每步都梳理过，确认重跑不会污染（commit 用允许空提交模式时显式 --allow-empty 还是直接报错），合并命令具备良好可重试性。trade-off：合并后调试链路变长，没法在某一步 dry-run 看中间状态——所以配套加了「展开模式」，开发态可以拆回逐步执行。失败教训是 untracked 文件触发 pull 假冲突：原来 pull 前 git status 看脏，但 untracked 也算脏被误判；修复是先 stash -u（包含 untracked），pull 完再 stash pop。最终 git 操作 P95 显著改善，分段解析做得严错误定位反而比合并前更精确。",
+          "en": "The essence is collapsing N cross-network RTTs into one. A few details. First, pipeline reliability: set -e aborts on any subcommand failure, so we never end up half-committed. Second, parsable output: between steps we inject ASCII delimiters (characters git won't produce) so the service layer can slice stdout cleanly, and an error inside any slice points exactly to which step failed. Third, idempotency: before merging we audited each step to make sure reruns don't corrupt state (allow-empty commits become explicit instead of implicit), so the composed command is retry-safe. Trade-off: composed commands are harder to debug because you can't dry-run a single step in isolation, so we kept an 'expand mode' for development. A real bug: untracked files used to trigger a fake pull conflict because the old logic treated 'dirty workdir' (including untracked) as a conflict; the fix was stash -u before pull and pop after, preserving user untracked files. Outcome: git operations' P95 improved substantially, and because the segmented parser is strict, error locating is actually more precise than before."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "git plumbing 命令",
+          "level": "必须掌握",
+          "why": "讲不清 plumbing/porcelain 区别就讲不清合并的可解析性"
+        },
+        {
+          "name": "shell set -e / pipefail",
+          "level": "必须掌握",
+          "why": "复合命令的失败传播全靠这俩"
+        },
+        {
+          "name": "git stash -u 语义",
+          "level": "加分项",
+          "why": "失败教训对应的细节，能体现工程深度"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Pro Git book - 第 10 章 Git Internals",
+          "git-stash(1) man page"
+        ],
+        "hands_on": [
+          "写一个脚本，把 status + add + commit 合并成一条 set -e 命令，输出按分隔符切片",
+          "构造一个有 untracked 文件的仓库跑 pull，复现 stash -u / pop 的修复"
+        ],
+        "common_pitfalls": [
+          "复合命令忘开 set -e，前面失败后续还在跑",
+          "用 echo / printf 当分隔符不够安全，git 输出可能含同样字符",
+          "stash 的 -u 缺失，导致 untracked 文件被丢"
+        ],
+        "mock_questions": [
+          "如果合并命令中的某一步偶发失败，你怎么定位是哪步？",
+          "为什么不直接用 libgit2 而是 shell git？",
+          "checkpoint（保存点）功能是怎么基于 git 实现的？"
+        ],
+        "time_estimate": "1–2 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "为什么不用 libgit2 直接在进程内跑 git，省掉沙箱往返？",
+            "en": "Why not use libgit2 inside the process to avoid the sandbox round-trip entirely?"
+          },
+          "primary_dimension": "trade-off",
+          "expected_answer": {
+            "zh": "沙箱里的工作区是用户的，文件、配置、凭据都在沙箱命名空间内；libgit2 跑在主进程会破坏隔离边界且无法用沙箱内的 git 凭据，得不偿失。",
+            "en": "The workspace lives in the user's sandbox — files, config, credentials all in that namespace. Running libgit2 in the main process would break isolation and lose access to sandbox-scoped git credentials. Not worth it."
+          }
+        }
+      ]
+    },
+    {
+      "id": "q-07",
+      "source_tech_point": "tp-007",
+      "primary_dimension": "security",
+      "scope": "fullstack",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/config/feature-whitelist.ts",
+        "backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx"
+      ],
+      "question": {
+        "zh": "Pod 内存配置这种高风险能力你们怎么灰度？为什么要做双态展示？",
+        "en": "How do you gray-roll a high-risk knob like pod memory, and why does the UI show a dual state?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "白名单 + per-user feature flag 双闸门控制可见性，前端双态显示已保存值和运行中值。",
+          "en": "Whitelist plus per-user feature flag gates visibility; the UI shows both the saved value and the running value side by side."
+        },
+        "standard": {
+          "zh": "高风险配置（比如 Pod 内存）一旦改错会让用户业务起不来。后端用 feature-whitelist.ts 维护一份允许使用的用户名单，前端再叠一层 feature flag，只有同时满足才能看到这个配置入口。展示上 DeployTabPanel 同时显示「已保存值」和「运行中值」：保存了但还没重启时两者会不一致，用户能直观看到「我的改动还没生效」，避免之前那种「改了不知道是不是真的生效」的困惑。这套机制成了平台高风险能力的发布范式。",
+          "en": "A high-risk knob like pod memory can take a user's app down if set wrong. The backend keeps a whitelist (feature-whitelist.ts) of allowed users, and the frontend stacks a feature flag on top — both must pass before the entry shows up. For display, DeployTabPanel shows both the saved value and the running value: after a save but before restart they differ, so users see 'my change hasn't taken effect yet' instead of guessing. This pattern became our default playbook for high-risk capabilities."
+        },
+        "deep_dive": {
+          "zh": "灰度的核心是把 blast radius 缩到可控。我们做了三层。第一层后端白名单（feature-whitelist.ts），上线初期写死一组内部账号，这层是「能不能看到」的最终决定权，前端绕不开。第二层 feature flag，前端按 flag 决定是否渲染入口，运营可以按用户群拨开关而不发版。第三层双态 UI：DeployTabPanel 同时显示「已保存（DB 持久化）」和「运行中（实际生效在 Pod 上）」，deploy 重启前两值会不一致，肉眼可见。trade-off：双态比单态实现成本高（前端要拉两个值、UI 要解释清楚），但相比「改完不知道生不生效，反复试」的体验，这层成本完全值得。一个真实问题：早期没做白名单光靠前端 feature flag，结果有用户用浏览器开发者工具改 flag 看到了入口，差点改坏配置；之后把权限的最终判断完全压到后端 API，前端只是隐藏入口。现在这套范式被复用到部署、checkpoint 等多个高风险场景，成本几乎是零（拷贝一份白名单 key），收益是稳定性兜底。",
+          "en": "The point is shrinking blast radius. Three layers. First, a backend whitelist (feature-whitelist.ts), initially hardcoded to internal accounts. This is the final decider — the frontend cannot go around it. Second, a feature flag the frontend uses to render or hide the entry, so ops can toggle by user group without a deploy. Third, the dual-state UI: DeployTabPanel shows both 'saved (persisted in DB)' and 'running (actually live on the pod)'; before a deploy restart these visibly differ. Trade-off: dual-state costs more on the frontend (two values to fetch, more UI to explain), but compared to users 'changed something and have no idea, try again' it's clearly worth it. Real lesson: early on we only had the frontend flag and no backend whitelist; a user flipped the flag in dev tools and almost misconfigured production. After that we pushed the final permission check entirely into the backend API — the frontend just hides the entry. Now this same pattern is reused on deploy, checkpoint, and other high-risk surfaces at near-zero cost (copy a whitelist key) for real reliability gain."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "Feature flag 模式",
+          "level": "必须掌握",
+          "why": "讲不清 release toggle / ops toggle 区别就讲不清这套发布"
+        },
+        {
+          "name": "Blast radius 思维",
+          "level": "必须掌握",
+          "why": "中级以上必须能解释为什么不全量"
+        },
+        {
+          "name": "前后端权限分层",
+          "level": "加分项",
+          "why": "讲清「前端只是 UI 隐藏」是体现安全意识的关键"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Martin Fowler - Feature Toggles 文章",
+          "OWASP Cheat Sheet - Authorization 章节"
+        ],
+        "hands_on": [
+          "在小 Express 项目里实现「白名单 + feature flag」双闸门，前端按 flag 隐藏入口、后端按白名单拒绝请求",
+          "为某个表单字段做双态 UI，对比改造前后用户的困惑度"
+        ],
+        "common_pitfalls": [
+          "只在前端做 flag 判断，浏览器一改就绕过",
+          "feature flag 上线后没清理，长期堆成几百个开关",
+          "灰度数据没采集，发布完不知道效果"
+        ],
+        "mock_questions": [
+          "如果用户改 flag 绕过前端，你怎么防？",
+          "灰度发布到一定比例之后下一步怎么走？",
+          "feature flag 怎么不变成屎山？"
+        ],
+        "time_estimate": "半天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "为什么需要双态 UI 而不是改完直接显示新值？",
+            "en": "Why a dual-state UI instead of just showing the new value after save?"
+          },
+          "primary_dimension": "trade-off",
+          "expected_answer": {
+            "zh": "Pod 内存这类配置只有 deploy 重启后才真正生效，单态会让用户误以为已经生效；双态明确显示「已保存 vs 运行中」避免静默 drift。",
+            "en": "A knob like pod memory only takes effect after a deploy restart. A single-state UI makes users think the change is live; dual-state explicitly shows 'saved vs running', preventing silent drift."
+          }
+        }
+      ]
+    },
+    {
+      "id": "q-08",
+      "source_tech_point": "tp-008",
+      "primary_dimension": "feature",
+      "scope": "fullstack",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/services/build-preview/sandbox-deploy.service.ts",
+        "backagent/src/services/build-preview/deploy-proxy.service.ts",
+        "backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx"
+      ],
+      "question": {
+        "zh": "从沙箱里 build 出来的产物到用户能访问的子域名，中间链路是怎么打通的？",
+        "en": "From the sandbox build artifact to a reachable subdomain — what does the path actually look like?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "沙箱内 build → deploy-proxy 把产物挂到子域名 → 修正 vite base 让相对路径正确。",
+          "en": "Build inside the sandbox, deploy-proxy maps the artifact to a subdomain, and we rewrite vite base so relative paths resolve."
+        },
+        "standard": {
+          "zh": "用户点 deploy 后 sandbox-deploy 在沙箱里跑 build，产物 dist 留在沙箱内；deploy-proxy 把 dist 挂载到一个唯一子域名（user-id + project hash），通过反向代理对外暴露。坑点是 vite 默认 base 是 `/`，子域名场景下相对路径基本能 work，但根路径资源（`/assets/...`）会因为代理路径不一致出问题，所以 deploy 时强制把 vite base 改成 `/`（或对应子路径）并做 HTML 注入修正。前端 DeployTabPanel 显示 deploy 状态、错误面板，并暴露子域名链接给用户。",
+          "en": "When a user clicks deploy, sandbox-deploy runs the build inside the sandbox and the dist stays there; deploy-proxy mounts that dist onto a unique subdomain (user-id plus project hash) via a reverse proxy. The gotcha: vite's default base is '/', which mostly works on a subdomain, but root-relative assets (/assets/...) break when the proxy path doesn't match. So at deploy time we force vite base to '/' (or the right subpath) and patch the HTML accordingly. The frontend DeployTabPanel shows deploy status, runtime errors, and the final subdomain link."
+        },
+        "deep_dive": {
+          "zh": "这条链路的难点不在每一步技术，而在「跨边界的状态统一」。沙箱、deploy-proxy、前端 UI 三处都要对「这次 deploy 是否成功、产物在哪、用户的 URL 是什么」这一组事实保持一致。我们把 deploy 拆成几个状态：building、built、proxied、served、failed，每个状态在 sandbox-state 里有 record，前端订阅 SSE 实时拿到状态变更。Vite base 修正这一步是必须的：沙箱里 build 时不知道未来要挂到哪个子域名，所以产物必须是路径无关的，要么用相对路径要么后处理 HTML。最初想全用相对路径，但 vite 生成的 chunk 引用是 `/assets/...` 形式，相对化代价高且容易出错；最终选了「构建时绝对路径占位 → deploy 时按子路径 rewrite HTML 入口」。trade-off：rewrite 需要对 dist 做后处理（多了几百毫秒），但保证任何子域名都能正确加载资源。一个真实失败教训是早期没做错误面板，deploy 失败用户只看到「转圈」，定位很难；后来 DeployTabPanel 直接展示 build 阶段 stderr 末尾几行 + runtime 错误面板（iframe 里的 console.error 通过 postMessage 回传），定位成本骤降。",
+          "en": "The hard part isn't any single step — it's keeping state consistent across boundaries. Sandbox, deploy-proxy, and the frontend UI all need to agree on the same fact: did this deploy succeed, where is the artifact, what's the user URL. We split deploy into states — building, built, proxied, served, failed — each persisted in sandbox-state, with the frontend subscribing via SSE for live updates. Vite base rewriting is unavoidable: at build time the sandbox doesn't know which subdomain it'll end up on, so the artifact has to be path-agnostic — either fully relative or post-processed. We tried fully relative first but vite's generated chunk refs use absolute /assets/... paths, and making everything relative was costly and brittle. We landed on 'build with an absolute placeholder, rewrite HTML entry by subpath at deploy time'. Trade-off: rewriting adds a few hundred ms post-processing per deploy, but it guarantees any subdomain loads correctly. Real lesson: early on there was no error panel, so a failed deploy looked like an endless spinner. After we made DeployTabPanel show the last few lines of build stderr plus a runtime error panel (the iframe's console.error piped back via postMessage), debug time dropped dramatically."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "vite base / publicPath",
+          "level": "必须掌握",
+          "why": "子路径部署的 90% 故障都是这里"
+        },
+        {
+          "name": "反向代理 host/path",
+          "level": "必须掌握",
+          "why": "讲不清子域名映射就讲不清整条链路"
+        },
+        {
+          "name": "构建产物路径无关性",
+          "level": "加分项",
+          "why": "理解为什么不能写死绝对路径"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Vite 官方文档 - Public Base Path",
+          "nginx proxy_pass 与 sub_filter 章节"
+        ],
+        "hands_on": [
+          "用一个 vite 项目 build 出 dist，挂到 nginx 的子路径下，修复 /assets 加载问题",
+          "给 deploy 加一个简单的 stderr tail 面板，故意制造 build 失败验证显示"
+        ],
+        "common_pitfalls": [
+          "vite base 没设导致 /assets 404",
+          "HTML 入口没 rewrite，相对路径在某些子路径下错乱",
+          "deploy 状态没区分 build / proxy / serve，前端 UI 误显示成功"
+        ],
+        "mock_questions": [
+          "如果用户的项目是 SPA + history 路由，deploy 之后刷新 404 怎么处理？",
+          "怎么区分 build 失败和 runtime 失败？两边的错误面板有什么不同？",
+          "子域名命名怎么避免冲突和被猜出来？"
+        ],
+        "time_estimate": "1–2 天"
+      }
+    },
+    {
+      "id": "q-09",
+      "source_tech_point": "tp-009",
+      "primary_dimension": "reliability",
+      "scope": "frontend",
+      "sub_project": "backagent-web",
+      "depth": "中级",
+      "evidence": [
+        "backagent-web/src/pages/Chat/components/preview/H5Preview.tsx",
+        "backagent-web/src/hooks/useH5PreviewRefresh.ts",
+        "backagent-web/src/stores/usePreviewStore.ts",
+        "backagent/src/services/h5-preview.service.ts"
+      ],
+      "question": {
+        "zh": "H5 预览从轮询重构成状态机，具体把哪些边界情况想清楚了？",
+        "en": "When you rewrote the H5 preview from polling into a state machine, which edge cases did you nail down?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "把启动、就绪、出错、刷新、销毁拆成显式状态，并发启动有保护，postMessage 严格 origin 校验。",
+          "en": "Split start, ready, error, refresh, destroy into explicit states; protect concurrent starts; strictly check postMessage origin."
+        },
+        "standard": {
+          "zh": "原来 iframe 预览就是「轮询能不能访问」，状态隐式分散在多个 setInterval 和 useEffect 里，刷新时偶尔会出现「老 iframe 还没销毁、新 iframe 已经起来」的并发问题。重构后 usePreviewStore 维护显式状态机：idle → starting → ready / error → refreshing → ready，所有转移都过 store；并发启动靠 inflight token 保护，新启动覆盖老 promise。postMessage 监听加 origin 严格校验防注入。HMR 用 useH5PreviewRefresh 监听文件变化感知刷新而不是粗暴 reload。整体预览稳定性显著好转。",
+          "en": "The old preview just polled 'is it up', with state scattered across setInterval and useEffect, and refresh sometimes left an old iframe alive while a new one started. After the rewrite, usePreviewStore is an explicit state machine — idle → starting → ready / error → refreshing → ready — and all transitions go through the store. Concurrent starts are protected by an inflight token so a new start cancels the old promise. postMessage listeners strictly check origin to prevent injection. HMR uses useH5PreviewRefresh to react to file changes intelligently rather than forcing a reload. Preview reliability noticeably improved."
+        },
+        "deep_dive": {
+          "zh": "状态机的价值在于把「隐式时序」变成「显式转移」。具体边界情况有几类。第一是并发启动：用户连续点两次刷新或者代码快速变化触发多次启动，老的 starting promise 还没 resolve 新的就来了——usePreviewStore 用 inflight token + AbortController，新启动直接 abort 老的，避免 ready 事件错位。第二是 origin 校验：iframe 加载的预览 URL 在用户子域名下，postMessage 来源必须严格匹配该子域名而不是简单的 `*` 或 `parent.origin`，防止恶意页面伪造预览事件。第三是 HMR 感知：后端 h5-preview.service 推送文件变更，前端 useH5PreviewRefresh 把变更映射到 iframe 的 HMR 通道，能局部更新就不全量刷新；只有当 HMR 失败（比如修改了入口文件结构）才升级到 full reload。第四是错误回流：iframe 内运行时错误通过 postMessage 回传到主控台，但要带 frame id 和 origin，避免不同 session 的错误串台。trade-off：状态机让代码量增加，但调试成本骤降——有问题时能直接看 store 当前状态，不用从一堆 setInterval 反推。一个失败教训是早期没做 inflight 保护，用户连续两次点「重新启动」会出现「显示 ready 但其实是老 iframe」的幽灵状态，事后才意识到所有异步交互都得有「最近一次 win」的语义。",
+          "en": "A state machine's value is turning implicit timing into explicit transitions. Several edge cases to call out. First, concurrent starts: a user double-clicking refresh or rapid code changes triggering multiple starts — usePreviewStore uses an inflight token plus AbortController so a new start aborts the old one, preventing ready events from landing on the wrong iframe. Second, origin checks: the preview URL loads under a user subdomain, and postMessage origin must strictly match that subdomain — not '*' or 'parent.origin' — to block malicious pages forging preview events. Third, HMR awareness: the backend h5-preview.service pushes file changes, and useH5PreviewRefresh maps them onto the iframe's HMR channel, doing partial updates when possible and only escalating to a full reload when HMR fails (e.g., entry file restructure). Fourth, error piping back: runtime errors inside the iframe come back via postMessage to the main console with frame id and origin, so different sessions don't cross-talk. Trade-off: a state machine adds code, but debug cost crashes — you can read the current store state directly instead of reverse-engineering setIntervals. Lesson: early on we had no inflight protection; double-clicking restart produced a 'shows ready but it's actually the old iframe' ghost state. After that we made 'most-recent-wins' the rule for every async interaction."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "状态机/有限状态自动机",
+          "level": "必须掌握",
+          "why": "讲不清状态与转移就讲不清重构动机"
+        },
+        {
+          "name": "postMessage origin 校验",
+          "level": "必须掌握",
+          "why": "iframe 通信安全的第一道关"
+        },
+        {
+          "name": "AbortController 取消语义",
+          "level": "加分项",
+          "why": "并发保护的标准答案"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "MDN: Window.postMessage 与 origin 安全部分",
+          "XState 文档 - Statecharts in 15 Minutes（状态机思维入门）"
+        ],
+        "hands_on": [
+          "把一个含三个 setInterval + 多 useEffect 的小组件重构成 useReducer 状态机",
+          "写一个 iframe 预览 demo，加 origin 校验和 inflight token 保护"
+        ],
+        "common_pitfalls": [
+          "postMessage 用 `*` 或不校验 origin，等于把 iframe 当不可信源",
+          "并发启动没有取消老任务，老的 ready 事件覆盖新状态",
+          "HMR 失败时不降级到 full reload，预览静默不更新"
+        ],
+        "mock_questions": [
+          "如果 HMR 频繁失败，你怎么定位是 vite 还是网络的问题？",
+          "状态机的转移用 reducer 还是单独的 action 函数？为什么？",
+          "iframe 内的 console.error 是怎么收集回主控台的？"
+        ],
+        "time_estimate": "1–2 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "为什么不用 XState 这类状态机库，而是自己在 store 里实现？",
+            "en": "Why not use a library like XState instead of rolling your own in the store?"
+          },
+          "primary_dimension": "trade-off",
+          "expected_answer": {
+            "zh": "状态数量有限（5 个）、转移规则简单，引 XState 反而增加 bundle 和心智负担；但如果状态超过十个或有平行状态，会再考虑。",
+            "en": "Few states (5) and simple transitions; XState would add bundle size and cognitive overhead. If states grew past ten or we needed parallel regions, we'd revisit."
+          }
+        }
+      ]
+    },
+    {
+      "id": "q-10",
+      "source_tech_point": "tp-010",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "backagent-web",
+      "depth": "中级",
+      "evidence": [
+        "backagent-web/src/hooks/useAgent.ts",
+        "backagent-web/src/hooks/useFileSync.ts"
+      ],
+      "question": {
+        "zh": "useAgent 和 useFileSync 是怎么分工的？为什么要拆成两个 hook 而不是一个？",
+        "en": "How do useAgent and useFileSync divide responsibility, and why split them into two hooks instead of one?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "useAgent 管 SSE 订阅与消息流，useFileSync 管文件状态与编辑器同步，按数据生命周期划分。",
+          "en": "useAgent owns SSE subscription and message flow; useFileSync owns file state and editor sync. The split follows data lifecycle."
+        },
+        "standard": {
+          "zh": "拆分的依据是数据生命周期不同。useAgent 负责一次会话的 SSE 订阅、消息累积、tool_use / tool_result 分发，是「事件流」语义；useFileSync 负责把 tool 修改的文件同步到本地编辑器、做差异对比、协调多个文件的并发更新，是「持久状态」语义。两者通过 store 解耦：useAgent 把文件相关事件写入 store，useFileSync 订阅 store 变化做后续编辑器操作。这样 useAgent 跟编辑器实现无关，useFileSync 跟 SSE 协议无关，单测都能各自跑。",
+          "en": "The split follows lifecycle. useAgent handles SSE subscription, message accumulation, and tool_use / tool_result dispatch for one session — event-stream semantics. useFileSync handles syncing tool-modified files into the local editor, diff comparison, and coordinating concurrent updates across files — persistent-state semantics. They decouple via the store: useAgent writes file-related events into the store, and useFileSync subscribes to store changes and does the editor work. useAgent stays editor-agnostic, useFileSync stays SSE-agnostic, and both unit-test cleanly on their own."
+        },
+        "deep_dive": {
+          "zh": "拆 hook 的关键标准是「依赖方向是否单向」。useAgent 依赖 SSE 协议和事件解析，useFileSync 依赖编辑器 API 和文件比较，两者直接合并会出现「修一个 hook 必须懂另一边」的耦合。我们把共享数据放 Zustand store（messages、files、active session），两个 hook 各自只读自己关心的 slice。一个具体好处：当后端把 SSE 事件协议升级时（比如 tool_result 字段调整），只改 useAgent 的解析逻辑，useFileSync 完全不用动；反过来切编辑器从 CodeMirror 5 升 6 时，只 useFileSync 受影响。trade-off：拆开后 store schema 变成隐式契约，得有 TypeScript 类型守住；优势是单测、调试、并行修改都方便。一个失败教训是早期 useAgent 直接调编辑器 API，结果切 codemirror 版本时一个 hook 改了几百行；之后加这层 store 隔离才稳。整体思路是「按变化频率和依赖方向拆 hook」而不是「按代码长度拆」，前者能省真实的维护成本。",
+          "en": "The key criterion for splitting is 'is the dependency direction one-way'. useAgent depends on the SSE protocol and event parsing; useFileSync depends on editor APIs and file comparison. Merging them creates 'edit one hook, need to understand the other' coupling. We put shared data in the Zustand store (messages, files, active session) and each hook reads only its slice. Concrete benefit: when the backend's SSE event protocol changes (a tool_result field shift), only useAgent's parser changes; useFileSync isn't touched. Conversely, upgrading CodeMirror from 5 to 6 only touches useFileSync. Trade-off: after the split the store schema becomes an implicit contract, so TypeScript types have to hold the line; the upside is clean unit tests, easier debugging, and parallel changes. Lesson: early on useAgent called editor APIs directly, and a CodeMirror upgrade rewrote hundreds of lines in one hook; the store isolation cleaned that up. The principle is 'split by rate of change and direction of dependency, not by line count'."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "Hook 单一职责",
+          "level": "必须掌握",
+          "why": "面试官一定会问拆分依据"
+        },
+        {
+          "name": "Zustand selector / slice",
+          "level": "必须掌握",
+          "why": "store 隔离的具体落地"
+        },
+        {
+          "name": "依赖方向设计",
+          "level": "加分项",
+          "why": "讲清单向依赖能体现架构思维"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "React 官方文档 - Custom Hooks 章节",
+          "Dan Abramov - 'Why Do React Hooks Rely on Call Order?'"
+        ],
+        "hands_on": [
+          "把一个混做 fetch + 表单 + 校验的 hook 按数据生命周期拆成 3 个 hook",
+          "用 Zustand 实现两个 hook 的 store 隔离，写最小单测"
+        ],
+        "common_pitfalls": [
+          "按文件长度拆 hook，但依赖方向是双向的，越拆越乱",
+          "store 不写类型，hook 之间靠默契传字段",
+          "useEffect 的依赖数组漏字段，state 切换时 hook 不重订阅"
+        ],
+        "mock_questions": [
+          "如果 useAgent 和 useFileSync 共享一份 inflight 状态怎么办？",
+          "怎么避免两个 hook 都触发同一个副作用？",
+          "测 useAgent 时 SSE 怎么 mock？"
+        ],
+        "time_estimate": "半天"
+      }
+    },
+    {
+      "id": "q-11",
+      "source_tech_point": "tp-011",
+      "primary_dimension": "observability",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/services/mcp-catalog.service.ts",
+        "backagent/src/services/streamManager.ts"
+      ],
+      "question": {
+        "zh": "OpenTelemetry + Langfuse 怎么把 LLM 调用串到分布式 trace 里？token 用量这种 LLM 特有指标怎么落地？",
+        "en": "How do OpenTelemetry and Langfuse stitch LLM calls into one distributed trace, and where do LLM-specific metrics like token usage land?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "OTel 注入 W3C Trace Context 把 LLM 调用挂到主 trace，Langfuse 接住 prompt / token 维度的细节。",
+          "en": "OTel injects W3C Trace Context so LLM calls join the main trace; Langfuse captures prompt and token detail."
+        },
+        "standard": {
+          "zh": "传统 trace 系统对 LLM 调用没原生概念，prompt、token、tool 调用都是黑箱。我们用 OTel Node SDK 在 Express handler、SSE streamManager、MCP 工具调用处都开 span，并通过 W3C Trace Context 把 LLM 调用 span 也挂上去；Langfuse 作为 LLM 维度的专属后端，记录 prompt 文本、token 用量、cost，同样用 trace_id 关联到 OTel 那条 trace 上。结果是一次用户请求从点击到 LLM token，能在 OTel UI 看完整时序，需要 prompt 细节就跳到 Langfuse 看同一 trace_id。",
+          "en": "Traditional tracing has no native LLM concept — prompt, token, tool calls are a black box. We use the OTel Node SDK to open spans on the Express handler, SSE streamManager, and MCP tool calls, and propagate W3C Trace Context so LLM-call spans hook in. Langfuse is the LLM-specific backend, recording prompt text, token usage, and cost, also keyed by trace_id linked to the OTel trace. End result: one user request from click to LLM token shows full timing in OTel, and prompt-level detail is one click away in Langfuse using the same trace_id."
+        },
+        "deep_dive": {
+          "zh": "把 LLM 纳入分布式 trace 的难点是「LLM 调用属于哪条 span」和「prompt / token 这些非标准字段放哪」。我们的做法：第一，所有入口（Express handler、SSE 长连接、tool handler）都开 OTel span，进入 LLM 调用前从当前 context 取 trace_id 透传到 Langfuse 客户端，让两边的 trace_id 一致。第二，prompt 文本、token 用量、cost 这些 LLM 特有维度不塞 OTel attribute（attribute 长度有限且不适合大段文本），而是写到 Langfuse；OTel 这边只记关键标量（model_name、prompt_tokens、completion_tokens、duration），方便聚合告警。第三，密钥脱敏在写 Langfuse 之前做，避免 prompt 里 leak 出 API key。trade-off：双后端意味着维护两套 SDK 和成本，但好处是 OTel 解决「全链路定位」、Langfuse 解决「LLM 特有可观测」，强行塞一个系统会两边都凑合。一个失败教训是早期 OTel attribute 里塞了完整 prompt，导致后端导出超大、采样率被迫拉低；之后才把大文本剥离到 Langfuse，OTel 只留标量。整体上从用户点击 → SSE → LLM token，排障路径变成「先看 OTel 哪步慢/出错、再到 Langfuse 看 prompt 细节」，定位时间从分钟级到秒级。",
+          "en": "The hard parts are 'which span does an LLM call belong to' and 'where do non-standard fields like prompt and token live'. Our approach: first, every entry point (Express handler, SSE long connection, tool handler) opens an OTel span, and before an LLM call we pull trace_id from the current context and pass it to the Langfuse client so both backends key on the same trace_id. Second, prompt text, token usage, and cost don't go into OTel attributes (attributes have length limits and aren't great for long text); they go to Langfuse. OTel only records key scalars (model_name, prompt_tokens, completion_tokens, duration), good for aggregation and alerts. Third, secret redaction happens before writing to Langfuse to avoid leaking API keys in prompts. Trade-off: two backends means two SDKs and two bills, but OTel solves 'full-stack debugging' and Langfuse solves 'LLM-specific observability'; jamming everything into one system gives you neither. Lesson: early on we put full prompts into OTel attributes, exporters blew up, and sampling had to be lowered; the fix was moving big text to Langfuse and leaving OTel scalars only. Now triage runs 'OTel for which step is slow or failing, Langfuse for prompt detail', and time-to-locate dropped from minutes to seconds."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "W3C Trace Context",
+          "level": "必须掌握",
+          "why": "讲不清 trace_id / span_id 传播就讲不清串联"
+        },
+        {
+          "name": "OTel Span / Attribute",
+          "level": "必须掌握",
+          "why": "为什么 prompt 不该进 attribute 是关键 trade-off"
+        },
+        {
+          "name": "LLM 可观测性指标",
+          "level": "加分项",
+          "why": "讲清 token / cost / latency 三件套是 LLM 工程加分点"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "OpenTelemetry 官方文档 - Trace Context Propagation",
+          "Langfuse 官方文档 - Tracing 与 OpenTelemetry 集成"
+        ],
+        "hands_on": [
+          "在一个 Express + Anthropic SDK 的小项目里接入 OTel + Langfuse，验证两边 trace_id 一致",
+          "故意让某次 LLM 调用超时，从 trace 里定位卡在哪一步"
+        ],
+        "common_pitfalls": [
+          "把整段 prompt 塞 OTel attribute，导致 exporter 流量爆炸",
+          "trace_id 透传断在某一层，导致 LLM span 不在主 trace 下",
+          "prompt 落 Langfuse 前忘了脱敏，API key / token 被记录"
+        ],
+        "mock_questions": [
+          "如果 OTel collector 暂时不可达，trace 数据怎么办？",
+          "怎么决定哪些字段进 OTel、哪些进 Langfuse？",
+          "采样率怎么设？高流量场景怎么不丢关键 trace？"
+        ],
+        "time_estimate": "1–2 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "为什么不直接把 Langfuse 当 trace 后端，省掉 OTel？",
+            "en": "Why not just use Langfuse as the trace backend and skip OTel?"
+          },
+          "primary_dimension": "trade-off",
+          "expected_answer": {
+            "zh": "Langfuse 专门为 LLM 设计，对非 LLM span（DB / Redis / 沙箱）支持薄；OTel 是行业标准能接所有现有基础设施，两者各司其职更划算。",
+            "en": "Langfuse is purpose-built for LLM and only thinly supports non-LLM spans (DB, Redis, sandbox). OTel is the industry standard and connects to all existing infrastructure; splitting roles is the cheaper path."
+          }
+        }
+      ]
+    },
+    {
+      "id": "q-12",
+      "source_tech_point": "tp-012",
+      "primary_dimension": "feature",
+      "scope": "backend",
+      "sub_project": "backagent",
+      "depth": "中级",
+      "evidence": [
+        "backagent/src/api/routes.ts"
+      ],
+      "question": {
+        "zh": "你们 Express 路由层暴露了哪些类型的端点？SSE 端点和普通 REST 在路由层有什么不同处理？",
+        "en": "What kinds of endpoints does your Express layer expose, and how does an SSE endpoint differ from a regular REST one at the routing layer?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "REST 给会话/沙箱/git/部署，SSE 给 Agent 流式响应；SSE 端点要禁缓冲、设 keepalive、注入 trace context。",
+          "en": "REST for session, sandbox, git, deploy; SSE for Agent streaming; SSE endpoints disable buffering, set keepalive, inject trace context."
+        },
+        "standard": {
+          "zh": "routes.ts 里大致分两类。第一类是普通 REST：会话 CRUD、沙箱启停、git 操作、deploy 触发，标准 JSON 请求响应。第二类是 SSE：Agent 主消息流、预览启动状态推送，要求长连接和分片输出。SSE 端点里专门做了几件事：设置 Content-Type: text/event-stream + Cache-Control: no-cache、X-Accel-Buffering: no（防 nginx buffer）、定期发送 keepalive 注释行（防中间代理超时断连），并在 handler 入口手动 open OTel span 注入 trace context 给下游 streamManager。错误处理上 SSE 不能像 REST 那样直接 res.status(500)，得先发一条 error 事件再 close，前端能区分。",
+          "en": "routes.ts roughly has two kinds. First, plain REST: session CRUD, sandbox start/stop, git operations, deploy triggers — standard JSON request and response. Second, SSE: the Agent's main message stream and preview status push, requiring long connections and chunked output. SSE endpoints specifically set Content-Type: text/event-stream plus Cache-Control: no-cache, X-Accel-Buffering: no (to stop nginx buffering), periodic keepalive comment lines (to keep intermediaries from timing out), and the handler manually opens an OTel span at entry so downstream streamManager has trace context. Error handling differs too: SSE can't just res.status(500); it has to emit an error event then close, so the frontend can distinguish."
+        },
+        "deep_dive": {
+          "zh": "SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header 设置：Content-Type: text/event-stream、Cache-Control: no-cache、X-Accel-Buffering: no（针对 nginx）、Connection: keep-alive，缺一不可；早期我们漏过 X-Accel-Buffering，结果生产 nginx 把整条流缓住，前端要等十几秒才看到第一条事件。第二是 keepalive：每 15 秒左右发一条 `:` 注释行，防止中间代理（k8s ingress、nginx、客户端 proxy）按空闲超时切断连接。第三是 trace 注入：Express 中间件提取 traceparent header 进 OTel context，但 streamManager 是异步的，必须在 handler 同步阶段 open 一个 long-running span 并把 context 显式传下去，否则 LLM 调用拿不到正确 trace_id。第四是错误协议：SSE 的 statusCode 在第一字节发出后就锁死了，不能再 res.status(500)，错误必须按事件协议发一条 `event: error\\ndata: {...}` 再 close，前端 useAgent 看到这种事件就能分清是「真错」还是「网络断」。trade-off：把 SSE 处理逻辑抽成中间件比较干净但会侵入响应对象 API，所以选择了「routes.ts 里每个 SSE handler 显式开头几行处理 header + keepalive 启动」这种重复但可读的写法；后期如果 SSE 端点超过十个再考虑抽中间件。整体上 SSE 端点是这套平台的协议核心，路由层把这些细节做对，下游业务才能心无旁骛地写流式逻辑。",
+          "en": "SSE adds several details over plain REST in the routing layer. First, headers: Content-Type: text/event-stream, Cache-Control: no-cache, X-Accel-Buffering: no (for nginx), Connection: keep-alive — all required. Early on we missed X-Accel-Buffering and production nginx buffered the whole stream; the frontend waited tens of seconds for the first event. Second, keepalive: send a `:` comment line every 15s or so to keep intermediaries (k8s ingress, nginx, client proxies) from cutting on idle timeout. Third, trace injection: an Express middleware pulls traceparent into OTel context, but streamManager is async, so the handler must synchronously open a long-running span and pass the context explicitly; otherwise downstream LLM calls won't get the right trace_id. Fourth, error protocol: SSE's statusCode locks once the first byte goes out — you can't res.status(500). Errors must follow the event format, an `event: error\\ndata: {...}` line then close; the frontend useAgent can distinguish 'real error' from 'network blip'. Trade-off: extracting SSE plumbing into middleware is cleaner but invades the response API, so we kept 'each SSE handler does header plus keepalive bootstrap inline' — a few duplicated lines but very readable; if SSE endpoints exceed ten we'll revisit. Overall SSE endpoints are the platform's protocol core; getting these details right at the routing layer lets downstream business logic focus on streaming semantics."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "Express middleware 模型",
+          "level": "必须掌握",
+          "why": "讲不清 next() 和 res 生命周期就讲不清 SSE 处理"
+        },
+        {
+          "name": "HTTP 长连接 keepalive",
+          "level": "必须掌握",
+          "why": "中间代理切断连接的根因都在这"
+        },
+        {
+          "name": "SSE 错误协议",
+          "level": "加分项",
+          "why": "讲清 statusCode 锁定后怎么报错是细节加分"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Express 官方文档 - Routing 与 Middleware",
+          "MDN: Server-Sent Events 与 Connection 头部"
+        ],
+        "hands_on": [
+          "写一个 SSE 端点，故意挂在 nginx 后面观察 X-Accel-Buffering 的影响",
+          "在 SSE 端点里手动注入 OTel span，验证下游 LLM 调用能拿到 trace_id"
+        ],
+        "common_pitfalls": [
+          "漏 X-Accel-Buffering: no 导致 nginx 缓住整条流",
+          "没发 keepalive 导致中间代理空闲超时切断",
+          "出错时直接 res.status(500)，前端拿到的不是 error 事件而是协议错位"
+        ],
+        "mock_questions": [
+          "如果同一用户开两个 tab 都连了 SSE，后端怎么区分和管理？",
+          "SSE 端点压测时怎么模拟真实长连接？",
+          "Express 处理 SSE vs Fastify 有什么差异？"
+        ],
+        "time_estimate": "1–2 天"
+      }
+    }
+  ],
+  "dimension_coverage": {
+    "feature": 3,
+    "architecture": 3,
+    "performance": 2,
+    "reliability": 2,
+    "observability": 1,
+    "trade-off": 0,
+    "security": 1
+  }
+}
