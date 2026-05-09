@@ -1,0 +1,649 @@
+{
+  "schema_version": "1.0",
+  "mode": "knowledge",
+  "platform_name": "QQ 频道小程序 (guild_mp)",
+  "knowledge_map": {
+    "topics": [
+      {
+        "name": "微信小程序主包与分包、pkg-* 工具分包的体积规则",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "qa-01"
+        ],
+        "must_read": [
+          "微信官方文档 - 分包加载 / 分包预下载 (https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/preload.html)",
+          "guild_mp docs/分包规则.md"
+        ],
+        "hands_on": [
+          "空小程序压到 1.5M 以下，用 preloadRule 预加载一个分包并观察加载时序。"
+        ]
+      },
+      {
+        "name": "app.json preloadRule 的 network / packages 语义与触发时机",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "qa-01"
+        ],
+        "must_read": [
+          "微信官方文档 - 分包加载 / 分包预下载 (https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/preload.html)",
+          "guild_mp docs/分包规则.md"
+        ],
+        "hands_on": [
+          "空小程序压到 1.5M 以下，用 preloadRule 预加载一个分包并观察加载时序。"
+        ]
+      },
+      {
+        "name": "分包下载失败 / 超时的兜底",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "qa-01"
+        ],
+        "must_read": [
+          "微信官方文档 - 分包加载 / 分包预下载 (https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/preload.html)",
+          "guild_mp docs/分包规则.md"
+        ],
+        "hands_on": [
+          "空小程序压到 1.5M 以下，用 preloadRule 预加载一个分包并观察加载时序。"
+        ]
+      },
+      {
+        "name": "小程序 require / requireAsync API 与加载时序",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "qa-02"
+        ],
+        "must_read": [
+          "微信官方文档 - 分包异步化 requireAsync (https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)",
+          "TypeScript Handbook - Mapped Types (https://www.typescriptlang.org/docs/handbook/2/mapped-types.html)"
+        ],
+        "hands_on": [
+          "自己实现一个 10 行版 requireAsyncModule：带类型签名 + 缓存 + 超时。"
+        ]
+      },
+      {
+        "name": "TypeScript 泛型映射：keyof / mapped types / conditional types",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "qa-02"
+        ],
+        "must_read": [
+          "微信官方文档 - 分包异步化 requireAsync (https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)",
+          "TypeScript Handbook - Mapped Types (https://www.typescriptlang.org/docs/handbook/2/mapped-types.html)"
+        ],
+        "hands_on": [
+          "自己实现一个 10 行版 requireAsyncModule：带类型签名 + 缓存 + 超时。"
+        ]
+      },
+      {
+        "name": "模块缓存与首次加载失败的重试 / 降级",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "qa-02"
+        ],
+        "must_read": [
+          "微信官方文档 - 分包异步化 requireAsync (https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)",
+          "TypeScript Handbook - Mapped Types (https://www.typescriptlang.org/docs/handbook/2/mapped-types.html)"
+        ],
+        "hands_on": [
+          "自己实现一个 10 行版 requireAsyncModule：带类型签名 + 缓存 + 超时。"
+        ]
+      },
+      {
+        "name": "CDN / 对象存储工程化上传与路径替换模式",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "qa-03"
+        ],
+        "must_read": [
+          "微信官方文档 - image 组件 (https://developers.weixin.qq.com/miniprogram/dev/component/image.html)"
+        ],
+        "hands_on": [
+          "为 demo 写 cdn.ts 支持 dev/prod 切换并模拟 CI 替换。"
+        ]
+      },
+      {
+        "name": "CI / CD 流水线钩子与产物替换",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "qa-03"
+        ],
+        "must_read": [
+          "微信官方文档 - image 组件 (https://developers.weixin.qq.com/miniprogram/dev/component/image.html)"
+        ],
+        "hands_on": [
+          "为 demo 写 cdn.ts 支持 dev/prod 切换并模拟 CI 替换。"
+        ]
+      },
+      {
+        "name": "意图信号（touchstart / hover）驱动的预取时序",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-04"
+        ],
+        "must_read": [
+          "mini-stores 仓库 README (https://github.com/Tencent/mini-stores)",
+          "Web Prefetch 相关 MDN 文档 (https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel/prefetch)"
+        ],
+        "hands_on": [
+          "demo 里实现 touchstart 预取并用 DevTools 网络面板量化首屏时间。"
+        ]
+      },
+      {
+        "name": "mini-stores 数据流与 miniprogram-computed 脏检查",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-04"
+        ],
+        "must_read": [
+          "mini-stores 仓库 README (https://github.com/Tencent/mini-stores)",
+          "Web Prefetch 相关 MDN 文档 (https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel/prefetch)"
+        ],
+        "hands_on": [
+          "demo 里实现 touchstart 预取并用 DevTools 网络面板量化首屏时间。"
+        ]
+      },
+      {
+        "name": "请求并发 / TTL / 去重缓存策略",
+        "level": "加分项",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-04"
+        ],
+        "must_read": [
+          "mini-stores 仓库 README (https://github.com/Tencent/mini-stores)",
+          "Web Prefetch 相关 MDN 文档 (https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel/prefetch)"
+        ],
+        "hands_on": [
+          "demo 里实现 touchstart 预取并用 DevTools 网络面板量化首屏时间。"
+        ]
+      },
+      {
+        "name": "setData 的性能模型与 Native Bridge 成本",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-05"
+        ],
+        "must_read": [
+          "miniprogram-computed 官方 README (https://github.com/wechat-miniprogram/computed)",
+          "guild_mp .codebuddy/rules/miniprogram-computed-data-rules.mdc"
+        ],
+        "hands_on": [
+          "对比纯 setData 与 computed 在频繁更新下的 setData 次数。"
+        ]
+      },
+      {
+        "name": "响应式派生：Vue / MobX computed 的脏检查机制",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-05"
+        ],
+        "must_read": [
+          "miniprogram-computed 官方 README (https://github.com/wechat-miniprogram/computed)",
+          "guild_mp .codebuddy/rules/miniprogram-computed-data-rules.mdc"
+        ],
+        "hands_on": [
+          "对比纯 setData 与 computed 在频繁更新下的 setData 次数。"
+        ]
+      },
+      {
+        "name": "list 的引用稳定性与 shallow compare",
+        "level": "加分项",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-05"
+        ],
+        "must_read": [
+          "miniprogram-computed 官方 README (https://github.com/wechat-miniprogram/computed)",
+          "guild_mp .codebuddy/rules/miniprogram-computed-data-rules.mdc"
+        ],
+        "hands_on": [
+          "对比纯 setData 与 computed 在频繁更新下的 setData 次数。"
+        ]
+      },
+      {
+        "name": "虚拟列表的可视窗口、回收与定高 / 变高测量",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-06"
+        ],
+        "must_read": [
+          "微信官方文档 - skyline 渲染引擎 (https://developers.weixin.qq.com/miniprogram/dev/framework/runtime/skyline/introduction.html)",
+          "recycle-view / virtual-list 开源实现 (https://github.com/wechat-miniprogram/recycle-view)"
+        ],
+        "hands_on": [
+          "实现一个能跑 5000 条消息的 virtual-list 并测帧率。"
+        ]
+      },
+      {
+        "name": "skyline vs WebView 渲染器的差异",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-06"
+        ],
+        "must_read": [
+          "微信官方文档 - skyline 渲染引擎 (https://developers.weixin.qq.com/miniprogram/dev/framework/runtime/skyline/introduction.html)",
+          "recycle-view / virtual-list 开源实现 (https://github.com/wechat-miniprogram/recycle-view)"
+        ],
+        "hands_on": [
+          "实现一个能跑 5000 条消息的 virtual-list 并测帧率。"
+        ]
+      },
+      {
+        "name": "IM 消息乐观更新、id 映射与失败重试",
+        "level": "加分项",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "qa-06"
+        ],
+        "must_read": [
+          "微信官方文档 - skyline 渲染引擎 (https://developers.weixin.qq.com/miniprogram/dev/framework/runtime/skyline/introduction.html)",
+          "recycle-view / virtual-list 开源实现 (https://github.com/wechat-miniprogram/recycle-view)"
+        ],
+        "hands_on": [
+          "实现一个能跑 5000 条消息的 virtual-list 并测帧率。"
+        ]
+      },
+      {
+        "name": "Protocol Buffers：字段规则、wire format、兼容性原则",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "qa-07"
+        ],
+        "must_read": [
+          "protobufjs 官方文档 (https://github.com/protobufjs/protobuf.js)",
+          "Protocol Buffers Encoding (https://protobuf.dev/programming-guides/encoding/)"
+        ],
+        "hands_on": [
+          "用 protoc 生成同一 proto 的 JSON 版本与 binary 版本，量化包体积差异。"
+        ]
+      },
+      {
+        "name": "JSON vs binary 的协议演进风险对比",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "qa-07"
+        ],
+        "must_read": [
+          "protobufjs 官方文档 (https://github.com/protobufjs/protobuf.js)",
+          "Protocol Buffers Encoding (https://protobuf.dev/programming-guides/encoding/)"
+        ],
+        "hands_on": [
+          "用 protoc 生成同一 proto 的 JSON 版本与 binary 版本，量化包体积差异。"
+        ]
+      },
+      {
+        "name": "类型生成：.d.ts 挂全局 namespace 的可维护性",
+        "level": "加分项",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "qa-07"
+        ],
+        "must_read": [
+          "protobufjs 官方文档 (https://github.com/protobufjs/protobuf.js)",
+          "Protocol Buffers Encoding (https://protobuf.dev/programming-guides/encoding/)"
+        ],
+        "hands_on": [
+          "用 protoc 生成同一 proto 的 JSON 版本与 binary 版本，量化包体积差异。"
+        ]
+      },
+      {
+        "name": "HTTP 请求封装的经典分层：拦截器 / 适配器 / 错误分发",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "qa-08"
+        ],
+        "must_read": [
+          "axios / wx.request 的拦截器设计 (https://axios-http.com/docs/interceptors)",
+          "guild_mp utils/httpClient 源码"
+        ],
+        "hands_on": [
+          "实现一个 mini-axios：支持 interceptor + 统一错误分发。"
+        ]
+      },
+      {
+        "name": "statusCode vs 业务 code 的错误分层",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "qa-08"
+        ],
+        "must_read": [
+          "axios / wx.request 的拦截器设计 (https://axios-http.com/docs/interceptors)",
+          "guild_mp utils/httpClient 源码"
+        ],
+        "hands_on": [
+          "实现一个 mini-axios：支持 interceptor + 统一错误分发。"
+        ]
+      },
+      {
+        "name": "幂等性与重试 / 退避策略",
+        "level": "加分项",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "qa-08"
+        ],
+        "must_read": [
+          "axios / wx.request 的拦截器设计 (https://axios-http.com/docs/interceptors)",
+          "guild_mp utils/httpClient 源码"
+        ],
+        "hands_on": [
+          "实现一个 mini-axios：支持 interceptor + 统一错误分发。"
+        ]
+      },
+      {
+        "name": "小程序 Behavior 的注入机制",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "qa-09"
+        ],
+        "must_read": [
+          "腾讯防水墙 / 图灵盾官方文档（需内部权限）",
+          "OWASP Automated Threats to Web Applications (https://owasp.org/www-project-automated-threats-to-web-applications/)"
+        ],
+        "hands_on": [
+          "给 demo 接入一个开源 captcha SDK，走一遍『前端拿 ticket → 后端验证 → 接口放行』全流程。"
+        ]
+      },
+      {
+        "name": "ticket / challenge-response 模式在风控中的作用",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "qa-09"
+        ],
+        "must_read": [
+          "腾讯防水墙 / 图灵盾官方文档（需内部权限）",
+          "OWASP Automated Threats to Web Applications (https://owasp.org/www-project-automated-threats-to-web-applications/)"
+        ],
+        "hands_on": [
+          "给 demo 接入一个开源 captcha SDK，走一遍『前端拿 ticket → 后端验证 → 接口放行』全流程。"
+        ]
+      },
+      {
+        "name": "前端安全的边界：客户端绝不是最终校验",
+        "level": "加分项",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "qa-09"
+        ],
+        "must_read": [
+          "腾讯防水墙 / 图灵盾官方文档（需内部权限）",
+          "OWASP Automated Threats to Web Applications (https://owasp.org/www-project-automated-threats-to-web-applications/)"
+        ],
+        "hands_on": [
+          "给 demo 接入一个开源 captcha SDK，走一遍『前端拿 ticket → 后端验证 → 接口放行』全流程。"
+        ]
+      },
+      {
+        "name": "JS 异常捕获：window.onerror / unhandledrejection / 小程序 App.onError",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "qa-10"
+        ],
+        "must_read": [
+          "Tencent Aegis 官网 / 接入文档 (https://aegis.qq.com/)",
+          "MDN - Source map (https://developer.mozilla.org/en-US/docs/Glossary/Source_map)"
+        ],
+        "hands_on": [
+          "在 demo 里接一个监控 SDK，构造错误并验证源码映射。"
+        ]
+      },
+      {
+        "name": "sourcemap 的安全与构建 / 上传流程",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "qa-10"
+        ],
+        "must_read": [
+          "Tencent Aegis 官网 / 接入文档 (https://aegis.qq.com/)",
+          "MDN - Source map (https://developer.mozilla.org/en-US/docs/Glossary/Source_map)"
+        ],
+        "hands_on": [
+          "在 demo 里接一个监控 SDK，构造错误并验证源码映射。"
+        ]
+      },
+      {
+        "name": "核心指标定义：FCP / 自定义业务指标",
+        "level": "加分项",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "qa-10"
+        ],
+        "must_read": [
+          "Tencent Aegis 官网 / 接入文档 (https://aegis.qq.com/)",
+          "MDN - Source map (https://developer.mozilla.org/en-US/docs/Glossary/Source_map)"
+        ],
+        "hands_on": [
+          "在 demo 里接一个监控 SDK，构造错误并验证源码映射。"
+        ]
+      },
+      {
+        "name": "乐观更新的回滚与一致性保证",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "qa-11"
+        ],
+        "must_read": [
+          "React Query optimistic update 文档 (https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)"
+        ],
+        "hands_on": [
+          "给 demo 加乐观点赞并故意让后端返回限频，验证回滚 + 冷却。"
+        ]
+      },
+      {
+        "name": "错误码枚举集中管理的工程价值",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "qa-11"
+        ],
+        "must_read": [
+          "React Query optimistic update 文档 (https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)"
+        ],
+        "hands_on": [
+          "给 demo 加乐观点赞并故意让后端返回限频，验证回滚 + 冷却。"
+        ]
+      },
+      {
+        "name": "限频 / 冷却的 UI 反馈模式",
+        "level": "加分项",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "qa-11"
+        ],
+        "must_read": [
+          "React Query optimistic update 文档 (https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)"
+        ],
+        "hands_on": [
+          "给 demo 加乐观点赞并故意让后端返回限频，验证回滚 + 冷却。"
+        ]
+      },
+      {
+        "name": "登录 / 验证码类表单的状态机设计",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "qa-12"
+        ],
+        "must_read": [
+          "XState 官方文档（理解状态机） (https://stately.ai/docs/xstate)",
+          "guild_mp docs/superpowers/specs / reviews 目录"
+        ],
+        "hands_on": [
+          "自己写一个邮箱 + 验证码登录组件，带完整状态机与 mock 兜底。"
+        ]
+      },
+      {
+        "name": "mock → 真接口的渐进式联调方法",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "qa-12"
+        ],
+        "must_read": [
+          "XState 官方文档（理解状态机） (https://stately.ai/docs/xstate)",
+          "guild_mp docs/superpowers/specs / reviews 目录"
+        ],
+        "hands_on": [
+          "自己写一个邮箱 + 验证码登录组件，带完整状态机与 mock 兜底。"
+        ]
+      },
+      {
+        "name": "CR followups 作为团队知识资产沉淀",
+        "level": "加分项",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "qa-12"
+        ],
+        "must_read": [
+          "XState 官方文档（理解状态机） (https://stately.ai/docs/xstate)",
+          "guild_mp docs/superpowers/specs / reviews 目录"
+        ],
+        "hands_on": [
+          "自己写一个邮箱 + 验证码登录组件，带完整状态机与 mock 兜底。"
+        ]
+      },
+      {
+        "name": "前端路由分发器的职责分层：数据 / 协议 / 跳转",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "qa-13"
+        ],
+        "must_read": [
+          "微信小程序官方文档 - 页面跳转 API (https://developers.weixin.qq.com/miniprogram/dev/api/route/wx.navigateTo.html)"
+        ],
+        "hands_on": [
+          "写一个 mini 路由分发器，支持 4 种 type 并自带 fallback。"
+        ]
+      },
+      {
+        "name": "一次性 ticket 在业务链路里的防伪作用",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "qa-13"
+        ],
+        "must_read": [
+          "微信小程序官方文档 - 页面跳转 API (https://developers.weixin.qq.com/miniprogram/dev/api/route/wx.navigateTo.html)"
+        ],
+        "hands_on": [
+          "写一个 mini 路由分发器，支持 4 种 type 并自带 fallback。"
+        ]
+      },
+      {
+        "name": "前端向后兼容：未知 type 的 fallback 设计",
+        "level": "加分项",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "qa-13"
+        ],
+        "must_read": [
+          "微信小程序官方文档 - 页面跳转 API (https://developers.weixin.qq.com/miniprogram/dev/api/route/wx.navigateTo.html)"
+        ],
+        "hands_on": [
+          "写一个 mini 路由分发器，支持 4 种 type 并自带 fallback。"
+        ]
+      }
+    ]
+  },
+  "role": "前端工程师（微信小程序 / 内容社区方向）",
+  "level": "中级"
+}
