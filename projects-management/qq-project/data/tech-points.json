@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0",
+  "role": "前端",
+  "level": "中级",
+  "points": [
+    {
+      "id": "tp-001",
+      "topic": "Materials 配置驱动 + power-design-react 双层抽象",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/materials/",
+        "src/components/power-design-react/",
+        "src/hooks/useConfigCreate.ts",
+        "src/hooks/useConfigManage.ts",
+        "docs/project-structure.md",
+        ".codebuddy/skills/config-page-development/SKILL.md"
+      ],
+      "depth_tags": ["architecture", "config-driven", "schema-rendering", "design-system", "code-reuse"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-002",
+      "topic": "Zustand 9 store 领域拆分 + createWithEqualityFn 治理",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/store/index.ts",
+        "src/store/useViewManageStore.ts",
+        "src/store/useVersionStore.ts",
+        "src/store/useBugPanelStore.ts",
+        "src/store/useDefectViewStore.ts",
+        "src/store/useAdminConfigStore.ts",
+        "openspec/project.md"
+      ],
+      "depth_tags": ["state-management", "zustand", "shallow", "selector", "domain-decomposition"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-003",
+      "topic": "Axios 统一请求层（camelize / 重试 / Aegis 上报 / 401 logout）",
+      "scope": "frontend",
+      "primary_dimension": "reliability",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/utils/request/index.ts",
+        "src/utils/request/axios.ts",
+        "src/utils/request/axios-transform.ts",
+        "src/utils/request/axios-cancel.ts",
+        "src/utils/request/utils.ts",
+        "src/utils/request/constants.ts"
+      ],
+      "depth_tags": ["http", "axios", "interceptor", "retry", "humps", "camelize", "aegis"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-004",
+      "topic": "OpenSpec 规格驱动开发（proposal/design/spec/tasks 四件套）",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "qq-project",
+      "evidence": [
+        "openspec/project.md",
+        "openspec/AGENTS.md",
+        "openspec/changes/add-view-management/design.md",
+        "openspec/changes/add-view-management/proposal.md",
+        "openspec/changes/add-view-management/specs/view-management/spec.md",
+        "openspec/changes/add-view-management/tasks.md",
+        ".codebuddy/commands/openspec/proposal.md",
+        ".codebuddy/commands/openspec/apply.md",
+        ".codebuddy/commands/openspec/archive.md"
+      ],
+      "depth_tags": ["spec-driven", "process", "ai-collaboration", "documentation"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-005",
+      "topic": "QPilot AI Agent 入口注入 + 就绪轮询",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/hooks/useQPilot.ts"
+      ],
+      "depth_tags": ["ai-integration", "third-party-sdk", "polling", "lifecycle", "cleanup"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-006",
+      "topic": "Orange CI 多分支差异化流水线 + secret-key imports",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "sub_project": "qq-project",
+      "evidence": [
+        ".orange-ci.yml",
+        "Dockerfile",
+        "cache.dockerfile",
+        "getBranch.sh",
+        "start.sh"
+      ],
+      "depth_tags": ["ci-cd", "docker", "tke", "branch-strategy", "secret-management"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-007",
+      "topic": "自定义视图 CRUD（add-view-management）端到端实现",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/store/useViewManageStore.ts",
+        "src/components/NewBoard/BugPannel/ViewCreate/index.tsx",
+        "src/components/NewBoard/BugPannel/ViewManage/index.tsx",
+        "src/components/NewBoard/BugPannel/ViewPush/index.tsx",
+        "src/types/bug-pannel.ts",
+        "src/services/bug-pannel.ts",
+        "openspec/changes/add-view-management/"
+      ],
+      "depth_tags": ["feature", "crud", "permission", "cross-product", "share-link"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-008",
+      "topic": "useConfigManage 通用 Hook 与 Excel 导出递归分页",
+      "scope": "frontend",
+      "primary_dimension": "performance",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/hooks/useConfigManage.ts",
+        "src/utils/file.ts",
+        "src/utils/tool.ts"
+      ],
+      "depth_tags": ["pagination", "export", "xlsx", "abstraction", "react-hook"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-009",
+      "topic": "Playwright + 登录态分离的 E2E 策略（auth + storageState）",
+      "scope": "frontend",
+      "primary_dimension": "reliability",
+      "sub_project": "qq-project",
+      "evidence": [
+        "playwright.config.ts",
+        "e2e/save-auth.spec.ts",
+        "e2e/save-auth.ts",
+        "e2e/save-auth.mjs",
+        "e2e/system-view.spec.ts",
+        "e2e/history-version-plan.spec.ts"
+      ],
+      "depth_tags": ["e2e", "playwright", "storage-state", "sso", "internal-network"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-010",
+      "topic": "VersionProgress 节点模板系统（多类节点 With* 模板）",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/components/NewBoard/VersionProgress/index.tsx",
+        "src/components/NewBoard/VersionProgress/components/WithFormalPackageNode.tsx",
+        "src/components/NewBoard/VersionProgress/components/WithGrayPackageNode.tsx",
+        "src/components/NewBoard/VersionProgress/components/WithMilestoneNode.tsx",
+        "src/components/NewBoard/VersionProgress/components/WithTpmPlanNode.tsx",
+        "src/components/NewBoard/VersionProgress/components/WithQFlowVersionRecordNode.tsx",
+        "src/components/NewBoard/VersionProgress/components/WithAuditProgressNode.tsx",
+        "src/components/NewBoard/VersionProgress/template/packageProgressTemplate.tsx",
+        "src/components/NewBoard/VersionProgress/template/volumeProgressTemplate.tsx",
+        "src/types/version-progress.ts"
+      ],
+      "depth_tags": ["component-pattern", "hoc-like", "extensibility", "rendering"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-011",
+      "topic": "NoSSR / SPA 模式与 Pages Router 选型",
+      "scope": "frontend",
+      "primary_dimension": "trade-off",
+      "sub_project": "qq-project",
+      "evidence": [
+        "next.config.js",
+        "src/components/Dynamic.tsx",
+        "src/pages/_app.tsx",
+        "src/pages/_document.tsx",
+        "openspec/project.md"
+      ],
+      "depth_tags": ["next-js", "ssr", "trade-off", "pages-router", "hydration"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-012",
+      "topic": "Aegis 监控接入 + retcode 手动上报",
+      "scope": "frontend",
+      "primary_dimension": "observability",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/hooks/useAegis.ts",
+        "src/utils/request/index.ts",
+        "src/global.d.ts"
+      ],
+      "depth_tags": ["observability", "monitoring", "aegis", "error-tracking"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-013",
+      "topic": ".codebuddy 项目规则与 Skill 工程化（AI 协作约束）",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "qq-project",
+      "evidence": [
+        ".codebuddy/rules/!core-rules.mdc",
+        ".codebuddy/rules/code-quality-checklist.mdc",
+        ".codebuddy/rules/must-check-errors-after-changes.mdc",
+        ".codebuddy/rules/sync-documentation.mdc",
+        ".codebuddy/skills/config-page-development/SKILL.md",
+        "AGENTS.md",
+        "CODEBUDDY.md"
+      ],
+      "depth_tags": ["ai-collaboration", "process", "code-quality", "documentation"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-014",
+      "topic": "humps camelize 双向转换的接入位置与陷阱",
+      "scope": "frontend",
+      "primary_dimension": "trade-off",
+      "sub_project": "qq-project",
+      "evidence": [
+        "src/utils/request/index.ts"
+      ],
+      "depth_tags": ["serialization", "camel-snake", "trade-off", "axios"],
+      "interview_value": "中"
+    }
+  ]
+}

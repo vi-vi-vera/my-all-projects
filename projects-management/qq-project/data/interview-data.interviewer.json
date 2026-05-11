@@ -1,0 +1,924 @@
+{
+  "schema_version": "1.0",
+  "mode": "interviewer",
+  "platform_name": "QQ 项目管理门户 (qq-project)",
+  "role": "前端",
+  "level": "中级",
+  "question_bank": [
+    {
+      "id": "iq-01",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-001",
+      "depth": "中级",
+      "evidence": [
+        "src/materials/",
+        "src/components/power-design-react/",
+        "src/hooks/useConfigCreate.ts",
+        "src/hooks/useConfigManage.ts"
+      ],
+      "question": {
+        "zh": "你们项目里 Materials 配置和 power-design-react 是两层抽象，请讲讲它们各自的职责边界，以及为什么不合并成一层。",
+        "en": "Materials config and power-design-react are two layers in your project. Explain their responsibility boundary and why you did not merge them."
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "如果某个业务页面有 schema 表达不了的特殊渲染逻辑，你怎么扩展？会不会破坏抽象？",
+            "en": "If a page needs rendering logic the schema cannot express, how do you extend it without breaking the abstraction?"
+          }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": {
+            "zh": "Schema 字段命名要变更时，你有什么平滑迁移方案？",
+            "en": "How do you migrate when schema field names need to change?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-02",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-002",
+      "depth": "中级",
+      "evidence": [
+        "src/store/useViewManageStore.ts",
+        "src/store/index.ts"
+      ],
+      "question": {
+        "zh": "九个 Zustand store 是按什么原则拆的？为什么不用单 store？请用具体业务字段举例。",
+        "en": "By what principle are the nine Zustand stores split, and why not a single store? Please illustrate with concrete business fields."
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "performance",
+          "question": {
+            "zh": "createWithEqualityFn + shallow 解决了什么问题？如果不传 shallow 会怎样？",
+            "en": "What problem does createWithEqualityFn plus shallow solve? What happens without shallow?"
+          }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "跨 store 联动你怎么处理？为什么没用 event bus？",
+            "en": "How do you handle cross-store coordination, and why not an event bus?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-03",
+      "primary_dimension": "reliability",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-003",
+      "depth": "中级",
+      "evidence": [
+        "src/utils/request/index.ts",
+        "src/utils/request/axios-transform.ts"
+      ],
+      "question": {
+        "zh": "请讲一下 src/utils/request/index.ts 里 transformer hook 和 interceptor 的协作顺序，camelize/401/Aegis/重试分别在哪一步执行。",
+        "en": "Walk through the order of transformer hooks and interceptors in src/utils/request/index.ts, and where camelize, 401, Aegis and retry each plug in."
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "POST 创建类接口重试可能造成重复创建，你怎么避免？",
+            "en": "Retrying a POST create can cause duplicates. How do you avoid that?"
+          }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "humps camelize 的边界情况怎么处理？url、FormData 上传都做转换吗？",
+            "en": "How do you handle humps camelize edge cases? Do you convert urls and FormData uploads?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-04",
+      "primary_dimension": "feature",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-007",
+      "depth": "中级",
+      "evidence": [
+        "src/store/useViewManageStore.ts",
+        "openspec/changes/add-view-management/"
+      ],
+      "question": {
+        "zh": "讲讲自定义视图 CRUD 是怎么从 OpenSpec 提案落到 useViewManageStore 再到 ViewCreate/ViewManage/ViewPush 三个组件的。",
+        "en": "Walk through how the custom view CRUD flows from an OpenSpec proposal into useViewManageStore and then into the ViewCreate, ViewManage and ViewPush components."
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "architecture",
+          "question": {
+            "zh": "openEditDialog 这个 action 要同时写哪些字段？为什么不在组件里分别 set？",
+            "en": "Which fields does openEditDialog write together, and why not set them separately in the component?"
+          }
+        },
+        {
+          "primary_dimension": "security",
+          "question": {
+            "zh": "ViewPush 跨产品推送怎么防越权？前端 checkPermission 可信吗？",
+            "en": "How do you prevent cross-product privilege escalation in ViewPush? Is the frontend checkPermission trustworthy?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-05",
+      "primary_dimension": "performance",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-008",
+      "depth": "中级",
+      "evidence": [
+        "src/hooks/useConfigManage.ts",
+        "src/utils/file.ts"
+      ],
+      "question": {
+        "zh": "useConfigManage 的 Excel 导出是递归分页拉数据再写盘，请讲讲这个设计的取舍，5000 条上限是怎么来的。",
+        "en": "useConfigManage exports Excel via recursive paging and then writes the file. Explain the design trade-off and how the 5000 row cap was set."
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "performance",
+          "question": {
+            "zh": "如果数据量超过 5 万条你会怎么改方案？纯前端递归还能支撑吗？",
+            "en": "Beyond 50000 rows how would you change the approach? Can pure frontend recursion still hold?"
+          }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "为什么不让后端做导出？前端导出有什么不可替代的好处？",
+            "en": "Why not have the backend handle export? What unique advantages does frontend export keep?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-06",
+      "primary_dimension": "observability",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-012",
+      "depth": "中级",
+      "evidence": [
+        "src/hooks/useAegis.ts",
+        "src/utils/request/index.ts"
+      ],
+      "question": {
+        "zh": "Aegis 全局错误捕获和接口 retcode 上报你们是怎么协作的？哪些场景上报、哪些跳过？",
+        "en": "How do Aegis global error capture and API retcode reporting cooperate? Which scenarios are reported and which are skipped?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "observability",
+          "question": {
+            "zh": "Aegis 上报本身失败你怎么知道？怎么避免循环上报？",
+            "en": "How do you know when an Aegis report itself fails, and how do you avoid a reporting loop?"
+          }
+        },
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "上报字段 ext 里塞太多业务上下文有什么风险？",
+            "en": "What are the risks of stuffing too much business context into the ext field?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-07",
+      "primary_dimension": "trade-off",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-011",
+      "depth": "中级",
+      "evidence": [
+        "next.config.js",
+        "src/components/Dynamic.tsx",
+        "src/pages/_app.tsx"
+      ],
+      "question": {
+        "zh": "你们用 Next.js 14 但所有页面都包了 NoSSR 当 SPA 用，请讲讲这个决策的全部理由和代价。",
+        "en": "You use Next.js 14 but every page is wrapped with NoSSR and runs as a SPA. Walk through all the reasons and costs of that decision."
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "reactStrictMode 关掉对开发期 bug 检测有什么影响？怎么补这一刀？",
+            "en": "How does disabling reactStrictMode affect dev-time bug detection, and how do you compensate?"
+          }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": {
+            "zh": "如果未来需要 SEO 或首屏优化，你会怎么演进到 SSR/RSC？",
+            "en": "If SEO or first-paint optimisation becomes needed, how would you evolve toward SSR or RSC?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-08",
+      "primary_dimension": "security",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-003",
+      "depth": "中级",
+      "evidence": [
+        "src/utils/request/index.ts",
+        "openspec/project.md"
+      ],
+      "question": {
+        "zh": "门户依赖 TOF cookie 认证，前端 401 兜底和按钮级权限怎么协作？为什么前端 checkPermission 不可信？",
+        "en": "The portal relies on TOF cookie auth. How do the frontend 401 fallback and button-level permissions cooperate, and why is frontend checkPermission untrusted?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "security",
+          "question": {
+            "zh": "为什么不把 token 存到 localStorage？XSS 风险具体怎么爆发？",
+            "en": "Why not store the token in localStorage? How would the XSS risk concretely play out?"
+          }
+        },
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "401 跳转时 isRedirecting 标记防的是什么并发问题？",
+            "en": "What concurrency issue does the isRedirecting flag prevent during 401 redirect?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-09",
+      "primary_dimension": "reliability",
+      "scope": "infra",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-006",
+      "depth": "中级",
+      "evidence": [
+        ".orange-ci.yml",
+        "Dockerfile",
+        "cache.dockerfile"
+      ],
+      "question": {
+        "zh": "Orange CI 多分支策略和双 Dockerfile（业务镜像 + cache 镜像）是怎么配合的？请讲一遍 master 推全量、MR 只跑 lint 的全链路。",
+        "en": "How do the Orange CI multi-branch strategy and the two Dockerfiles (business and cache) cooperate? Walk through the full chain where master pushes images and MR only runs lint."
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "cache 镜像和业务镜像 lock 文件不同步会发生什么？怎么校验？",
+            "en": "What happens if cache image and business image lock files are out of sync, and how do you verify?"
+          }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "FROM cache:latest 写死会有什么问题？versioned tag 怎么管？",
+            "en": "What is wrong with FROM cache:latest, and how do you manage versioned tags?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-10",
+      "primary_dimension": "feature",
+      "scope": "frontend",
+      "sub_project": "qq-project",
+      "source_tech_point": "tp-005",
+      "depth": "中级",
+      "evidence": [
+        "src/hooks/useQPilot.ts"
+      ],
+      "question": {
+        "zh": "useQPilot 这个 Hook 用 200ms × 20 次的轮询等 SDK 就绪，请讲讲为什么不直接监听 onload 事件，并指出这套设计可能的故障点。",
+        "en": "useQPilot polls every 200 ms up to 20 times waiting for the SDK to be ready. Why not just listen for onload, and what failure modes does this design have?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "20 次轮询都失败你会怎么处理？是否需要降级？",
+            "en": "What if all 20 polls fail? Do you need a fallback?"
+          }
+        },
+        {
+          "primary_dimension": "observability",
+          "question": {
+            "zh": "QPilot 初始化失败怎么上报？需要走 Aegis 吗？",
+            "en": "How do you report a failed QPilot init? Should it flow through Aegis?"
+          }
+        }
+      ]
+    }
+  ],
+  "rubrics": [
+    {
+      "qa_id": "iq-01",
+      "criteria": [
+        {
+          "name": "抽象边界清晰度",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲清 schema 只描述结构、power-design-react 只负责渲染，并能举出至少两个具体抽象点（useConfigCreate / useConfigManage）。",
+              "en": "Clearly explains schema describes structure only and power-design-react only renders, citing at least two concrete abstractions like useConfigCreate and useConfigManage."
+            },
+            "合格": {
+              "zh": "能说出两层各自做什么，但举例较泛。",
+              "en": "States what each layer does but with vague examples."
+            },
+            "不合格": {
+              "zh": "把两层混为一谈，无法说出独立职责。",
+              "en": "Conflates the two layers and cannot articulate distinct responsibilities."
+            }
+          }
+        },
+        {
+          "name": "演进与扩展思考",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能说出 schema 不够用时如何扩展（注册渲染器 / 字段命名走 OpenSpec），并意识到风险。",
+              "en": "Explains how to extend when the schema is not enough (registering renderers, OpenSpec for field renames) and is aware of risks."
+            },
+            "合格": {
+              "zh": "能给出一种扩展方式但没有讨论代价。",
+              "en": "Names one extension approach without discussing trade-offs."
+            },
+            "不合格": {
+              "zh": "没有扩展思路或建议放弃 schema 重写命令式。",
+              "en": "Has no extension plan or suggests dropping the schema for imperative code."
+            }
+          }
+        },
+        {
+          "name": "落地证据",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能引用 src/materials、power-design-react、useConfigManage 这些具体路径并讲出关键 API 名。",
+              "en": "Cites concrete paths like src/materials, power-design-react, useConfigManage and names key APIs."
+            },
+            "合格": {
+              "zh": "提到目录但说不清 API。",
+              "en": "Mentions directories but is unclear on APIs."
+            },
+            "不合格": {
+              "zh": "没有具体实现细节，只停留在概念。",
+              "en": "Stays at the concept level with no concrete implementation details."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-02",
+      "criteria": [
+        {
+          "name": "拆分原则与边界",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲业务域拆分依据，举出每个 store 关键字段（如 viewList / savedProductIds / dialogVisible）。",
+              "en": "Explains domain decomposition principle and cites key fields per store (viewList, savedProductIds, dialogVisible)."
+            },
+            "合格": {
+              "zh": "能说按业务域拆但举例较少。",
+              "en": "Mentions domain-based splitting with few examples."
+            },
+            "不合格": {
+              "zh": "说不清拆分理由，认为合并也没问题。",
+              "en": "Cannot articulate the reason for splitting and thinks merging is fine."
+            }
+          }
+        },
+        {
+          "name": "重渲染机制",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲清 createWithEqualityFn + shallow 的浅比较语义，能举不传 shallow 时的 rerender 现象。",
+              "en": "Explains shallow compare semantics of createWithEqualityFn plus shallow and demonstrates rerender behaviour without shallow."
+            },
+            "合格": {
+              "zh": "知道要用 shallow 但说不清原理。",
+              "en": "Knows shallow is needed but cannot explain why."
+            },
+            "不合格": {
+              "zh": "完全不了解相等性比较和 rerender 关系。",
+              "en": "Has no grasp of how equality compare and rerender relate."
+            }
+          }
+        },
+        {
+          "name": "跨域协作",
+          "weight": 0.2,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论 store 间显式调用 vs event bus 的取舍，并提到循环依赖风险。",
+              "en": "Discusses explicit cross-store calls vs event bus and mentions circular dependency risk."
+            },
+            "合格": {
+              "zh": "能给出一种跨域方案，但没讨论风险。",
+              "en": "Provides one cross-domain approach without discussing risks."
+            },
+            "不合格": {
+              "zh": "没有跨域方案，完全靠 useEffect 拉数据。",
+              "en": "Has no cross-domain plan and relies on useEffect to refetch."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-03",
+      "criteria": [
+        {
+          "name": "钩子顺序理解",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能按请求 -> 响应顺序讲完 beforeRequestHook、transformRequestHook、responseInterceptors、responseInterceptorsCatch 四个钩子。",
+              "en": "Walks through beforeRequestHook, transformRequestHook, responseInterceptors and responseInterceptorsCatch in request-response order."
+            },
+            "合格": {
+              "zh": "能说出钩子但顺序不准确。",
+              "en": "Names the hooks but not in the right order."
+            },
+            "不合格": {
+              "zh": "搞不清拦截器和 transform 的差异。",
+              "en": "Confuses interceptors with transformers."
+            }
+          }
+        },
+        {
+          "name": "重试 + 监控",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 retryCount 计数、可重试错误判定，且讨论幂等问题；能讲 Aegis 上报字段。",
+              "en": "Explains retryCount, retryable error classification and idempotency concerns; describes Aegis report fields."
+            },
+            "合格": {
+              "zh": "知道有重试和上报但说不清细节。",
+              "en": "Knows retry and reporting exist but lacks detail."
+            },
+            "不合格": {
+              "zh": "无幂等意识，认为所有请求都能盲重试。",
+              "en": "No idempotency awareness, assumes any request can be blindly retried."
+            }
+          }
+        },
+        {
+          "name": "边界处理",
+          "weight": 0.2,
+          "indicators": {
+            "优秀": {
+              "zh": "能举 url 不转换、FormData 跳过、白名单接口跳过 401 上报等边界。",
+              "en": "Cites edge cases like skipping url conversion, FormData and whitelisted endpoints for 401 reporting."
+            },
+            "合格": {
+              "zh": "能说一两个边界但不全。",
+              "en": "Cites one or two edge cases but incomplete."
+            },
+            "不合格": {
+              "zh": "无边界意识，认为请求层一刀切就行。",
+              "en": "No edge-case awareness, assumes a one-size-fits-all request layer."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-04",
+      "criteria": [
+        {
+          "name": "OpenSpec 流程理解",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 proposal/design/spec/tasks 四件套各自的产出和归档时机。",
+              "en": "Explains what proposal, design, spec and tasks each produce and when they are archived."
+            },
+            "合格": {
+              "zh": "能说出有四个文档但内容不全。",
+              "en": "Knows there are four files but cannot fully describe each."
+            },
+            "不合格": {
+              "zh": "完全不了解 OpenSpec 流程。",
+              "en": "No knowledge of the OpenSpec process."
+            }
+          }
+        },
+        {
+          "name": "store action 编排",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 openEditDialog 同时写 editingView/savedProductIds/dialogVisible 的必要性，以及为什么不在组件里分别 set。",
+              "en": "Explains why openEditDialog writes editingView, savedProductIds and dialogVisible together rather than letting the component set each separately."
+            },
+            "合格": {
+              "zh": "提到要同时写多字段但说不清原因。",
+              "en": "Mentions writing multiple fields together but cannot articulate why."
+            },
+            "不合格": {
+              "zh": "在组件里到处 set，造成回填错乱。",
+              "en": "Sets fields ad hoc in components, causing prefill bugs."
+            }
+          }
+        },
+        {
+          "name": "跨产品安全意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 ViewPush 多产品场景下的后端校验，明确前端 checkPermission 不可信。",
+              "en": "Explains backend validation for ViewPush multi-product scenarios and clearly states frontend checkPermission is not authoritative."
+            },
+            "合格": {
+              "zh": "知道要做权限校验但分工不清。",
+              "en": "Knows authorisation is needed but is unclear on the division of responsibility."
+            },
+            "不合格": {
+              "zh": "完全依赖前端 checkPermission。",
+              "en": "Relies entirely on frontend checkPermission."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-05",
+      "criteria": [
+        {
+          "name": "递归分页设计",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 fetchPage + 递归 + 终止条件（pageSize 不满 / 上限），并说出 pageSize 200 的依据。",
+              "en": "Explains fetchPage plus recursion plus termination conditions (short page or cap) and reasons for pageSize 200."
+            },
+            "合格": {
+              "zh": "知道是分页递归，但终止条件不全。",
+              "en": "Knows it is paged recursion but lists incomplete termination conditions."
+            },
+            "不合格": {
+              "zh": "想直接 pageSize=10000 拉全量。",
+              "en": "Suggests fetching everything with pageSize 10000."
+            }
+          }
+        },
+        {
+          "name": "前端导出 vs 后端导出",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能权衡复用业务接口、权限一致性、异步任务体验等多维度。",
+              "en": "Weighs reuse of business endpoints, permission consistency and async task UX."
+            },
+            "合格": {
+              "zh": "能给出一种立场但论据较弱。",
+              "en": "Takes a position but with weak rationale."
+            },
+            "不合格": {
+              "zh": "没考虑过两种方案的差别。",
+              "en": "Has not thought about the difference between the two approaches."
+            }
+          }
+        },
+        {
+          "name": "可扩展性",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论 5 万条以上需要后端异步任务、worker、流式写盘等演进。",
+              "en": "Discusses scaling beyond 50000 rows via backend async tasks, workers or streaming."
+            },
+            "合格": {
+              "zh": "能提一种规模化方案但缺细节。",
+              "en": "Names one scaling option but lacks detail."
+            },
+            "不合格": {
+              "zh": "认为 5000 上限足够，不考虑大数据量。",
+              "en": "Believes a 5000 cap is enough and ignores larger volumes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-06",
+      "criteria": [
+        {
+          "name": "上报模型",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 Aegis 自动捕获 + retcode 手动上报双轨，并说出为什么 HTTP 200 + retcode!=0 也要上报。",
+              "en": "Explains the dual track of Aegis auto-capture plus manual retcode reporting and why HTTP 200 with non-zero retcode is reported."
+            },
+            "合格": {
+              "zh": "知道有两条线但说不清差异。",
+              "en": "Knows there are two tracks but cannot articulate the difference."
+            },
+            "不合格": {
+              "zh": "只依赖 SDK 自动捕获。",
+              "en": "Relies only on automatic SDK capture."
+            }
+          }
+        },
+        {
+          "name": "降噪与白名单",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲长轮询 401、用户取消请求、SSO 跳转 401 各类降噪场景。",
+              "en": "Cites noise reduction for long-polling 401, user-cancelled requests and 401 during SSO redirect."
+            },
+            "合格": {
+              "zh": "能说一两种降噪场景。",
+              "en": "Names one or two noise scenarios."
+            },
+            "不合格": {
+              "zh": "没考虑过降噪，所有错误都报。",
+              "en": "Has not considered noise reduction and reports everything."
+            }
+          }
+        },
+        {
+          "name": "上报失败保护",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 try-catch 包住 Aegis、避免循环上报、ext 字段大小约束。",
+              "en": "Wraps Aegis calls in try/catch, avoids reporting loops and constrains the ext field size."
+            },
+            "合格": {
+              "zh": "知道要保护但实现不全。",
+              "en": "Knows protection is needed but implementation is incomplete."
+            },
+            "不合格": {
+              "zh": "未考虑 Aegis 自身可能失败。",
+              "en": "Has not considered that Aegis itself can fail."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-07",
+      "criteria": [
+        {
+          "name": "决策动机",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能从内网门户、登录态、第三方 SDK 兼容性、心智模型四个维度论证 NoSSR 选型。",
+              "en": "Justifies NoSSR from internal portal, logged-in users, third-party SDK compatibility and mental-model angles."
+            },
+            "合格": {
+              "zh": "能说一两条理由但不全。",
+              "en": "Cites one or two reasons but not fully."
+            },
+            "不合格": {
+              "zh": "认为 SSR 永远更好或不知道为什么 NoSSR。",
+              "en": "Thinks SSR is always better or does not know why NoSSR."
+            }
+          }
+        },
+        {
+          "name": "实现细节",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 dynamic ssr:false、_document 静态资源、_app 副作用挂载的具体写法。",
+              "en": "Describes dynamic with ssr:false, static assets in _document and side effects in _app."
+            },
+            "合格": {
+              "zh": "知道用 dynamic 但其它细节模糊。",
+              "en": "Knows about dynamic but other details are fuzzy."
+            },
+            "不合格": {
+              "zh": "完全说不出 NoSSR 是怎么实现的。",
+              "en": "Cannot explain how NoSSR is implemented."
+            }
+          }
+        },
+        {
+          "name": "代价与演进",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 reactStrictMode false 的代价以及 RSC 演进前提条件。",
+              "en": "Explains the cost of disabling reactStrictMode and prerequisites for RSC evolution."
+            },
+            "合格": {
+              "zh": "知道有代价但举不出具体例子。",
+              "en": "Knows there are costs but cannot give concrete examples."
+            },
+            "不合格": {
+              "zh": "未考虑代价或演进。",
+              "en": "Has not considered costs or evolution."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-08",
+      "criteria": [
+        {
+          "name": "认证模型",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 cookie + withCredentials + SSO 续期，对比 localStorage token 的 XSS 风险。",
+              "en": "Explains cookie plus withCredentials plus SSO renewal and contrasts with XSS risks of localStorage tokens."
+            },
+            "合格": {
+              "zh": "知道是 cookie-based 但讲不清续期细节。",
+              "en": "Knows it is cookie-based but is unclear on renewal details."
+            },
+            "不合格": {
+              "zh": "倾向把 token 存 localStorage。",
+              "en": "Tends to store tokens in localStorage."
+            }
+          }
+        },
+        {
+          "name": "401 处理流程",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲完整流程 isRedirecting -> logout -> reset stores -> redirect with redirectUrl。",
+              "en": "Walks the full flow: isRedirecting check, logout, reset stores and redirect with redirectUrl."
+            },
+            "合格": {
+              "zh": "能讲跳 SSO 但缺 isRedirecting 防抖等细节。",
+              "en": "Explains SSO redirect but misses details like the isRedirecting debounce."
+            },
+            "不合格": {
+              "zh": "只跳 SSO 不清状态。",
+              "en": "Just redirects without clearing state."
+            }
+          }
+        },
+        {
+          "name": "权限分工",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能明确前端只做 UX 禁用、后端是权威，并讨论 viewId 跨产品越权场景。",
+              "en": "Clearly states frontend only renders disabled UX while the backend is authoritative, and discusses cross-product viewId escalation."
+            },
+            "合格": {
+              "zh": "知道后端要校验但前端兜底逻辑模糊。",
+              "en": "Knows backend must validate but is fuzzy on frontend fallback logic."
+            },
+            "不合格": {
+              "zh": "把前端 checkPermission 当权威。",
+              "en": "Treats frontend checkPermission as authoritative."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-09",
+      "criteria": [
+        {
+          "name": "分支策略",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 master 推全量、MR 跑 lint+构建、feature 只跑 lint 的差异化策略及收益。",
+              "en": "Explains the differentiated strategy where master pushes full builds, MR runs lint plus build and feature runs only lint, plus benefits."
+            },
+            "合格": {
+              "zh": "知道有差异化但说不全。",
+              "en": "Knows about differentiation but cannot fully describe it."
+            },
+            "不合格": {
+              "zh": "认为所有分支都应该构建镜像。",
+              "en": "Believes every branch should build images."
+            }
+          }
+        },
+        {
+          "name": "双 Dockerfile 协作",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 cache 镜像独立流水线、业务镜像 FROM cache、lock 文件 hash 校验。",
+              "en": "Describes the cache image's separate pipeline, business image FROM cache and lock file hash verification."
+            },
+            "合格": {
+              "zh": "知道有 cache 镜像但协作机制模糊。",
+              "en": "Knows there is a cache image but is fuzzy on cooperation."
+            },
+            "不合格": {
+              "zh": "搞不清两个 Dockerfile 谁是基。",
+              "en": "Cannot identify which Dockerfile is the base."
+            }
+          }
+        },
+        {
+          "name": "运维风险",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能识别 latest 被覆盖、secrets imports 不继承、TKE 配额等运维风险。",
+              "en": "Identifies risks like overwritten latest, non-inherited secrets imports and TKE quota."
+            },
+            "合格": {
+              "zh": "能说一两种风险。",
+              "en": "Names one or two risks."
+            },
+            "不合格": {
+              "zh": "无运维风险意识。",
+              "en": "No operational risk awareness."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-10",
+      "criteria": [
+        {
+          "name": "轮询设计",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能解释为什么 onload 不够（QPilotAI 还要二次初始化），并讲清 200ms × 20 是怎么调出来的。",
+              "en": "Explains why onload is not enough (QPilotAI needs secondary init) and how the 200 ms times 20 budget was tuned."
+            },
+            "合格": {
+              "zh": "知道用轮询但说不清原因。",
+              "en": "Knows polling is used but cannot explain why."
+            },
+            "不合格": {
+              "zh": "认为直接 onload 就行，不知道二次初始化。",
+              "en": "Thinks onload is enough and is unaware of secondary init."
+            }
+          }
+        },
+        {
+          "name": "失败处理",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲 20 次失败后的降级（隐藏入口 / 上报 Aegis）。",
+              "en": "Describes a fallback after 20 failures (hide entry, report to Aegis)."
+            },
+            "合格": {
+              "zh": "知道要降级但方案模糊。",
+              "en": "Knows a fallback is needed but the plan is vague."
+            },
+            "不合格": {
+              "zh": "失败后无任何处理。",
+              "en": "No handling after failure."
+            }
+          }
+        },
+        {
+          "name": "生命周期清理",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讲卸载时 clearInterval 和移除 script 节点的必要性。",
+              "en": "Explains the need to clearInterval and remove the script node on unmount."
+            },
+            "合格": {
+              "zh": "知道要清 timer 但忽略 script 节点。",
+              "en": "Knows the timer must be cleared but overlooks the script node."
+            },
+            "不合格": {
+              "zh": "完全没考虑卸载清理。",
+              "en": "Has not considered cleanup on unmount."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

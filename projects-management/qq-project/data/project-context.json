@@ -1,0 +1,191 @@
+{
+  "schema_version": "1.0.0",
+  "platform_name": "QQ 项目管理门户 (qq-project)",
+  "one_liner": "腾讯内部 QQ 各端（Android/iOS/桌面/鸿蒙）的项目管理门户：版本计划、缺陷追踪、需求面板、版本进展、自定义视图与配置后台一体化，Next.js 14 纯客户端 SPA + Zustand + TDesign。",
+  "domain": "项目管理 · 版本/缺陷/需求一体化 · 内部研效平台",
+  "platform_tech_stack": {
+    "languages": ["TypeScript 5", "JavaScript", "Less"],
+    "frameworks": [
+      "Next.js 14 (Pages Router, NoSSR/SPA)",
+      "React 18.3",
+      "TDesign React 1.7",
+      "Zustand 4.4 (createWithEqualityFn + shallow)",
+      "ECharts 5.6",
+      "Axios 1.10 (深度封装)",
+      "humps (camelCase ↔ snake_case)",
+      "@next/mdx 13",
+      "next-with-less 3 / next-global-css 1.3",
+      "html2canvas / xlsx-js-style / qrcode",
+      "Playwright 1.59 (E2E)",
+      "ESLint 8 (@tencent/eslint-config-tencent + next/core-web-vitals)",
+      "Prettier 2",
+      "pnpm"
+    ],
+    "infra": [
+      "Node 18 Docker 镜像 + cache.dockerfile 双 Dockerfile 构建",
+      "TKE 容器集群 (csighub.tencentyun.com/qqopr/qq-project-{prod,test})",
+      "北极星 (域名 → TKE 负载服务发现)",
+      "TOF 统一认证（401 自动登出）",
+      "TAPD（Bug/需求数据来源）",
+      "腾讯云 COS（文件上传，useFileUpload2Cos）",
+      "Aegis Web SDK v2 (前端监控 + 手动 retcode 上报)",
+      "QPilot AI 助手（agentEntry 入口注入，showAgentEntry/hideAgentEntry）",
+      "盘古系统对接（系统视图权限）",
+      "QQ 统一转发 BFF (pindao-bff.woa.com, /api/qqproject/* 前缀)",
+      "RTX 企业通讯录（RtxSelect 组件）",
+      "Orange CI (.orange-ci.yml: master/MR/feature/bugfix 多分支流水线)",
+      "Whistle 本地代理 (test-qq.woa.com → localhost:3000)",
+      "TDE 测试环境代理"
+    ]
+  },
+  "sub_projects": [
+    {
+      "name": "qq-project (frontend monolith)",
+      "path": "",
+      "scope": "frontend",
+      "tech_stack": {
+        "framework": "Next.js 14 Pages Router (NoSSR via Dynamic.tsx wrapper)",
+        "build": "next build + swcMinify + transpilePackages: tdesign-react",
+        "ts": "TypeScript 5（构建时 ignoreBuildErrors=true，靠 next lint 拦截）",
+        "state": "Zustand 4 (createWithEqualityFn, 9 个领域 store)",
+        "ui": "TDesign React 1.7 + power-design-react 自研基础组件层",
+        "http": "Axios 封装 (camelize 双向转换 / 重试 3 次×1s / 401 logout / Aegis 异常上报 / 时间戳防缓存)",
+        "charts": "ECharts 5.6",
+        "config_pattern": "Materials 配置驱动（apis.ts + types.ts + create/manage config.tsx）+ useConfigCreate / useConfigManage 通用 Hook"
+      },
+      "modules": [
+        {
+          "name": "Pages 路由层",
+          "path": "src/pages/",
+          "responsibility": "Next.js Pages Router 入口；首页 index、bug-list、bug-pannel、defect-view、story-pannel、version-plan、version-progress、history-archive、history-version-plan、calendar、develop-admin、no-auth；config/* 子目录下覆盖产品/版本/公告/文档/快捷导航/组织架构/一二级业务/质量标准/版本进展/同步配置/系统视图等十余个配置后台 CRUD 页面。"
+        },
+        {
+          "name": "Layout & 看板主框架",
+          "path": "src/components/Layout/ + src/components/NewBoard/",
+          "responsibility": "Layout（Header/NewHeader/SideMenu）+ NewBoard 主看板：Main(VersionPlan/VersionDetail) + VersionProgress（节点指示器/灰度定包/正式定包/TPM Plan/QFlow/审批等多类节点 With* 模板）+ BugPannel（缺陷面板，含 ViewCreate/ViewManage/ViewPush/ViewList/PushChat/PushTime/RankList/Refresh/BugOverview/BugPackageTips）+ storyPannel + RightSide（公告/订阅）+ ReleaseRecord + visitorBoard 游客视图。"
+        },
+        {
+          "name": "power-design-react 基础组件层",
+          "path": "src/components/power-design-react/",
+          "responsibility": "自研声明式表单/表格基础库：blocks (form / dialog-form / query-form / Table) + multiple-components (form-item-list 等) + core/hooks/layout；通过 JSON Schema 风格的 columns/fields 配置驱动渲染；token.less 集中 Design Token；为 materials 层提供统一渲染基座。"
+        },
+        {
+          "name": "Materials 业务物料层",
+          "path": "src/materials/",
+          "responsibility": "按业务领域拆分（announcement / board / bug-rate / document / formal-package / gray-package / history-archive / history-version-plan / metrics / navigate / organization / primary-business / product / secondary-business / version / version-progress 等 16+ 模块），每个模块固定结构：apis.ts（接口）+ types.ts（领域模型）+ create/config.tsx（创建表单配置）+ manage/config.tsx（管理表格列配置）。新建一个配置后台页面 = 加一份 materials 配置 + 路由。"
+        },
+        {
+          "name": "Zustand Stores",
+          "path": "src/store/",
+          "responsibility": "9 个领域 store：useVersionStore（版本/产品选中态）、useBugPanelStore / useBugPannelStore（缺陷面板）、useDefectViewStore（缺陷视图）、useViewManageStore（视图管理 CRUD + 弹窗）、useSystemViewStore、useAdminConfigStore（管理后台 page-key 隔离的配置缓存）、useConfigStore、useStaffStore（人员）；统一 createWithEqualityFn + shallow，selector 多字段返回 tuple；index.ts barrel 导出。"
+        },
+        {
+          "name": "通用 Hooks",
+          "path": "src/hooks/",
+          "responsibility": "useConfigCreate / useConfigManage（CRUD 标准化：查询/编辑/删除/Switch 切换/Excel 导出递归分页拉全量）、useQPilot（注入 QPilot SDK script + agentEntry 配置 + 轮询 window.QPilotAI 就绪 + 卸载清理）、useAegis（Aegis 监控初始化）、useFileUpload2Cos（COS 文件上传）、useVersionOptions、useRoute、useLocalStorage、useUpdateEffect、useQueuedEffect、useBusinessImport、operate.ts。"
+        },
+        {
+          "name": "Services API 层",
+          "path": "src/services/",
+          "responsibility": "面向 Pages/Materials 的领域 API：board / bug-pannel / calendar / defect-view / manage / story-pannel / system-view / task / user / version-progress；调用统一 request 实例。"
+        },
+        {
+          "name": "请求封装层",
+          "path": "src/utils/request/",
+          "responsibility": "Axios 工厂封装：transformRequestHook（dataPath/codePath/codeSuccessValue 配置化解包，code 非成功 message.error 兜底）+ beforeRequestHook（urlPrefix /api 拼接、formatDate、GET 时间戳、camelize/decamelize 双向转换、joinParamsToUrl、可选 requestId）+ responseInterceptors（401 → logout、retcode 异常通过 window.AegisV2.error 上报）+ responseInterceptorsCatch（按配置 retry 3 次 1s 间隔指数退避）；配置项 isJoinPrefix/withCredentials/withToken/withRequestId/ignoreRepeatRequest 等。"
+        },
+        {
+          "name": "Constants & Routes",
+          "path": "src/constants/",
+          "responsibility": "index.ts 通用常量、routes.ts 路由集中、story-pannel.ts、version-progress.ts；魔法字符串/数字必须落到 constants（项目规则）。"
+        },
+        {
+          "name": "类型与工具",
+          "path": "src/types/ + src/utils/",
+          "responsibility": "types/ 按领域：bug-pannel / board / calendar / defect-view / story-pannel / system-view / version-progress / pangu / refs / index；utils 含 auth、cache、file、time、tool、util、rtx、index；统一 export。"
+        },
+        {
+          "name": "Playwright E2E",
+          "path": "e2e/ + playwright.config.ts",
+          "responsibility": "三个 project：auth（手动登录后 storageState 落 e2e/auth.json）、e2e（system-view.spec.ts）、history-version-plan；baseURL = test-qq.woa.com，ignoreHTTPSErrors，仅失败截图，trace=on-first-retry；fullyParallel=false，60s 超时。"
+        },
+        {
+          "name": "OpenSpec 规格库",
+          "path": "openspec/",
+          "responsibility": "项目级 spec-as-code：openspec/project.md 定义 Tech Stack / Conventions / Domain Context / External Dependencies；changes/<change-id>/{proposal.md, design.md, specs/<capability>/spec.md, tasks.md} 跟踪每次能力变更（已收录 add-view-management、enhance-history-archive-table、enhance-org-view-filters/ui、fix-custom-view-post-save-selection、fix-org-view-buglist-crash、fix-org-view-share-link 等 7 个变更）。"
+        },
+        {
+          "name": ".codebuddy 项目规则与 Skill",
+          "path": ".codebuddy/",
+          "responsibility": "rules/!core-rules.mdc 等 mdc 规则（code-quality-checklist、must-check-errors-after-changes、sync-documentation）+ skills/config-page-development（配置后台页面开发 SKILL）+ commands/openspec/{apply,archive,proposal}.md；为 AI 协作开发提供项目级约束。"
+        },
+        {
+          "name": "Docker 构建",
+          "path": "Dockerfile + cache.dockerfile + start.sh + getBranch.sh",
+          "responsibility": "Dockerfile：node:18 基础镜像，COPY 全量代码，CMD 启动 next start；cache.dockerfile：用于 docker:cache 复用 node_modules（基于 package.json + pnpm-lock.yaml 版本化）；getBranch.sh 把分支名格式化为镜像 tag 后缀。"
+        },
+        {
+          "name": "Orange CI Pipeline",
+          "path": ".orange-ci.yml",
+          "responsibility": "三套触发：master/review（CR 通过 git:auto-merge + 企微通知）、master/merge_request（lint 卡口）、master/push（install→build→docker login→build→push→git:auto-tag→企微）、{feature,bugfix}/* push（企微 choice 询问是否构建测试镜像→格式化分支→install→build→docker push→企微通知 TKE 升级地址）；secret-key 通过 imports git.woa.com 注入。"
+        },
+        {
+          "name": "QPilot AI Agent 集成",
+          "path": "src/hooks/useQPilot.ts",
+          "responsibility": "运行时注入两段 script：script1 内联定义 qpilotAiParams（qpilotId=2851、agentId=8173、logo、agentEntry 尺寸/偏移），script2 异步加载 cos 上的 qpilotQa.1.0.5.3-ai-pm.js；配套 showAgentEntry(prompt) / hideAgentEntry() 通过 200ms × 20 次 轮询等 window.QPilotAI 就绪后再调；卸载时清 timer + 移除两个 script 节点；commit 612ee32f 'AI Agent 一期：里程碑 API' 把 AI 升级到 Agent 型。"
+        }
+      ],
+      "active_areas": [
+        "feature/enhance-history-archive-table — 历史归档页面优化（最新提交 64fb977）",
+        "feature/system-view — 系统视图管理（create/edit/manage 三页 + useSystemViewStore + system-view.spec.ts E2E）",
+        "feature/add-view-management — 自定义视图 CRUD + 个人/系统视图 + 跨产品应用 + 分享（spec/design/tasks 齐全）",
+        "feature/enhance-org-view-{filters,ui} — 组织架构视图筛选与 UI 优化",
+        "fix/custom-view-post-save-selection / fix-org-view-{buglist-crash,share-link} — 自定义视图保存选中/buglist 跳转崩溃/分享链接修复",
+        "feature/Bug 推送配置预览 + 群聊推送权限提示优化（多次迭代）",
+        "feature/AI PM 升级 Agent 型（一期里程碑 API）— 632ef97"
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "title": "Materials 配置驱动 + power-design-react 双层抽象",
+      "scope": "frontend",
+      "summary": "把 16+ 个配置后台 CRUD 页面抽象成 materials/<module>/{apis,types,create/config.tsx,manage/config.tsx} 的声明式配置，由 useConfigCreate / useConfigManage 两个 Hook 接管查询/编辑/删除/Switch/导出，下层走自研 power-design-react 的 form / Table / dialog-form / query-form blocks 渲染；新增一个后台页面只需补一份 materials 配置 + 路由，剔除了大量样板代码。"
+    },
+    {
+      "title": "Zustand 9 store 领域拆分 + createWithEqualityFn 治理",
+      "scope": "frontend",
+      "summary": "按业务域把状态拆成 useVersionStore / useBugPanelStore / useDefectViewStore / useViewManageStore / useSystemViewStore / useAdminConfigStore / useConfigStore / useStaffStore 等 9 个 store；store 内集成异步 action（直接调 services 后 set），消费时统一 createWithEqualityFn + shallow + tuple selector，避免巨型 store 的无差别重渲染；视图管理这种新增能力直接独立成 store 而不污染老 store。"
+    },
+    {
+      "title": "Axios 统一请求层（camelize / 重试 / Aegis 上报 / 401 logout）",
+      "scope": "frontend",
+      "summary": "src/utils/request 用 transformRequestHook + beforeRequestHook + responseInterceptors + responseInterceptorsCatch 把请求行为配置化：dataPath/codePath/codeSuccessValue 解包、humps 双向 camelize、GET 时间戳防缓存、可选 requestId、formatDate、urlPrefix 拼接；响应侧 401 自动 logout、retcode 非 0 通过 window.AegisV2.error 手动上报、按 retry.count/delay 默认 3×1s 重试；通过单点改动覆盖全站接口规范。"
+    },
+    {
+      "title": "OpenSpec 规格驱动开发流程",
+      "scope": "frontend",
+      "summary": "openspec/project.md 沉淀 Tech Stack/Conventions/Domain；每个能力变更在 openspec/changes/<id>/ 下走 proposal.md → design.md → specs/<capability>/spec.md → tasks.md 四件套，配套 .codebuddy/commands/openspec/{proposal,apply,archive}.md 三个 slash command；已沉淀 add-view-management（视图 CRUD/分享）、enhance-history-archive-table、enhance/fix-org-view-* 等 7 套规格；CR 通过后 orange-ci 走 git:auto-merge 自动合并。"
+    },
+    {
+      "title": "QPilot AI Agent 入口注入与就绪轮询",
+      "scope": "frontend",
+      "summary": "useQPilot 在挂载时分两段插入 script：内联段写 agentEntry 尺寸/agentId/logo 配置，异步段从 cos 拉 qpilotQa SDK；showAgentEntry(prompt) / hideAgentEntry 不直接调 SDK，而是 200ms × 20 次轮询等 window.QPilotAI 就绪再 apply，杜绝 SDK 未加载导致的 undefined；统一定时器 map 在卸载时一并清理；最近一次 AI Agent 一期升级（632ef97）把这条链路接到了 AI PM 里程碑 API。"
+    },
+    {
+      "title": "Orange CI 多分支差异化流水线",
+      "scope": "infra",
+      "summary": ".orange-ci.yml 区分 master 与 feature/bugfix：master MR 阶段做 pnpm lint 卡口；master push 阶段 install→build→镜像 docker login→生成 csighub.tencentyun.com/qqopr/qq-project-prod:YYYYMMDDHHmm tag→docker build/push→git:auto-tag→企微通知；feature/bugfix push 先用 wework:choice 在企微里弹按钮让人选择是否打镜像，避免每次推都构建；secret 通过 imports https://git.woa.com/.../secret-key/qq-project 注入 docker 账号，secret 与代码物理隔离。"
+    },
+    {
+      "title": "自定义视图 CRUD（add-view-management）",
+      "scope": "frontend",
+      "summary": "把原来 BugPanel 仅保存 deptNames+owners 的简化模型升级成完整视图实体：useViewManageStore 管 currentView/personalViews/systemViews + manage 列表 + create/manage 弹窗 + form data；新增 ViewToolbar/ViewCreateDialog/ViewManageDialog 三组件；个人视图与系统视图分权（系统视图仅盘古 Bug 看板管理员可建）；跨产品应用且编辑时 savedProductIds 置灰不可删；视图分享通过 saveViewSnapshot 链接复制筛选条件；spec/design/tasks 全程在 openspec 留档。"
+    },
+    {
+      "title": "Playwright + 登录态分离的 E2E 策略",
+      "scope": "frontend",
+      "summary": "playwright.config.ts 把流程拆成 auth/e2e/history-version-plan 三个 project：auth 手动登录后把 storageState 落到 e2e/auth.json，后续两个 project 复用；baseURL=test-qq.woa.com + ignoreHTTPSErrors 直连内网，screenshot:only-on-failure + trace:on-first-retry 节省体积；fullyParallel=false 因 TOF 登录态强串行；适配腾讯内网 SSO + TDE 代理这种特殊环境。"
+    }
+  ]
+}

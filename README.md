@@ -8,6 +8,7 @@
 |---|---|
 | [`qpilot-code/`](./qpilot-code) | QPilot Code Agent（企业级 AI 编程平台，backagent + backagent-web 全栈）的面试材料与知识图谱 |
 | [`qpilot-web/`](./qpilot-web) | QPilot Web LLMOps 工作台 `qpilot-web-v2`（pnpm + lerna monorepo · Next.js 16 App Router · Vercel AI SDK 5 ToolLoopAgent · 桌面端/移动端双轨）的面试材料与知识图谱 |
+| [`projects-management/qq-project/`](./projects-management/qq-project) | QQ 客户端项目管理门户 `qq-project`（Next.js 14 Pages Router · NoSSR SPA · Zustand 9 store · TDesign React · OpenSpec · Orange CI + TKE）的面试材料与知识图谱 |
 | [`guild-mp/`](./guild-mp) | QQ 频道小程序 `guild_mp`（微信小程序 + 多分包 + Skyline 渲染）的面试材料与知识图谱 |
 | [`guild_web/`](./guild_web) | QQ 频道 Web 平台 `guild_web`（pnpm + lerna monorepo · Nuxt 3 SSR/CSR · 5 宿主适配 · exeditor3 富文本）的面试材料与知识图谱 |
 
@@ -44,22 +45,22 @@
 | `tech-points.json` | Stage 2：面试技术点（按 architecture / performance / reliability / security / observability / feature 维度覆盖） |
 | `raw-bundle.json` | 原始扫描结果（git 历史、依赖、文件结构） |
 
-> 说明：`guild-mp/`、`guild_web/` 目录仅归档渲染后的双语 Markdown 与 `knowledge-data.json`；其 stage 0–3 中间 JSON 存放在原始工作区对应的 `<项目>/.codebuddy/interview-coach/` 目录下。`qpilot-web/` 完整归档了三阶段全部 JSON，统一放在 `qpilot-web/data/` 子目录下；其中 knowledge 模式数据使用 skill 标准命名 `interview-data.knowledge.json`（与 `knowledge-data.json` 等价）。
+> 说明：`guild-mp/`、`guild_web/` 目录仅归档渲染后的双语 Markdown 与 `knowledge-data.json`；其 stage 0–3 中间 JSON 存放在原始工作区对应的 `<项目>/.codebuddy/interview-coach/` 目录下。`qpilot-web/`、`projects-management/qq-project/` 完整归档了三阶段全部 JSON，统一放在子目录 `data/` 下；其中 knowledge 模式数据使用 skill 标准命名 `interview-data.knowledge.json`（与 `knowledge-data.json` 等价）。
 
 ## 目录文件矩阵
 
-| 文件 | qpilot-code | qpilot-web | guild-mp | guild_web |
-|---|:-:|:-:|:-:|:-:|
-| `project-context.json` | ✅ | ✅ | — | — |
-| `tech-points.json` | ✅ | ✅ | — | — |
-| `raw-bundle.json` | ✅ | — | — | — |
-| `interview-data.json` | ✅ | ✅ | — | — |
-| `interview-data.interviewer.json` | — | ✅ | — | — |
-| `interview-data.knowledge.json` | — | ✅ | — | — |
-| `interview-prep.{zh,en}.md` | ✅ | ✅ | ✅ | ✅ |
-| `interviewer-pack.{zh,en}.md` | — | ✅ | ✅ | ✅ |
-| `knowledge-data.json` | ✅ | — | ✅ | ✅ |
-| `knowledge-map.{zh,en}.md` | — | ✅ | ✅ | ✅ |
+| 文件 | qpilot-code | qpilot-web | qq-project | guild-mp | guild_web |
+|---|:-:|:-:|:-:|:-:|:-:|
+| `project-context.json` | ✅ | ✅ | ✅ | — | — |
+| `tech-points.json` | ✅ | ✅ | ✅ | — | — |
+| `raw-bundle.json` | ✅ | — | — | — | — |
+| `interview-data.json` | ✅ | ✅ | ✅ | — | — |
+| `interview-data.interviewer.json` | — | ✅ | ✅ | — | — |
+| `interview-data.knowledge.json` | — | ✅ | ✅ | — | — |
+| `interview-prep.{zh,en}.md` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `interviewer-pack.{zh,en}.md` | — | ✅ | ✅ | ✅ | ✅ |
+| `knowledge-data.json` | ✅ | — | — | ✅ | ✅ |
+| `knowledge-map.{zh,en}.md` | — | ✅ | ✅ | ✅ | ✅ |
 
 ## 复现方式
 
