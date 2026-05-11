@@ -8,6 +8,7 @@
 |---|---|
 | [`qpilot-code/`](./qpilot-code) | QPilot Code Agent（企业级 AI 编程平台，backagent + backagent-web 全栈）的面试材料与知识图谱 |
 | [`guild-mp/`](./guild-mp) | QQ 频道小程序 `guild_mp`（微信小程序 + 多分包 + Skyline 渲染）的面试材料与知识图谱 |
+| [`guild_web/`](./guild_web) | QQ 频道 Web 平台 `guild_web`（pnpm + lerna monorepo · Nuxt 3 SSR/CSR · 5 宿主适配 · exeditor3 富文本）的面试材料与知识图谱 |
 
 ## 每个项目的标准产物
 
@@ -42,20 +43,20 @@
 | `tech-points.json` | Stage 2：面试技术点（按 architecture / performance / reliability / security / observability / feature 维度覆盖） |
 | `raw-bundle.json` | 原始扫描结果（git 历史、依赖、文件结构） |
 
-> 说明：`guild-mp/` 目录仅归档渲染后的双语 Markdown 与 `knowledge-data.json`；其 stage 0–3 中间 JSON 存放在原始工作区的 `guild_mp/.codebuddy/interview-coach/` 目录下。
+> 说明：`guild-mp/`、`guild_web/` 目录仅归档渲染后的双语 Markdown 与 `knowledge-data.json`；其 stage 0–3 中间 JSON 存放在原始工作区对应的 `<项目>/.codebuddy/interview-coach/` 目录下。
 
 ## 目录文件矩阵
 
-| 文件 | qpilot-code | guild-mp |
-|---|:-:|:-:|
-| `project-context.json` | ✅ | — |
-| `tech-points.json` | ✅ | — |
-| `raw-bundle.json` | ✅ | — |
-| `interview-data.json` | ✅ | — |
-| `interview-prep.{zh,en}.md` | ✅ | ✅ |
-| `interviewer-pack.{zh,en}.md` | — | ✅ |
-| `knowledge-data.json` | ✅ | ✅ |
-| `knowledge-map.{zh,en}.md` | — | ✅ |
+| 文件 | qpilot-code | guild-mp | guild_web |
+|---|:-:|:-:|:-:|
+| `project-context.json` | ✅ | — | — |
+| `tech-points.json` | ✅ | — | — |
+| `raw-bundle.json` | ✅ | — | — |
+| `interview-data.json` | ✅ | — | — |
+| `interview-prep.{zh,en}.md` | ✅ | ✅ | ✅ |
+| `interviewer-pack.{zh,en}.md` | — | ✅ | ✅ |
+| `knowledge-data.json` | ✅ | ✅ | ✅ |
+| `knowledge-map.{zh,en}.md` | — | ✅ | ✅ |
 
 ## 复现方式
 
