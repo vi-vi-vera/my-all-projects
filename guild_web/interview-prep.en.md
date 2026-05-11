@@ -18,36 +18,46 @@
 
 ### Elevator (resume-sized)
 
-Tencent Guild frontend monorepo: pnpm + lerna over 11 shared packages × 6 apps spanning Web, Mobile QQ, QQ Browser, H5 and the long-post editor.
+Tencent Guild frontend monorepo. pnpm + lerna over 11 shared packages and 6 host-specific apps.
 
 ### Standard (30–60 seconds)
 
-guild_web is the unified frontend repo for Tencent Guild, hosting 6 host-targeted apps (web-guild for PC, h5-guild for mobile, qq-guild Electron, qqbrowser, guild-editor for long-post, guild-scraper) and 11 shared packages (guild-components, guild-pb, feed-editor, qrtc, guild-mui, etc.). The stack is Vue 3 + Nuxt 3 + TypeScript + Pinia + Vite 6 + exeditor3. Engineering relies on pnpm workspaces for deps, lerna for releases, ESLint 9 flat config + Husky/lint-staged + Orange CI for pre-commit quality gates, AegisV2 + Datong V4 + OpenTelemetry for unified observability, and turingSdk for human-check risk control.
+guild_web is the unified frontend repo for Tencent Guild. We keep 6 apps and 11 shared packages in it. The apps target different hosts: web-guild for PC, h5-guild for mobile, qq-guild for the Electron client, qqbrowser for the QQ Browser embed, guild-editor for the long-post composer, and guild-scraper for content scraping. Shared packages include guild-components for business widgets, guild-pb for proto-generated types, feed-editor for rich text, and qrtc for realtime media. The stack is Vue 3, Nuxt 3, TypeScript, Pinia, Vite 6, and exeditor3 for rich text. We use pnpm workspaces for deps and lerna for releases. ESLint 9 flat config plus Husky, lint-staged, and Orange CI handle pre-commit checks.
 
 ### Deep dive (2–3 minutes)
 
 <details><summary>Expand</summary>
 
-The core thesis of guild_web is 'one codebase, five host shapes'. Architecturally packages/ holds shared capability (guild-components business widgets, guild-pb protocol, feed-editor rich text, qrtc realtime media) while projects/ implement host specialization. pnpm workspaces' workspace:^ protocol keeps shared packages live-updating downstream; lerna's independent mode avoids cascading bumps for small fixes. web-guild and h5-guild ship Nuxt 3 SSR by default and can flip to CSR via NUXT_SSR=false for hosts without Node; an in-house rollup manualChunks splits vendor into stable/guild tiers plus per-page chunks to keep first-paint payload bounded. The largest business investment in the past year is AI-agent-style channels: agent-settings/tasks/bio/identity/nickname pages use Pinia slices for data modeling and PATCH-style diff-only writes to avoid clobber. Observability mounts aegis SSR-side via server/plugins/aegis.ts, Datong V4 reports business events, OpenTelemetry threads end-to-end. Security-wise turingSdk has separate PC/H5 SDKs adapting to host interaction differences, and tickets are fetched per-action without caching to prevent replay. The repo gates quality at the commit boundary through pnpm + ESLint + Husky + Orange CI so contributors can validate everything locally on first clone.
+The main constraint on guild_web is that one codebase has to run on five host shapes. Architecturally, shared capability lives in packages: guild-components for business widgets, guild-pb for proto-generated types, feed-editor for rich text, qrtc for realtime media. projects holds host-specific code.
+
+pnpm workspaces uses the workspace:^ protocol, so shared package changes flow to apps immediately. lerna runs in independent mode, so a small fix doesn't cascade version bumps. web-guild and h5-guild ship Nuxt 3 SSR by default and flip to CSR with NUXT_SSR=false for hosts without Node.
+
+We didn't take Nuxt's default chunking. We wrote rollup manualChunks that splits vendor into stable and guild tiers plus per-page chunks. lodash and dayjs sit in vendor-stable, and their long-cache hit rate stays above 85%. @tencent/guild-* packages go in vendor-guild, where they update more often.
+
+Over the past year the biggest business investment has been AI-agent channels. agent-settings, tasks, bio, identity, and nickname are five H5 pages, each owning one business entity. Every page has a Pinia slice tracking dirty and valid, writes go out as PATCH diffs, and a failure in one field doesn't force a full-page rollback.
+
+Observability uses three stacks. AegisV2 owns errors and perf. server/plugins/aegis.ts boots it at the SSR stage so white-screen failures still get reported. Datong V4 owns business telemetry. OpenTelemetry handles cross-service traces. All three share a traceId, so from an Aegis error we can jump to OTel for the full chain.
+
+For security we integrate turingSdk. PC and H5 have separate implementations but the external API is the same. Every sensitive action fetches a fresh ticket. We don't cache them — replay defense is the bottom line. On the engineering side, pnpm, ESLint, Husky, and Orange CI form four gates that get more expensive as you go right. A new hire can run the full check chain right after clone.
 
 </details>
 
 ## ✨ Highlights
 
 - **Monorepo 工程治理：pnpm workspaces + lerna 管控 6 业务 × 11 公共包** (architecture · frontend)
-  Situation: the repo hosts 6 host-targeted apps and 11 shared packages; legacy npm/yarn produced phantom dependencies. Task: build a controllable dep graph and release flow. Action: pnpm workspaces with workspace:^ for live-linked internal packages, lerna independent mode for releases, only-allow pnpm + Husky/lint-staged + Orange CI to push validation to commit time. Result: dependency drift eliminated; first-time contributors get the whole gate working from clone.
+  Situation: the repo holds 6 host-specific apps and 11 shared packages, and legacy npm/yarn had produced phantom deps. Task: bring the dep graph and release flow under control. Action: we switched to pnpm workspaces with workspace:^ for live-linked internal packages, lerna independent for releases, only-allow pnpm in preinstall to lock the toolchain, and Husky plus lint-staged plus Orange CI for pre-commit validation. Result: dependency drift stopped, and new hires can run the full check chain right after clone.
   > Keywords: `pnpm-workspaces` · `lerna` · `workspace:^` · `only-allow` · `Orange CI`
 - **Nuxt 3 SSR/CSR 双模 + 自研 rollup 代码分包** (performance · frontend)
-  Situation: web-guild's vendor.js peaked over 1.2MB; 3G LCP exceeded 4s. Task: shrink first-paint without giving up SSR. Action: keep Nuxt 3 SSR, expose NUXT_SSR=false for CSR builds; in-house rollup manualChunks slices along page/component/npm-package, splitting vendor into stable and guild tiers. Result: vendor-stable ~180KB caches long-term, cache hit rate rose from 60% to 85%+, first-paint payload dropped noticeably.
+  Situation: web-guild's vendor.js once went over 1.2MB, and LCP on 3G was past 4 seconds. Task: shrink first paint without giving up SSR. Action: we kept Nuxt 3 SSR and added NUXT_SSR=false for CSR builds. We wrote manualChunks that splits along page, component, and npm package, with vendor split into stable and guild tiers. Result: vendor-stable stays around 180KB, its long-cache hit rate went from 60% to 85%, and first-paint payload dropped.
   > Keywords: `Nuxt3` · `SSR` · `manualChunks` · `vendor-stable` · `LCP`
 - **AI Agent 化频道：agent-settings/tasks/bio/identity/nickname 全链路 H5** (feature · frontend)
-  Situation: h5-guild needed to deliver a new AI-agent channel surface with custom personas and tasks. Task: ship 5 complex form pages and handle concurrent edits without a heavy state-machine framework. Action: one Pinia slice per page tracking dirty/valid, PATCH-style diff-only writes, useAgentContext sharing identity across pages; form widgets unified into identity/bio/nickname editors. Result: all 5 pages launched with zero concurrent-edit conflicts; juniors clone-and-extend the template easily.
+  Situation: h5-guild needed a new channel surface with user-customizable AI personas and task flows. Task: ship 5 pages and handle concurrent edits without pulling in a heavy state-machine framework. Action: each page got its own Pinia slice tracking dirty and valid. Writes went out as PATCH diffs, cross-page identity shared via useAgentContext, and we pulled form widgets into an identity/bio/nickname trio. Result: all 5 pages launched, concurrent-edit conflicts stopped, and later hires extend the template directly.
   > Keywords: `AI-agent` · `Pinia-slice` · `PATCH` · `ImageCropper` · `diff-only`
 - **全链路可观测：AegisV2 + Datong V4 + OpenTelemetry** (observability · frontend)
-  Situation: SSR exceptions can't be diagnosed purely from the browser; business events and perf data scattered across platforms. Task: unify front-and-back observability. Action: web-guild's server/plugins/aegis.ts mounts the SSR-side Aegis reporter, Aegis V2 ships sourcemaps for readable stacks, Datong V4 owns business telemetry, OpenTelemetry propagates trace ids across the stack. Result: SSR exceptions trace back to a source line in Galileo, business diagnosis time drops noticeably.
+  Situation: SSR exceptions are hard to read from the browser, and business events plus perf data sat on different platforms. Task: connect frontend and backend observability into one chain. Action: we boot Aegis in web-guild's server/plugins/aegis.ts at the SSR stage, ship sourcemaps through AegisV2 for readable stacks, route business telemetry through Datong V4, and thread one traceId across services via OpenTelemetry. Result: SSR exceptions trace back to a source line in Galileo, and business diagnosis time dropped.
   > Keywords: `AegisV2` · `Datong` · `OpenTelemetry` · `SSR-plugin` · `sourcemap`
 - **多形态分发：PC Web / H5 / QQ Electron / QQ 浏览器 / 手 Q 终端长贴发布器** (architecture · frontend)
-  Situation: the same channel code must run on five hosts with divergent capabilities, auth and security policies. Task: encapsulate host differences so business code stays unaware. Action: three layers — useHostCapability probing, useShare/useUpload adapters, fallback widgets like share-qrcode — with adapter files placed at parallel paths in web/h5. Result: zero if-platform in business pages; onboarding a new host only requires adding one adapter set.
+  Situation: the same channel code had to run on 5 hosts with different capabilities, auth, and security policies. Task: wrap up the host differences so business code stays unaware. Action: we built three layers — useHostCapability for capability probing, composables like useShare and useUpload for adaptation, and fallback widgets like share-qrcode for UI degradation. Adapter files sit at parallel paths in web and h5. Result: business pages have no if-platform checks, and adding a new host only needs one new adapter set.
   > Keywords: `multi-host` · `JSBridge` · `Electron` · `mini-program-webview` · `useShare`
 
 
@@ -68,21 +78,21 @@ The core thesis of guild_web is 'one codebase, five host shapes'. Architecturall
 
 #### Tiered answers
 
-**🟢 Elevator**: pnpm handles hardlinks and workspace:^; lerna handles versioning and publish; only-allow pnpm + Orange CI gate validation pre-merge.
+**🟢 Elevator**: pnpm owns hardlinks and workspace:^, lerna owns versioning and publish, only-allow pnpm plus Orange CI gate validation pre-merge.
 
 **🔵 Standard** (default):
 
-We have 6 apps and 11 shared packages in one repo. npm/yarn cause phantom deps and bloated node_modules. pnpm workspaces' hardlink + workspace:^ protocol keep internal packages like guild-components live-linked. lerna only owns versioning and publish, avoiding overlap with pnpm. only-allow pnpm in preinstall locks the toolchain, Husky + lint-staged re-validate at commit time, Orange CI runs pnpm install --frozen-lockfile to enforce lockfile consistency.
+We have 6 apps and 11 shared packages in one repo. npm and yarn produced phantom deps and a large node_modules. pnpm workspaces uses hardlinks, and the workspace:^ protocol keeps internal packages like guild-components live-linked so a one-line edit shows up in apps immediately. lerna only handles versioning and publish so its role doesn't overlap with pnpm. only-allow pnpm in preinstall locks the toolchain, Husky plus lint-staged validate again at commit, and Orange CI runs pnpm install --frozen-lockfile to keep the lockfile consistent across machines.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Core trade-off: local DX vs release rigor. Vs yarn v1, pnpm cuts node_modules from GB to hundreds of MB and strict peer resolution exposes phantom deps; vs Nx/Rush, our complexity doesn't need a task graph, so minimal loop: pnpm for deps + lerna for releases.
+We use pnpm plus lerna, not yarn, and we didn't bring in Nx. The reason is scope: our needs land exactly at 'dep management plus version publish'. Compared to yarn v1, pnpm cuts node_modules from GB to hundreds of MB, and strict peer resolution surfaces phantom deps directly. Once a phantom dep shows up in CI we can fix it before it ships.
 
-We got bitten once on consistency: two projects transitively pulled different @vue/composition-api versions, breaking SSR Pinia hydration. Rules since: (1) root package.json pins TS/ESLint/Vue families; (2) all internal deps use workspace:^; (3) Orange CI runs pnpm install --frozen-lockfile.
+We hit a consistency issue once. Two projects transitively pulled different versions of @vue/composition-api, and SSR Pinia hydration broke; we only caught it in production. After the fix we set three rules: the root package.json pins TS, ESLint, and Vue family versions; every internal dep uses workspace:^; Orange CI runs pnpm install --frozen-lockfile, so anyone who can't install locally has to update the lockfile before pushing.
 
-Publishing uses lerna independent mode: small fixes in guild-components don't cascade-bump guild-pb, but detect-changed flags downstream apps for rebuild. At publish time lerna rewrites workspace:^ into real semver in the tarball.
+Releases use lerna independent mode. A bugfix in guild-components doesn't cascade-bump guild-pb, but lerna's detect-changed marks which downstream apps need a rebuild. At publish time lerna rewrites workspace:^ into real semver in the registry tarball.
 
-We skipped Nx task-graph caching: Nuxt 3 build already has Vite cache; adding Nx affected-graph yields marginal wins and raises onboarding cost. Cost: we forgo max cross-package parallel build speed, but pnpm --filter recovers ~80% of it.
+Why not Nx? The affected graph would let CI skip untouched apps and CI time would drop more. But Nuxt 3 build already has Vite cache, so another affected layer gives us little on top and raises the onboarding bar, plus the docs and onboarding need to be rewritten. The cost is we don't get max cross-package parallel build speed, but pnpm --filter recovers most of it, and the team is fine with it for now.
 
 </details>
 
@@ -108,7 +118,7 @@ We skipped Nx task-graph caching: Nuxt 3 build already has Vite cache; adding Nx
 #### Follow-ups (interviewer deep probes)
 
 - ⚖️ **Would you switch to Nx today? What are the wins and costs?** (trade-off)
-  > Nx affected graph could cut CI by 40%+ via skipping untouched projects. Costs: new DSL, complex TS paths, conflicts with Nuxt build hooks; migration ~2-3 weeks of work.
+  > Nx's affected graph would let CI skip untouched apps and cut CI time noticeably. The cost is a new DSL, more complex TS paths, and conflicts with Nuxt build hooks. Migration would take about two to three weeks.
 
 
 #### Evidence
@@ -136,23 +146,23 @@ We skipped Nx task-graph caching: Nuxt 3 build already has Vite cache; adding Nx
 
 #### Tiered answers
 
-**🟢 Elevator**: Three plugins model external-reference / rich-media-token / UX-placeholder — different lifecycles isolated via exeditor3's plugin registry and PluginKey.
+**🟢 Elevator**: Three plugins cover three lifecycles: external reference, rich-media token, UX placeholder. State is isolated via exeditor3's PluginKey.
 
 **🔵 Standard** (default):
 
-Rich-text editors' core tension is extensibility vs state coupling. exeditor3 gives every plugin its own schema/commands/keyboard hooks. AtPlugin persists entity IDs (interops with guild-types). EmojiPlugin handles emoji/sticker rendering fallback. PlaceholderPlugin is pure decoration, never entering schema. Adding new plugins like PollPlugin won't touch the existing three. State is isolated via PluginKey; cross-plugin communication rides transaction.meta.
+The hard part of rich text is extensibility versus state coupling. exeditor3 gives each plugin its own schema, commands, and keyboard hooks. AtPlugin persists user entity IDs and hooks into guild-types. EmojiPlugin handles emoji rendering fallback. PlaceholderPlugin is UX placeholder only, pure decoration, never touches the schema. Adding a new plugin like PollPlugin later doesn't touch the existing three. State is isolated via PluginKey, with one slot per plugin, and cross-plugin messages ride transaction.meta so events don't overwrite each other.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Each plugin's boundary with its pitfalls:
+Each plugin's boundary, plus issues we hit.
 
-(1) AtPlugin is hardest: mentions need three output formats — plainText, StRichText, HTML. StRichText is Mobile QQ's structured-message protocol where @ is a segment node {uid, tinyId, nick}. The plugin's serialize hook branches by output format so business code doesn't leak serialization logic.
+AtPlugin is the hardest. Mentions need three output formats: plainText, StRichText, and HTML. StRichText is Mobile QQ's structured message protocol where @ is a segment node with uid, tinyId, and nick. The plugin's serialize hook branches by output format so business code doesn't carry serialization logic, and adding a new output format only touches the plugin.
 
-(2) EmojiPlugin: early on we stored emoji as raw Unicode; a specific iOS 15 Mobile QQ webview build couldn't render certain code points, forcing SVG fallback. Now a 'host capability → strategy' branch reuses useHostCapability.
+EmojiPlugin had a problem. Early on we stored emoji as raw Unicode. Later, on a specific Mobile QQ iOS webview build, new emoji didn't render and we had to fall back to SVG. Now there's a host-capability probe feeding a strategy choice, reusing useHostCapability.
 
-(3) PlaceholderPlugin sits apart because it must NOT enter schema — otherwise placeholder text persists once the user types. The right approach is exeditor3's decorations API at EditorView render time, never touching doc. A lesson from common ProseMirror community pitfalls.
+PlaceholderPlugin sits apart because it can't enter the schema. If it did, the placeholder text would land in the doc the moment the user types. The right approach is exeditor3's decorations API, inserted dynamically at EditorView render time, never in the doc. This is a common ProseMirror pitfall and we stepped on it once, then wrote an internal wiki note pinning the boundary.
 
-State isolation via plugin registry: each plugin owns a state slot via PluginKey; the event bus only carries transactions; cross-plugin messaging rides meta. Vs 'global store + actions', plugin-state keeps plugins pluggable and debugging cross-plugin coupling is easier with meta than a shared store. Cost: combined features like 'mention-with-reaction' must explicitly read each other via plugin.apply.
+State isolation uses the plugin registry. Each plugin owns a PluginKey slot, the event bus only carries transactions, and cross-plugin messages ride meta. Compared to a global store with dispatch, plugin-state keeps plugins pluggable, and debugging coupling through meta is easier than through a shared store. The cost is that a future combined feature like 'mention-with-reaction' needs to read each other's state via plugin.apply explicitly.
 
 </details>
 
@@ -200,21 +210,21 @@ State isolation via plugin registry: each plugin owns a state slot via PluginKey
 
 #### Tiered answers
 
-**🟢 Elevator**: Three layers bottom-up: useHostCapability for detection, adapter composables for capability, fallback components for UI graceful degradation.
+**🟢 Elevator**: Three layers: useHostCapability probes capability, composables adapt, fallback components handle UI degradation.
 
 **🔵 Standard** (default):
 
-We need one codebase across five hosts without sprinkling if (isQQ) in business code. Bottom layer useHostCapability probes share/clipboard/file/login bits via UA, window globals and JSBridge. Middle layer is composables (useShare, useUpload, useLogin) that pick implementations (JSBridge / Web API / dialog fallback) based on those bits. UI layer ships fallback components — e.g., share degrades to a share-qrcode dialog on hosts without native share. Business code only calls useShare() with no host awareness.
+We need one codebase to run on 5 hosts without sprinkling if (isQQ) in business code. The bottom layer useHostCapability probes share, clipboard, file, and login bits via UA, window globals, and JSBridge. The middle layer is composables like useShare, useUpload, and useLogin, picking among JSBridge, Web API, and dialog fallbacks based on those bits. The UI layer ships fallback components — for example, share degrades to a share-qrcode dialog on hosts without native share. Business code only calls useShare() with no host awareness.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Capability matrix in brief: (1) PC Web is weakest but most universal; (2) H5 inside Mobile QQ webview adds mqq jsapi; (3) qq-guild (Electron) is most capable — direct FS access, system notifications; (4) qqbrowser embed has QQ Browser's own jsapi; (5) the long-post composer runs inside MQQ client SDK so share/upload go through native bridge.
+The capability matrix in short: PC Web is weakest but most universal; H5 inside Mobile QQ adds mqq jsapi; qq-guild is Electron and most capable, with direct FS and system notifications; qqbrowser uses QQ Browser's own jsapi; the long-post composer runs in the MQQ client SDK so share and upload go through the native bridge.
 
-Lesson learned: before layering, share logic lived across a dozen components; adding 'share-to-group' required a dozen ifs, and an Electron upgrade adding system-level share menus exploded regression testing. After layering, only useShare composable and a new ElectronAdapter are touched.
+Before we had layers, share logic was spread across a dozen components. Adding 'share-to-group' meant changing a dozen ifs. An Electron upgrade later added a system-level share menu, and regression testing went up sharply. After layering, only the useShare composable and one new ElectronAdapter change, and business code stayed untouched.
 
-Fallback selection matters: clipboard has navigator.clipboard.writeText on web, fails on older hosts and falls back to document.execCommand('copy'); ultimate fallback is a dialog with a textarea letting the user select-and-copy. Three-tier graceful degradation.
+The fallback itself matters. For clipboard, the web has navigator.clipboard.writeText; some older hosts don't support it and fall back to document.execCommand('copy'); if that fails too, we pop a dialog and let the user select and copy by hand. Three tiers.
 
-Boundary discipline: 'pure business state' (e.g., share copy text) stays out of the abstraction; only 'is capability available' and 'how to call it' belong. Otherwise you get useShare bloated with business copy as an anti-pattern. Cost: business devs learn three layers on first integration. Reward: average maintenance cost drops across 5 hosts; adding a 6th host (e.g., future Vision Pro) only requires a new Adapter.
+We enforce boundaries strictly. Business state doesn't go into the abstraction, like share copy text. Only 'is the capability available' and 'how is it called' go in. Otherwise useShare starts carrying business copy, which is an anti-pattern. The cost is that first-time integrators learn three layers. The payoff is lower average maintenance across the 5 hosts, and adding a sixth only needs one new adapter while existing callers stay unchanged. Looking back, the biggest payoff isn't perf or bundle size, it's mental overhead — new joiners only need to understand composable semantics, not five host runtimes.
 
 </details>
 
@@ -240,7 +250,7 @@ Boundary discipline: 'pure business state' (e.g., share copy text) stays out of 
 #### Follow-ups (interviewer deep probes)
 
 - ⚖️ **If you add a HarmonyOS webview as a 6th host, which layer changes?** (architecture)
-  > Only the bottom layer: useHostCapability adds Harmony UA detection and jsapi probing; middle layer useShare registers a HarmonyAdapter; UI and business layers stay intact.
+  > Only the bottom layer changes. useHostCapability adds Harmony UA detection and jsapi probing. The middle layer registers a HarmonyAdapter in useShare. UI and business layers stay the same.
 
 
 #### Evidence
@@ -268,27 +278,31 @@ Boundary discipline: 'pure business state' (e.g., share copy text) stays out of 
 
 #### Tiered answers
 
-**🟢 Elevator**: guild owns channel global metadata, detail owns transient post state; instantiated by route key with PATCH diff sync; hydration mismatch is diagnosed via timestamps and cookie origin.
+**🟢 Elevator**: guild owns channel metadata, detail owns transient post state, instantiated by route key with PATCH diff sync. For mismatches, check cookies and timestamps first.
 
 **🔵 Standard** (default):
 
-Boundary: guild store owns channel-level metadata — guildId, member permissions, channel config, CDN domains, user role — relatively stable across the channel lifetime. detail store owns 'the currently opened post' — postId, comments, like state, rich content — reset on route change. Both are instantiated per route key (two channel-detail tabs each have their own); cross-store derived state flows through useShare composable. On SSR hydration, the server serializes a store snapshot into __NUXT__, CSR deserializes back into pinia.
+On boundaries, guild store owns channel-level metadata — guildId, member permissions, channel config, CDN domains, the user's role in the channel. All of it is stable across the channel lifetime. detail store owns the currently opened post — postId, comments, like state, rich content — and resets on route change. Both are instantiated per route key, so two channel-detail tabs each have their own. Cross-store derived state flows through the useShare composable. On SSR hydration, the server serializes a store snapshot into __NUXT__, and CSR deserializes it back into pinia.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Hard-won lessons:
+A few lessons from the field.
 
-(1) Boundary disputes: does 'current user's role in current channel' belong in guild or detail? Verdict: guild, because the role doesn't change when navigating posts. However, role-derived 'button visibility' is consumed by detail. 'Who owns data vs who consumes derived' must be strictly separated to avoid circular imports.
+On boundaries there was a dispute: does 'the current user's role in this channel' belong to guild or detail? We put it in guild because the role doesn't change across posts. But the role-derived 'button visibility' is consumed by detail. We keep 'who owns data' and 'who consumes derived state' separate; otherwise the two stores end up importing each other in a cycle.
 
-(2) PATCH-style diff-only sync: on post switch we don't reset detail wholesale — comments and like state can be partially reused (e.g., next post by same author has cached author info). We use store.$patch for incremental updates, backend returns etag-keyed diffs, saving ~30% bandwidth.
+PATCH diff-only sync. On post switch we don't wholesale reset detail. Comment lists and like state can be partially reused — for example, the next post by the same author already has cached author info. We use store.$patch for incremental updates, the backend returns etag-keyed diffs, and bandwidth drops roughly 30%.
 
-(3) SSR hydration mismatch debug playbook, by frequency:
-  - Cookie discrepancy: server reads httpOnly, client can't, login state diverges, a v-if differs across ends. Fix: add console.log on SSR setup + log req.headers.cookie with timestamp;
-  - Timestamp: Date.now() differs by seconds between server and client; fix: write server time into store, ban client regeneration;
-  - Third-party widgets bypassing nextTick: turingSdk injects DOM that hydrate's patch removes. Fix: wrap with ClientOnly;
-  - v-for missing key or using index: minor server/client order differences cause mismatch.
+SSR hydration mismatch debugging, by frequency.
 
-(4) Tooling: Vue devtools Pinia panel → diff server/client snapshot; Chrome Performance → measure hydration cost; console.log last.
+First, cookie differences between server and client. The server reads httpOnly, the client can't, and some v-if ends up different on the two ends. The fix is adding logs in SSR setup and printing req.headers.cookie with a timestamp.
+
+Second, timestamps. Date.now() during server render is server time, during hydrate it's client time, a few seconds apart and mismatch. The fix is writing server time into the store and not regenerating on the client.
+
+Third, third-party widgets that don't wait for nextTick — turingSdk injects DOM that hydration's patch removes. The fix is wrapping with ClientOnly.
+
+Fourth, v-for missing keys or using index as key. Slightly different server and client orderings then mismatch.
+
+For tooling, we open the Vue devtools Pinia panel first to diff server and client snapshots, then Chrome Performance to look at hydration cost, and only then reach for console.log.
 
 </details>
 
@@ -335,25 +349,25 @@ Hard-won lessons:
 
 #### Tiered answers
 
-**🟢 Elevator**: lerna independent + workspace:^ internally, SemVer externally; PB types via codegen; breaking changes must bump major.
+**🟢 Elevator**: lerna independent plus workspace:^ internally, SemVer externally, PB types via codegen, and breaking changes must bump major.
 
 **🔵 Standard** (default):
 
-Three different natures: (1) guild-components is a UI/business component library on independent SemVer — minor bumps mean consumers just refresh deps; (2) guild-pb is protobuf-generated request/response types via codegen — every breaking change must bump major, CI gates on type check; (3) guild-types is hand-maintained domain types, independent. During dev, workspace:^ feeds all 6 apps from packages source; on publish, lerna detect-changed + lerna version rewrites workspace:^ into real semver for the registry. Cross-app conflict mitigation: 'whoever bumps first announces in group' + Orange CI enforces lockfile consistency.
+Three different natures. guild-components is a UI plus business component library on independent SemVer — minor bumps mean consumers just refresh deps. guild-pb is protobuf-generated request/response types via codegen — every breaking change must bump major, CI gates on type check. guild-types is hand-maintained domain types, independent. During dev, workspace:^ feeds all 6 apps from packages source. At publish time, lerna detect-changed plus lerna version rewrites workspace:^ into real semver for the registry. Cross-app conflict mitigation: 'whoever bumps first announces in group chat' plus Orange CI enforcing lockfile consistency.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Version management pain points and mitigations:
+Version management pain points.
 
-(1) SemVer is fuzzy for large UI libs: is changing a default slot content a breaking change? Our rule: 'changes to props/events/slots contract exposed to consumers' = breaking; internal style tweaks = patch; behavior change without API change = minor.
+SemVer is fuzzy for large UI libraries. Is changing a default slot content a breaking change? Our rule: changes to props, events, or slots contract exposed to consumers count as breaking; internal style tweaks are patch; behavior changes without API changes are minor.
 
-(2) PB type strictness: guild-pb is codegen'd from .proto; every backend release triggers codegen + publish. 6 apps may install different versions — A on v2.3, B on v2.4 — yet share a Pinia store. Runtime is fine (types erased) but IDE inconsistency confuses devs. Fix: root package.json pins guild-pb version (peer-style), forcing all 6 apps to upgrade together.
+PB type strictness. guild-pb is codegen'd from .proto, and every backend release triggers codegen plus publish. The wrinkle is that the 6 apps may install different versions — A on v2.3, B on v2.4 — yet share a Pinia store. Runtime is fine because types are erased, but IDE inconsistency confuses devs. The fix is the root package.json pinning guild-pb version (peer-style), forcing all 6 apps to upgrade together.
 
-(3) lerna independent pain: detect-changed is accurate but limited — it tells you packages/A changed and downstream X, Y need rebuild, but can't auto-decide major/minor/patch. Devs must write conventional commits + lerna parses them.
+lerna independent's pain. detect-changed is accurate but limited. It tells you packages/A changed and downstream X, Y need rebuild, but it can't auto-decide major/minor/patch. Devs write conventional commits and lerna parses them.
 
-(4) Cross-app coordination: rule is 'pre-publish, @-mention all owners in the chat with changelog, wait 24h'; breaking changes also link a migration guide in the changelog. Sounds primitive but beats any tool — better hit rate than auto codemod.
+Cross-app coordination. Our rule is 'pre-publish, @-mention all owners in the chat with changelog, wait 24h'. Breaking changes also link a migration guide in the changelog. It sounds primitive, but it works better than any tool — hit rate beats auto codemod.
 
-(5) media-link is the most dangerous shared low-level component — used by 5 apps, one prop change = breaking. Policy: 'adding a prop must default-compat; removing a prop must deprecate one version first' — plus a custom ESLint rule warns consumers on deprecated usage.
+media-link is the most sensitive shared low-level component — used by 5 apps, one prop change is breaking. Policy: adding a prop must default-compat; removing a prop must deprecate one version first. A custom ESLint rule warns consumers on deprecated usage.
 
 </details>
 
@@ -403,25 +417,25 @@ Version management pain points and mitigations:
 
 #### Tiered answers
 
-**🟢 Elevator**: Split by business entity (identity/task/bio/nickname) into 5 separate pages, each with its own editor component; pages handle dynamic routing, views own UI only.
+**🟢 Elevator**: Split by business entity into 5 separate pages, each with its own editor. pages handles dynamic routing, views owns UI.
 
 **🔵 Standard** (default):
 
-An AI Agent is a virtual channel member; its attributes naturally split by entity — identity card / tasks / bio / nickname / entry settings. A single mega-form has three problems: (1) commit failure rolls back the whole page; (2) a single slow field blocks the form; (3) the backend already shards these by microservice — wrapping a BFF aggregator slows things down. So pages/agent-settings/[guildId]/[tinyId]/index.vue is the entry navigator, each child route owns its editor component, and the editor commits locally.
+An AI Agent is a virtual channel member, and its attributes split along natural business entities: identity card, tasks, bio, nickname, and entry settings. The initial ask was 'give the agent a persona-shaped config panel'. We didn't build a mega-form for three reasons: commit failure would roll back the whole page; one slow field would block the whole form; the backend already shards these into microservices, so wrapping a BFF aggregator would slow things down. So pages/agent-settings/[guildId]/[tinyId]/index.vue is the entry navigator, each child route owns its editor component, and editors commit locally.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Real drivers behind the split: (1) backend entity-level microservices were already a fact, frontend aggregation would be anti-pattern; (2) users in agent-config scenarios typically 'enter, edit one item, leave' — a mega-form is worse UX; (3) each editor has its own special state (identity has avatar cropping, bio embeds guild-editor rich text, tasks has drag-reorder) — isolated editors cut per-page LOC by 50%+.
+Three real drivers behind the split. First, the backend is already split into entity-level microservices, so frontend aggregation would be an anti-pattern. Second, in agent-config scenarios users 'enter, edit one thing, leave', and a mega-form gives worse UX. Third, each editor has its own special state — identity has avatar cropping, bio embeds guild-editor rich text, tasks has drag-reorder — and isolating them cut per-page LOC roughly in half.
 
-Few interesting engineering points:
+A few engineering points.
 
-(1) Dynamic routing [guildId]/[tinyId] expresses 'an Agent within a Guild'. Pages layer reads useRoute().params and passes them down; views layer is route-shape-agnostic (eases later PC migration).
+Dynamic routing uses [guildId]/[tinyId] to express 'an agent under a guild'. pages reads useRoute().params and passes them down. views doesn't care about route shape, which makes a later PC port easier.
 
-(2) Editor abstraction uses 'controlled editor': each editor only exposes v-model:value + onCommit; commit logic is aggregated by the parent calling BFF. New editors don't need to learn the store.
+editors use the controlled-editor pattern. Each editor exposes only v-model:value and onCommit, the parent aggregates commits and calls the BFF. Adding a new editor doesn't need knowledge of the store, and new contributors don't need to read the old code from the top.
 
-(3) Weak cross-editor coupling (e.g., changing identity should refresh the tasks card) uses EventBus + invalidate marks, not two-way store binding — two-way binding would expose intermediate state when one editor fails.
+Weak cross-editor coupling, like 'change identity, refresh the tasks card', goes through an EventBus with invalidate marks, not two-way store binding. Two-way binding would expose intermediate state when one editor fails, which is the worst kind of bug to reproduce.
 
-Reflection: this architecture is weak at strong cross-field coupling. 'Changing identity auto-changes nickname' must be glued in the parent page with an effect. If such requirements grow, a form-engine abstraction (formily-style) would help; current density doesn't justify the complexity.
+The current shape is weak at strong coupling, like 'changing identity auto-changes nickname'. That has to be glued in the parent page with an effect. If such requirements grow, a form-engine abstraction (formily-style) would help. The current business density doesn't justify that complexity.
 
 </details>
 
@@ -471,27 +485,27 @@ Reflection: this architecture is weak at strong cross-field coupling. 'Changing 
 
 #### Tiered answers
 
-**🟢 Elevator**: useShare for per-post sharing, useGlobalShare for the global share panel; host capability detection picks one of native / screenshot dialog / QR code.
+**🟢 Elevator**: useShare is per-post sharing, useGlobalShare is the global share panel. Host capability detection picks one of native, screenshot dialog, or QR code.
 
 **🔵 Standard** (default):
 
-Two clearly-scoped composables: useShare takes props (post id/title/thumbnail) and returns a share() method, called by per-post UI like cards; useGlobalShare is an app-level panel (the share entry in the top nav), owning global state. Three path picks: (1) host supports native share (Mobile QQ embed, Electron, QQ Browser) — invoke jsapi for native panel; (2) no native but can screenshot (PC modern browsers) — share-screen-dialog auto-screenshots + watermarks + lets user download or copy; (3) none of the above (old browsers) — share-qrcode dialog. Types in guild-share.ts (ShareTarget / ShareContent) prevent raw-object usage in business code.
+Two clearly-scoped composables. useShare takes props (post id, title, thumbnail) and returns a share() method, called by per-post UI like cards. useGlobalShare is an app-level panel (the share entry in the top nav), owning global state. Three path picks: hosts supporting native share (Mobile QQ embed, Electron, QQ Browser) invoke jsapi for the native panel; no native but screenshot-capable (PC modern browsers) uses share-screen-dialog, auto-screenshots with a watermark, and lets the user download or copy; none of the above (old browsers) uses share-qrcode. Types in guild-share.ts (ShareTarget, ShareContent) prevent raw-object usage in business code.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Design trade-offs:
+Design trade-offs.
 
-(1) Why not merge useShare and useGlobalShare: different lifecycles. useShare mounts/unmounts with the post component; useGlobalShare lives with the app. Merging would tie the global panel to a specific post's context and force post cards to subscribe to global events — coupling reversed. Keeping them split, the global panel calls useGlobalShare.share(payload) with payload injected by the caller — unidirectional data flow.
+Why not merge useShare and useGlobalShare? Different lifecycles. useShare mounts and unmounts with the post component; useGlobalShare lives with the app. Merging would tie the global panel to a specific post's context and force post cards to subscribe to global events — coupling reversed. With them split, the global panel calls useGlobalShare.share(payload) where payload is injected by the caller (possibly from useShare or the screenshot module) — unidirectional data flow.
 
-(2) share-screen-dialog screenshotting via html2canvas, with pitfalls: cross-origin images need a CORS proxy; oversized canvas OOMs on some phones; ultimate fallback degrades to 'text + link' share when screenshotting fails.
+share-screen-dialog screenshotting via html2canvas with pitfalls: cross-origin images need a CORS proxy; an oversized canvas OOMs on some phones; we added a final fallback that degrades to a 'text plus link' share when screenshotting fails.
 
-(3) QR fallback UX: many PC users don't have phones handy, so share-qrcode also shows a 'short-link copy' button as a tertiary fallback.
+QR fallback UX. Many PC users don't have phones handy, so share-qrcode also shows a 'short-link copy' button as a secondary fallback.
 
-(4) guild-share.ts type discipline: ShareTarget is a union enum 'wechat' | 'qq' | 'weibo' | 'copy_link' giving IDE hints, no string magic. ShareContent is a discriminated union for text/image/video — TS exhaustiveness check fails compilation on missing branches.
+Type discipline in guild-share.ts. ShareTarget is a union enum 'wechat' | 'qq' | 'weibo' | 'copy_link', giving IDE hints and avoiding string magic. ShareContent is a discriminated union for text, image, and video — TypeScript exhaustiveness check fails compilation on missing branches.
 
-(5) Observability: every share call brackets a probe (scene/target/result). Datong yields per-host per-target success rate. We once spotted H5's WeChat-share success rate collapse on a Mobile QQ webview version — located within 1h to mqq jsapi payload field rename, rolled back in seconds.
+Observability. Every share call brackets a probe (scene, target, result). Datong yields per-host per-target success rate. We once saw H5's WeChat-share success rate drop on a Mobile QQ webview version and traced it within an hour to an mqq jsapi payload field rename, then rolled back the old path.
 
-Reflection: share-screen-dialog still does client-side screenshotting. Backend has a more accurate OG-image service. Plan: move screenshotting to the backend, frontend only fetches image URLs — fixes OOM and CORS pains.
+share-screen-dialog still does client-side screenshotting. The backend has a more accurate OG-image service. The plan is to move screenshotting to the backend; the frontend would only fetch image URLs, which fixes OOM and CORS together.
 
 </details>
 
@@ -542,21 +556,21 @@ Reflection: share-screen-dialog still does client-side screenshotting. Backend h
 
 #### Tiered answers
 
-**🟢 Elevator**: NUXT_SSR=false flips to CSR; in-house manualChunks slices along page / component / npm-package; vendor splits into stable and guild tiers.
+**🟢 Elevator**: NUXT_SSR=false flips to CSR, manualChunks splits along page, component, and npm package, and vendor splits into stable and guild.
 
 **🔵 Standard** (default):
 
-Nuxt 3 defaults to SSR. Runtime config reads NUXT_SSR; when false, nuxt generate emits CSR for hosts without Node (older QQ Browser cores). In SSR mode server/plugins/aegis.ts mounts server-side so first-byte exceptions are reported. Chunking sits in vite build.rollupOptions.output.manualChunks across three axes: (1) per-page chunks; (2) high-reuse components like virtual-waterfall isolated; (3) npm deps grouped by package name, with vendor split into stable (lodash, dayjs) vs guild (@tencent/guild-*).
+Nuxt 3 defaults to SSR. Runtime config reads NUXT_SSR, and when it's false nuxt generate emits CSR for hosts without Node, like older QQ Browser cores. In SSR mode server/plugins/aegis.ts boots on the server side so first-byte exceptions still get reported. Chunking lives in vite build.rollupOptions.output.manualChunks across three layers. First is per-page, one chunk per page. Second is high-reuse components like virtual-waterfall, each isolated. Third is npm deps grouped by package name, with vendor split into stable (lodash, dayjs) and guild (@tencent/guild-*).
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Driven by host diversity: browser + QQ Browser embed + Mobile QQ webview + WeChat mini-program webview have divergent SSR support; older MQQ cores can't even refresh server-rendered cookies. Dual artifacts mandatory.
+The driver is host diversity. Browser, QQ Browser embed, Mobile QQ webview, and WeChat mini-program webview all have different SSR support. Older MQQ cores can't even refresh server-rendered cookies, so dual builds are required and a single artifact can't cover every host.
 
-SSR vs CSR differ in more than a flag: (1) useFetch only works in setup; calling it in onMounted resolves undefined, called out in our README; (2) server/plugins/aegis.ts only fires SSR-side, so CSR mode needs a second mount in app.vue; (3) Pinia serialize is redundant in CSR but we keep it for code-path symmetry.
+SSR and CSR differ in more than a flag. useFetch only works in setup; calling it in onMounted resolves undefined, and we wrote this into the README and a lint rule. server/plugins/aegis.ts only fires on the server, so CSR mode needs a second mount in app.vue. Pinia's serialize is redundant on CSR, but we kept it for code-path symmetry.
 
-Chunking is measurement-driven: vendor.js started at 1.2MB+, 3G LCP past 4s. The manualChunks rule is 'co-locate code with similar change cadence': lodash + dayjs (stable for months) → vendor-stable ~180KB long-cached; @tencent/guild-* → vendor-guild ~260KB updated often with sourcemaps; page chunks load on route change. Vendor cache hit rate climbs from 60% to 85%+.
+The chunking rule came from measurement. vendor.js started at over 1.2MB and LCP on 3G was past 4 seconds. Our rule is 'co-locate code with similar change cadence'. lodash and dayjs are stable for months and go into vendor-stable at around 180KB with long-term caching. @tencent/guild-* updates with releases and goes into vendor-guild at around 260KB; sourcemaps track it. Page chunks load only on route change. After the split, vendor-stable's cache hit rate went from 60% to 85%, and the CDN gain showed up directly in second-visit LCP numbers.
 
-Trade-off: we dropped Nuxt 3's default 'split by dep graph' because it inlines one-page-only npm deps into page chunks, duplicating shared libs across sibling pages. Hand-rolled rules lose automation but significantly raise cache hit rate.
+As a trade-off we dropped Nuxt 3's default dep-graph split. It inlines single-page npm deps into page chunks, so adjacent pages redownload the same dep. Handwritten rules give up automation but the cache hit rate goes up, and apps get a more predictable post-release experience.
 
 </details>
 
@@ -582,7 +596,7 @@ Trade-off: we dropped Nuxt 3's default 'split by dep graph' because it inlines o
 #### Follow-ups (interviewer deep probes)
 
 - ⚖️ **Why not lean on Nuxt 3's default route-based splitting?** (trade-off)
-  > Default splits by dep graph, inlining single-page npm deps into the page chunk and duplicating across sibling pages. Hand-rolled rules sacrifice automation but raise cache hit rate from 60% to 85%.
+  > The default splits by dep graph and inlines single-page npm deps into the page chunk, so adjacent pages redownload the same dep. Handwritten rules lose automation but raise the cache hit rate from 60% to 85%.
 
 
 #### Evidence
@@ -608,25 +622,25 @@ Trade-off: we dropped Nuxt 3's default 'split by dep graph' because it inlines o
 
 #### Tiered answers
 
-**🟢 Elevator**: Three pillars: DOM recycling pool, IntersectionObserver for lazy load, ResizeObserver for sliced async height measurement.
+**🟢 Elevator**: A DOM recycle pool, IntersectionObserver for lazy load, and ResizeObserver for sliced async height measurement.
 
 **🔵 Standard** (default):
 
-Waterfall's pain: unknown heights, two-column staggering. Our approach: (1) virtual-waterfall maintains a fixed-size DOM recycle pool (~50 items), recycling scrolled-out nodes for items entering viewport; (2) IntersectionObserver watches a pre-bottom sentinel to trigger pagination; (3) for unknown image heights we use estimated placeholders, then update real heights via ResizeObserver in sliced async batches to avoid mass reflow; (4) guild-waterfall-feed has separate implementations in web-guild and h5-guild differing only in columns and card style; the core algorithm lives in packages/guild-components.
+The waterfall pain is unknown heights and two-column staggering. Our approach: virtual-waterfall maintains a fixed-size DOM recycle pool, say 50 item DOMs, and scrolled-out nodes are recycled for items entering the viewport. IntersectionObserver watches a pre-bottom sentinel to trigger pagination. For unknown image heights we use estimated placeholders, then update real heights via ResizeObserver in sliced async batches to avoid reflowing many items at once. guild-waterfall-feed has separate copies in web-guild and h5-guild differing in column count and card style; the core algorithm lives in packages/guild-components.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Key perf issues and fixes:
+Key perf points and fixes.
 
-(1) DOM recycling vs Vue reactivity: naive v-for + key creates one vnode per row, exploding at 10k. Pool size = viewport height ÷ min card height × buffer ratio — e.g., 50 DOM nodes cover 100 virtual items, repositioned via transform: translateY, data swapped via ref. We didn't use vue-virtual-scroller because it handles two-column waterfall poorly and can't customize image-lazy timing.
+DOM recycling versus Vue reactivity. Plain v-for + key creates one vnode per row, and 10k rows can't hold up. The recycle pool sizes as 'viewport height over minimum card height times a buffer multiplier' — for example 50 DOM nodes cover 100 virtual items, repositioned via transform: translateY with data swapped through ref. We didn't use vue-virtual-scroller because its two-column waterfall support is weak and we can't customize image-lazy timing.
 
-(2) Height-measurement batching: image load is async; 10 images loading concurrently trigger 10 reflows. We use requestIdleCallback to merge measurement requests within a 16ms frame and batch-apply to column heights. Cost: first paint has brief column-height stagger, almost invisible.
+Height measurement needs batching. Image load is async, and 10 images loading together trigger 10 reflows. We use requestIdleCallback to merge measurement requests into a 16ms frame and batch-apply to column heights. The cost is brief column-height stagger on first paint, barely visible, and the product team accepted it.
 
-(3) IntersectionObserver vs scroll event: scroll at 60fps is a perf nightmare; IO is browser-scheduled and frame-friendly. We use separate IO instances for 'pagination sentinel' and 'card lazy load' (merging callbacks slows response). Thresholds are tuned carefully.
+IntersectionObserver versus scroll. 60fps scroll is unfriendly for perf. IO is browser-scheduled with fewer dropped frames. We use separate IO instances for the pagination sentinel and card lazy-load so callbacks don't get merged and slow response. Thresholds are tuned.
 
-(4) H5 vs PC differences: H5 has small screens and 2 columns, so pool can be smaller (20-30); PC has 3-4 columns, pool 70+. Different configs, same implementation.
+H5 vs PC is a config difference, not an implementation one. H5 has small screens with 2 columns, so a pool of 20 to 30 is fine. PC is wider with 3 to 4 columns, pool above 70.
 
-Perf data: at 10k mock items FPS stays 55+; memory drops ~80% vs naive implementation.
+Measurement: at 10k mock items FPS stays above 55 and memory drops roughly 80% versus the naive approach, taken from a pre-launch stress-test run.
 
 </details>
 
@@ -652,7 +666,7 @@ Perf data: at 10k mock items FPS stays 55+; memory drops ~80% vs naive implement
 #### Follow-ups (interviewer deep probes)
 
 - ⚖️ **If you add infinite scroll + anchor jump (user clicks anchor to scroll to item 5000), how does the architecture change?** (feature)
-  > Persist column-height arrays to the store; on jump, restore heights, derive scrollTop from estimatedHeight × index, fill unmeasured slots with estimates, correct via ResizeObserver after the jump.
+  > Persist column-height arrays in the store. On jump, restore the height array, derive scrollTop from estimatedHeight × index, fill unmeasured slots with estimates, then correct via ResizeObserver after landing.
 
 
 #### Evidence
@@ -681,27 +695,27 @@ Perf data: at 10k mock items FPS stays 55+; memory drops ~80% vs naive implement
 
 #### Tiered answers
 
-**🟢 Elevator**: Phase 1 batches signature requests, phase 2 uploads in parallel — saving per-file handshake; auth adapts pskey/skey/access_token via header switches.
+**🟢 Elevator**: Phase 1 batches signature requests, phase 2 uploads in parallel — saving per-file handshake. Auth adapts pskey, skey, and access_token via header switches.
 
 **🔵 Standard** (default):
 
-Two phases: (1) fileBatchUpload posts a batch of file metadata (filename/size/md5); backend returns per-file upload URL + signature + uploadId; (2) client PUTs file content in parallel (fileUpload). Wins: handshake happens once — uploading 9 photos saves 8 signature roundtrips; backend can also do risk/quota precheck in phase 1. Multi-auth: Mobile QQ uses pskey, PC web uses skey, third-party uses access_token — different headers (uin/pskey vs Authorization). An axios interceptor auto-injects based on host detection.
+Two phases. fileBatchUpload posts a batch of file metadata (filename, size, md5); the backend returns each file's upload URL, signature, and uploadId. The client then PUTs file content in parallel, that's fileUpload. The win is one handshake — uploading 9 photos saves 8 signature roundtrips. The backend can also do risk and quota pre-check in phase 1. For auth, Mobile QQ uses pskey, PC uses skey, and third-party uses access_token, with different headers (uin/pskey versus Authorization). An axios interceptor auto-injects them based on host detection.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Engineering depth:
+Engineering depth.
 
-(1) Cost of client-side md5: for big files (>10MB), running md5 on main thread freezes UI. We push spark-md5 chunk-incremental md5 into a Web Worker. Business code just sees await getMd5(file).
+Cost of client-side md5. For files above 10MB, running md5 on the main thread freezes the UI, so we push spark-md5 chunk-incremental md5 into a Web Worker. Business code just sees await getMd5(file).
 
-(2) Concurrency control: phase 2 is parallel, but browsers cap same-origin connections at 6 — some webviews are stricter (4). A Semaphore limits max=4; failed chunks resume via uploadId retry.
+Concurrency control. Phase 2 is parallel, but browsers cap same-origin connections at 6, and some webviews are stricter at 4. A Semaphore limits max=4, and failed chunks resume via uploadId retry.
 
-(3) Resumable retry: each PUT retries up to 3 times with exponential backoff via uploadId; if >30% of files fail, abort the whole batch so the user re-triggers — avoids polluting UI with half-success state.
+Resumable retry. Each PUT retries up to 3 times with exponential backoff via uploadId. If more than 30% of files fail, we abort the whole batch so the user retriggers, avoiding a half-success state in the UI.
 
-(4) Auth adapter pitfall: early on each project had its own axios interceptor, three diverging implementations. H5 lost pskey on certain paths. We hoisted it to packages/guild-components/src/base-components/media-link; business code imports the composable. media-link.vue checks URL scheme on render — cdn.xxx URLs are pre-signed, so pskey would interfere.
+Multi-auth adapter pitfall. Early on each project had its own axios interceptor, three diverging implementations, and H5 lost pskey on certain paths. We hoisted it to packages/guild-components/src/base-components/media-link, and business code imports the composable. media-link.vue checks URL scheme on render — cdn.xxx URLs are pre-signed, so pskey would interfere.
 
-(5) Whistle proxying: for dev, route requests to prod backend with local cookies via whistle rules. Onboarding doc has a dedicated section.
+Whistle proxying. For dev, we route requests to the prod backend with local cookies via whistle rules. Onboarding docs have a dedicated section with common rule recipes.
 
-Reflection: if rebuilding, we'd consider tus.io protocol over our custom two-phase — more mature ecosystem. We didn't switch because Tencent backend infra is built around this protocol; changing requires backend coordination with low ROI.
+If rebuilding, we'd consider tus.io over the custom two-phase protocol — more mature ecosystem. We didn't switch because Tencent backend infra is built around this protocol; changing requires backend coordination, and ROI is low for now. The upload setup is still evolving — the next step is moving the worker to a SharedWorker so multiple uploads share one md5 context.
 
 </details>
 
@@ -747,35 +761,29 @@ Reflection: if rebuilding, we'd consider tus.io protocol over our custom two-pha
 
 #### Tiered answers
 
-**🟢 Elevator**: Four gates getting more expensive: editor live-lint → pre-commit lint-staged → pre-push husky → Orange CI.
+**🟢 Elevator**: Four gates that get more expensive: editor live-lint, pre-commit lint-staged, pre-push husky, and Orange CI.
 
 **🔵 Standard** (default):
 
-Four gates: (1) editor live-lint (VSCode + ESLint) — cheapest, real-time; (2) lint-staged at commit runs ESLint + Prettier on staged files via Husky pre-commit hook; (3) Husky pre-push runs type check and unit tests (optional); (4) Orange CI does full lint + type check + build + unit tests — most expensive. We migrated to ESLint 9 flat config (eslint.config.mjs) — programmable config, per-glob rule sets. CI mandates 100% pass; local is 100% recommended; emergency --no-verify is allowed but must be explained in PR description.
+Four gates: editor live-lint (VSCode plus ESLint) — the cheapest and real-time; lint-staged at commit, running ESLint plus Prettier on staged files via Husky pre-commit; Husky pre-push for type check and unit tests (optional); Orange CI running the full lint, type check, build, and unit tests — the most expensive. We migrated to ESLint 9 flat config (eslint.config.mjs) — programmable config with per-glob rule sets. CI mandates pass; local is recommended. Emergency --no-verify is allowed but must be explained in the PR description.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Why not CI-only — four reasons:
+Four reasons we don't rely only on CI.
 
-(1) Feedback loop: editor is ms, CI is 5-15 min. Writing a buggy line and learning at CI = 10x context switch cost.
+Feedback loop. Editor is milliseconds, CI is 5 to 15 minutes. Writing a buggy line and learning at CI multiplies context-switch cost by 10x.
 
-(2) Hot-path triage: CI resources are shared across the org. Cheap local checks filter 'sure-fail' so CI tackles 'maybe-fail' — best resource use.
+Hot-path triage. CI resources are shared across the org. Cheap local checks filter the sure-fail cases so CI tackles the maybe-fail ones, which is the best use of resources.
 
-(3) Main branch protection: CI gates merge, but unguarded push means devs habitually push broken commits to feature branches, polluting git history.
+Main branch protection. CI gates merge, but without a pre-push gate, devs habitually push broken commits to feature branches and pollute git history.
 
-(4) Progressive education: lint-staged auto-fixes (prettier formatting) — 'wrote wrong → tool fixed it' loop builds muscle memory.
+Progressive education. lint-staged auto-fixes at commit time (prettier formatting). The 'wrote wrong → tool fixed it' loop builds muscle memory after a hundred repetitions.
 
-ESLint 9 flat config migration value:
+ESLint 9 flat config migration value. The old .eslintrc was a config black box with invisible rule inheritance. flat config is a plain JS module exporting an array, each entry has { files, rules, plugins } matched by glob — much more readable. It allows dynamic plugin import — for example, enable vue/strongly-recommended only in packages/guild-components and looser rules elsewhere, all in one config file. pnpm plus flat config also removes monorepo ambiguity: .eslintrc used to auto-merge up the tree so packages and projects polluted each other; flat config declares files glob explicitly with clear scope.
 
-(a) Old .eslintrc was a 'config black box' with invisible rule inheritance; flat config is a plain JS module exporting an array, each entry { files, rules, plugins } matched by glob — vastly more readable.
+Pitfall. lint-staged and husky 9.x have a known bug where Windows stash failures can lose files. We pin 9.0.0 plus an internal workaround script.
 
-(b) Dynamic plugin import: e.g., enable vue/strongly-recommended only in packages/guild-components, looser elsewhere — all in one config file.
-
-(c) pnpm + flat config eliminates monorepo ambiguity: .eslintrc auto-merged up the tree, so packages and projects polluted each other; flat config declares files glob explicitly with clear scope.
-
-Pitfall: lint-staged + husky 9.x have a known bug — Windows stash failures can lose files. We pin 9.0.0 + an internal workaround script.
-
-Reflection: CI is still the bottleneck at ~5 min; optimizing to <2 min needs incremental lint + affected-test. Nx is great here but, as noted earlier, we didn't switch.
+CI speed is still the bottleneck at around 5 minutes. Optimizing to under 2 minutes needs incremental lint and affected-only tests. Nx is strong here but, as noted, we didn't switch.
 
 </details>
 
@@ -825,31 +833,31 @@ Reflection: CI is still the bottleneck at ~5 min; optimizing to <2 min needs inc
 
 #### Tiered answers
 
-**🟢 Elevator**: Aegis owns frontend exceptions/perf, Datong drives business analytics, OTel traces cross-service spans — three layers with non-overlapping scopes.
+**🟢 Elevator**: Aegis owns frontend exceptions and perf, Datong drives business analytics, OTel traces cross-service spans. Three layers with non-overlapping scopes.
 
 **🔵 Standard** (default):
 
-Three roles: (1) AegisV2 = Tencent's frontend monitoring platform — JS errors, perf metrics (LCP/FID/CLS), white screens; strong at browser-side error aggregation and alerting; (2) Datong V4 = data-platform analytics — business KPIs, funnels, cohorts; every 'button click / page dwell' goes here; (3) OpenTelemetry = distributed tracing from browser to backend microservices via shared traceId, strong at slow-request and cross-service dependency diagnosis. server/plugins/aegis.ts boots Aegis at Nuxt SSR entry so even white-screen first-paint can report. A unified useObserve composable exposes reportError/reportEvent/startSpan — business code is backend-agnostic.
+Three roles. AegisV2 is Tencent's frontend monitoring platform, owning JS errors, perf metrics (LCP, FID, CLS), and white-screen detection, and strong at browser-side error aggregation and alerting. Datong V4 is the data-platform analytics system, strong at business KPIs, funnels, and cohorts; button clicks and page dwell go there. OpenTelemetry runs distributed traces from the browser through backend microservices via one traceId, strong at slow-request and cross-service dependency diagnosis. server/plugins/aegis.ts boots Aegis at the Nuxt SSR stage so white-screen first paints can still report. A unified useObserve composable exposes reportError, reportEvent, and startSpan, so business code stays backend-agnostic.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Why not consolidate — each tool's strength is irreplaceable:
+Why not consolidate — each tool's strength is irreplaceable.
 
-(1) AegisV2 excels at error fingerprint aggregation: the same error 10k times collapses to one record with auto sourcemap. Datong (analytics) doesn't dedupe; OTel cares about spans not fingerprints.
+AegisV2 excels at error fingerprint aggregation. The same error ten thousand times collapses to one record with auto sourcemap. Datong as an analytics platform doesn't dedupe. OTel cares about spans, not fingerprints.
 
-(2) Datong owns business funnels: 'open channel → enter post → like → comment' retention, cohort and time slicing. Aegis lacks OLAP.
+Datong owns business funnels. 'Open channel, enter post, like, comment' retention needs cohort and time slicing. Aegis lacks OLAP.
 
-(3) OTel owns cross-service correlation: a slow post might show 800ms in Aegis, but is it BFF slow or RPC slow? OTel walks the traceId chain and points to the exact service and span.
+OTel owns cross-service correlation. A slow post might show 800ms in Aegis, but is it BFF slow or backend RPC slow? OTel walks the traceId chain and points to the exact service and span.
 
-Forcing one tool: Aegis for analytics? dimension explosion, slow queries; Datong for errors? no aggregation, no sourcemap; OTel for analytics? no out-of-the-box BI.
+Forcing one tool: Aegis for analytics — dimension explosion, slow queries. Datong for errors — no aggregation, no sourcemap. OTel for analytics — no out-of-the-box BI.
 
-Co-design details:
+Co-design.
 
-(a) Unified traceId: generated on page entry; all three include it. From an Aegis error, jump to OTel for the full chain or Datong for user path — three views of the same user.
+Unified traceId. Generated on page entry; all three include it. From an Aegis error we jump to OTel for the full chain or Datong for the user path. Three views of one user.
 
-(b) Staggered sampling: Aegis full sampling (errors are rare); Datong scene-based (core funnels 100%, non-core 10%); OTel 10% head sampling + 100% error tail sampling. Total volume controlled, critical scenes preserved.
+Staggered sampling. Aegis runs full sampling because errors are rare. Datong samples by scene — core funnels 100%, non-core 10%. OTel uses 10% head sampling plus 100% error tail sampling. Total volume stays controlled while critical scenes are preserved.
 
-(c) SSR injection care: Aegis on server avoids window — use globalThis; Datong is client-only, stubbed in SSR; OTel trace context flows via HTTP header across server/client. server/plugins/aegis.ts only boots Aegis; the other two live in plugins/client/observe.ts.
+SSR injection needs care. Aegis on server avoids window — use globalThis. Datong is client-only and is stubbed during SSR. OTel trace context flows via HTTP header across server and client. server/plugins/aegis.ts only boots Aegis; the other two live in plugins/client/observe.ts.
 
 </details>
 
@@ -898,31 +906,31 @@ Co-design details:
 
 #### Tiered answers
 
-**🟢 Elevator**: High-risk action triggers slider captcha → SDK returns a ticket → business attaches ticket to API request → backend validates and consumes; one-time use, never cached.
+**🟢 Elevator**: A high-risk action triggers a slider check, the SDK returns a ticket, business sends the ticket to the backend, and the backend validates and consumes it. One-time use, never cached.
 
 **🔵 Standard** (default):
 
-TuringShield is Tencent's unified risk-control gateway. Flow: (1) a high-risk action (post, follow, like-spam threshold) triggers turingSdk.verify({ scene }); (2) SDK shows slider / puzzle / silent challenge UI; on success returns a ticket (one-time credential with scene/ts/sign); (3) business attaches ticket to header or body and sends with the business request; (4) backend validates ticket against TuringShield service, only then executes real business; (5) consumed tickets are dead; replay rejected. PC and H5 have separate utils/turingSdk/index.ts because load sources differ (PC via CDN script, H5 via host jsapi), but external API is unified.
+turingSdk is Tencent's unified risk-control gateway. The flow: a high-risk action (post, follow, like-spam threshold) triggers turingSdk.verify({ scene }). The SDK shows a slider, puzzle, or silent challenge, and on success returns a ticket containing scene, ts, and sign. Business attaches the ticket to a request header or body and sends it with the business call. The backend validates the ticket against the turingSdk service and only then runs the real business logic. Once validated the ticket is dead — replay is rejected. PC and H5 each have their own utils/turingSdk/index.ts because the load source differs — PC via CDN script, H5 via host jsapi — but the external API is the same.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-Why tickets must not be cached — three design layers:
+Why we can't cache the ticket — three design layers.
 
-(1) Replay defense: caching a ticket degrades a one-time credential into a long-lived token, letting attackers replay high-risk endpoints. Backend validation is atomic — duplicate consumption is rejected outright.
+Replay defense. Caching a ticket degrades a one-time credential into a long-lived token, and one ticket would let an attacker replay high-risk endpoints. Backend validation is atomic, so duplicate consumption is rejected.
 
-(2) Cross-scene defense: different scenes (post / follow / payment) carry different risk levels. Posting may trigger silent challenge; payment requires sliders. Caching would mean reusing a low-strength credential for a high-risk action. The SDK requires scene as an arg so business can't bypass.
+Cross-scene defense. Different scenes (post, follow, payment) carry different risk levels. Posting is low-risk and may trigger a silent challenge; payment is high-risk and triggers a slider. Caching would mean reusing a low-strength credential for a high-risk call. The SDK requires scene as an argument, so business can't bypass it.
 
-(3) Time-window defense: tickets include ts; backend enforces a 60s window. No caching ensures attackers can't 'fetch a ticket at noon and replay at 3am after risk thresholds change'.
+Time-window defense. Tickets include ts, and the backend enforces a 60-second window. Not caching prevents an attacker from 'fetching a ticket at noon and replaying at 3am after risk thresholds change'.
 
-Engineering details for PC/H5 unified abstraction:
+Engineering details for the unified PC + H5 abstraction.
 
-(a) Lazy load: turingSdk is 300KB+; most users never trigger it, so we lazy-load — inject script on first verify call, cache the promise after;
+Lazy load. turingSdk is over 300KB. Most users never trigger it, so we lazy-load — inject the script on first verify call and cache the promise afterward.
 
-(b) Fallback: what if SDK fails to load or times out? try/catch + 60s timeout window: log degraded state, ask user to retry, never let a request through without a ticket — the security bottom line;
+Fallback. What if the SDK fails to load or times out? We use try/catch with a 60-second fallback window. On timeout we log a degraded state and ask the user to retry; we never let a request through without a ticket. That's the security floor.
 
-(c) H5 inside Mobile QQ has a special advantage: host can invoke native verification UI for better UX. So H5 version first detects mqq jsapi, falls back to CDN script if absent;
+H5 inside Mobile QQ is special: the host can invoke a native verification UI, which feels better. The H5 version checks mqq jsapi first, uses native when present, and falls back to the CDN script otherwise.
 
-(d) Observability: each verify reports scene/duration/result to Aegis; dashboards show per-scene success rate and average latency, enabling second-level anomaly detection.
+Observability. Each verify call reports scene, duration, and result to Aegis. The dashboard shows per-scene success rate and average latency, and anomalies show up quickly.
 
 </details>
 

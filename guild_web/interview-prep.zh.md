@@ -18,36 +18,46 @@
 
 ### 一句话（简历版）
 
-腾讯频道前端 Monorepo，pnpm + lerna 管 11 公共包 × 6 端应用，覆盖 PC Web / 手 Q / QQ 浏览器 / H5 / 长贴发布器。
+腾讯频道前端 Monorepo，pnpm + lerna 管 11 个公共包和 6 个面向不同宿主的应用。
 
 ### 标准（30–60 秒）
 
-guild_web 是腾讯频道前端的总仓库，承载 6 个面向不同宿主的应用（web-guild PC 主站、h5-guild 移动 H5、qq-guild Electron、qqbrowser、guild-editor 长贴发布器、guild-scraper 抓取工具）和 11 个公共包（guild-components、guild-pb、feed-editor、qrtc、guild-mui 等）。整体技术栈是 Vue 3 + Nuxt 3 + TypeScript + Pinia + Vite 6 + exeditor3 富文本，工程侧用 pnpm workspaces 做依赖、lerna 做发布，ESLint 9 扁平配置 + Husky/lint-staged + Orange CI 把质量门禁前置到提交侧；运行时通过 AegisV2 + Datong V4 + OpenTelemetry 做一体化观测，turingSdk 兜底人机风控。
+guild_web 是腾讯频道前端的总仓库，我们在里面放了 6 个应用和 11 个公共包。6 个应用对应不同宿主：web-guild 是 PC 主站，h5-guild 是移动 H5，qq-guild 是 Electron 客户端，qqbrowser 跑在 QQ 浏览器内嵌里，guild-editor 是长贴发布器，guild-scraper 做内容抓取。公共包里 guild-components 放业务组件，guild-pb 从 proto 生成类型，feed-editor 是富文本内核，qrtc 做实时音视频。技术栈用 Vue 3、Nuxt 3、TypeScript、Pinia、Vite 6，富文本用 exeditor3。工程侧 pnpm workspaces 管依赖，lerna 管发布，ESLint 9 flat config 配 Husky、lint-staged 和 Orange CI 做前置校验。
 
 ### 深挖（2–3 分钟）
 
 <details><summary>展开</summary>
 
-guild_web 的核心命题是『一份代码同时服务 5 种宿主形态』。架构上 packages/ 沉淀共享能力（guild-components 业务组件、guild-pb 协议、feed-editor 富文本、qrtc 实时音视频等），projects/ 各自实现宿主特化逻辑；pnpm workspaces 的 workspace:^ 协议让公共包升级实时联动业务，lerna 的 independent 模式让小修复不需要联动版本号。Nuxt 3 在 web-guild/h5-guild 上默认 SSR，通过 NUXT_SSR=false 还可以切 CSR 出包用于不支持 Node 的宿主；自研 rollup manualChunks 把 vendor 拆成 stable/guild 两层，配合页级 chunk 把首屏依赖控在阈值内。业务层最大投入近一年都在 AI Agent 化频道：agent-settings/tasks/bio/identity/nickname 五个 H5 页面用 Pinia slice 拆分模型，PATCH-style diff-only 提交避免覆盖。可观测侧 server/plugins/aegis.ts 把 SSR 异常打通到伽利略，Datong V4 上报业务行为，OpenTelemetry 贯穿前后端。安全侧 turingSdk 在 PC/H5 两套 SDK 各自适配宿主，敏感操作每次现拿 ticket，禁止缓存防止重放。整个仓库通过 pnpm + ESLint + Husky + Orange CI 四道关把质量门禁压到提交侧，新人 clone 即可跑全套校验。
+一份代码同时跑在 5 种宿主上，是 guild_web 最主要的约束。架构上我们把共享能力沉淀到 packages 目录，guild-components 是业务组件，guild-pb 是 proto 生成的类型，feed-editor 是富文本内核，qrtc 做实时音视频。projects 目录放每个宿主的特化逻辑。
+
+pnpm workspaces 用 workspace:^ 协议，公共包改了业务层立刻能看到。lerna 用 independent 模式，小修复不需要带动所有包一起升版本。web-guild 和 h5-guild 默认走 Nuxt 3 SSR，设 NUXT_SSR=false 可以切 CSR，用于没有 Node 的宿主。
+
+分包我们没用 Nuxt 默认策略，自己写了 rollup manualChunks，把 vendor 拆成 stable 和 guild 两层，再按页切 chunk。lodash、dayjs 这些半年不动的放 vendor-stable，长缓存命中率稳定在 85% 以上。@tencent/guild-* 随版本变动的放 vendor-guild。
+
+过去一年业务侧投入最多的是 AI Agent 化频道。agent-settings、tasks、bio、identity、nickname 五个 H5 页面各管一个业务实体，每页一个 Pinia slice 管 dirty 和 valid，提交走 PATCH diff-only，避免整页回滚。富文本侧 guild-editor 把 At、Emoji、Placeholder 拆成三个独立插件，靠 exeditor3 的 PluginKey 隔离状态。
+
+可观测接了三家。AegisV2 抓错误和性能，server/plugins/aegis.ts 在 SSR 阶段就启动，首屏白屏也能上报。Datong V4 跑业务埋点。OpenTelemetry 做跨服务 trace。三家共用一个 traceId，从 Aegis 看到错误可以跳到 OTel 看完整链路。
+
+安全侧接了图灵盾 turingSdk，PC 和 H5 各一份实现，对外 API 一致。敏感动作每次现拿 ticket，一次一票，不缓存，防重放是底线。工程上 pnpm、ESLint、Husky、Orange CI 四道闸门，越往后越贵，新人 clone 下来能跑全套校验。整体看这套架构的目标是让业务方专注业务，宿主和工程细节由 packages 兜住。
 
 </details>
 
 ## ✨ 项目亮点
 
 - **Monorepo 工程治理：pnpm workspaces + lerna 管控 6 业务 × 11 公共包**（architecture · frontend）
-  Situation：仓库里同时有 6 个面向不同宿主的应用和 11 个公共包，旧版 npm/yarn 出现幽灵依赖。Task：建立可控的依赖图与发布流程。Action：用 pnpm workspaces + workspace:^ 协议保证内部包源码级联动，lerna 独立版本管理发布，配合 only-allow pnpm + Husky/lint-staged + Orange CI 把校验前置。Result：依赖一致性问题清零，新人 clone 即可一键拉起全套校验。
+  Situation：仓库里有 6 个面向不同宿主的应用和 11 个公共包，早期用 npm/yarn 出过幽灵依赖。Task：把依赖图和发布流程管起来。Action：pnpm workspaces 加 workspace:^ 让内部包源码级联动，lerna independent 管发布，preinstall 写 only-allow pnpm 锁工具链，Husky 加 lint-staged 加 Orange CI 把校验前置。Result：依赖一致性问题不再出现，新人 clone 下来能一键跑完全套校验。
   > 关键词：`pnpm-workspaces` · `lerna` · `workspace:^` · `only-allow` · `Orange CI`
 - **Nuxt 3 SSR/CSR 双模 + 自研 rollup 代码分包**（performance · frontend）
-  Situation：web-guild 首屏 vendor.js 一度超 1.2MB，3G 网络 LCP 超 4s。Task：在不放弃 SSR 体验的前提下降首屏体积。Action：保留 Nuxt 3 SSR、通过 NUXT_SSR=false 支持 CSR 出包，自研 rollup manualChunks 按页/组件/npm 包三层切，vendor 拆 stable 与 guild 两层。Result：vendor-stable ~180KB 长缓存命中率从 60% 提升至 85%+，首屏体积明显下降。
+  Situation：web-guild 的 vendor.js 一度超过 1.2MB，3G 下 LCP 超过 4 秒。Task：在保留 SSR 的前提下把首屏体积压下来。Action：保留 Nuxt 3 SSR，同时支持 NUXT_SSR=false 生成 CSR。自己写 manualChunks 按页、组件、npm 包三层切，vendor 拆成 stable 和 guild 两层。Result：vendor-stable 稳定在 180KB 左右，长缓存命中率从 60% 升到 85%，首屏体积下降。
   > 关键词：`Nuxt3` · `SSR` · `manualChunks` · `vendor-stable` · `LCP`
 - **AI Agent 化频道：agent-settings/tasks/bio/identity/nickname 全链路 H5**（feature · frontend）
-  Situation：h5-guild 需要支持用户自定义 AI 角色与任务编排的频道新形态。Task：在不引入大状态机框架的前提下落地 5 个相关页面的复杂表单与并发编辑。Action：每页一个 Pinia slice 管 dirty/valid，提交走 PATCH-style diff-only，跨页用 useAgentContext 共享身份；表单组件统一封装到 identity/bio/nickname-editor 三件套。Result：5 个 H5 页面顺利上线并发编辑零冲突，新人按模板可以快速复用。
+  Situation：h5-guild 要支持用户自定义 AI 角色和任务编排这种新频道形态。Task：在不引入大状态机框架的情况下落地 5 个页面，还要处理并发编辑。Action：每页一个 Pinia slice 管 dirty 和 valid，提交走 PATCH diff-only，跨页共享身份走 useAgentContext，表单组件抽成 identity、bio、nickname 三件套。Result：5 个页面都顺利上线，并发编辑没出过冲突，后续新人可以按模板复用。
   > 关键词：`AI-agent` · `Pinia-slice` · `PATCH` · `ImageCropper` · `diff-only`
 - **全链路可观测：AegisV2 + Datong V4 + OpenTelemetry**（observability · frontend）
-  Situation：SSR 异常很难只靠浏览器侧定位，业务事件与性能数据散落在不同平台。Task：建立一套前后端一体化的观测链路。Action：在 web-guild 的 server/plugins/aegis.ts 注入 SSR 侧上报，Aegis V2 上传 sourcemap 提升异常可读性，Datong V4 接管业务埋点，OpenTelemetry 把 trace id 贯穿前后端。Result：SSR 异常可在伽利略一键回溯到行号，业务问题定位时长显著缩短。
+  Situation：SSR 异常在浏览器侧看不清楚，业务事件和性能数据又散在不同平台。Task：把前后端观测串成一条链。Action：在 web-guild 的 server/plugins/aegis.ts 启动 SSR 上报，AegisV2 传 sourcemap 让堆栈可读，Datong V4 接业务埋点，OpenTelemetry 用同一个 traceId 贯穿前后端。Result：SSR 异常可以在伽利略直接回溯到源码行号，业务定位时间下降。
   > 关键词：`AegisV2` · `Datong` · `OpenTelemetry` · `SSR-plugin` · `sourcemap`
 - **多形态分发：PC Web / H5 / QQ Electron / QQ 浏览器 / 手 Q 终端长贴发布器**（architecture · frontend）
-  Situation：同一份频道代码必须在五种宿主里跑，宿主能力、登录态、安全策略各不相同。Task：把宿主差异封装起来，业务代码无感知。Action：三层抽象（useHostCapability 探测 → useShare/useUpload 适配 → 兜底组件如 share-qrcode），adapter 文件路径在 web/h5 项目里完全平行。Result：业务页面零 if-platform，新增宿主时仅追加一组 adapter 即可。
+  Situation：同一份频道代码要在 5 种宿主里跑，宿主能力、登录态、安全策略都不一样。Task：把宿主差异封起来，业务代码不感知。Action：分三层——useHostCapability 做能力探测，useShare 和 useUpload 这些 composable 做适配，最上层 share-qrcode 这类兜底组件做 UI 退化。adapter 文件在 web 和 h5 里放在平行路径上。Result：业务页面里没有 if-platform，加一个新宿主只需要新增一组 adapter。
   > 关键词：`multi-host` · `JSBridge` · `Electron` · `mini-program-webview` · `useShare`
 
 
@@ -68,21 +78,23 @@ guild_web 的核心命题是『一份代码同时服务 5 种宿主形态』。�
 
 #### 三档回答
 
-**🟢 一句话**：pnpm 管硬链接和 workspace:^，lerna 管版本和发布，only-allow pnpm + Orange CI 把校验前置。
+**🟢 一句话**：pnpm 管硬链接和 workspace:^，lerna 管版本和发布，only-allow pnpm 加 Orange CI 把校验前置。
 
 **🔵 标准**（默认）：
 
-诉求是同一份代码里 6 个应用 + 11 个共享包并存，npm/yarn 会有幽灵依赖和 node_modules 膨胀。pnpm workspaces 的硬链接 + workspace:^ 协议让 guild-components 等内部包源码级联动；lerna 只负责版本号推进和发布，避免与 pnpm 职责重叠。preinstall 写 only-allow pnpm 强制工具链，Husky + lint-staged 在提交侧再校一次，Orange CI 跑 pnpm install --frozen-lockfile 保证 lockfile 一致。
+我们有 6 个应用和 11 个共享包放在一个仓库里。用 npm 或 yarn 时出现过幽灵依赖，node_modules 也很大。pnpm workspaces 的硬链接加 workspace:^ 让 guild-components 这种内部包源码级联动，业务侧改一行立刻看到。lerna 只负责版本号推进和发布，不和 pnpm 的职责重叠。preinstall 写 only-allow pnpm 强制工具链，Husky 和 lint-staged 在提交时再校一次，Orange CI 跑 pnpm install --frozen-lockfile 保证 lockfile 一致。新人 clone 下来不用看文档也能跑通。整套规则跑下来，依赖一致性问题基本不再出现，发版前的 lockfile 校验也成了常规动作。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-选型核心权衡是『本地 DX』vs『发布严谨度』。pnpm 相对 yarn v1 把 node_modules 从 GB 降到百 MB，严格 peer 解析能暴露幽灵依赖；相对 Nx/Rush，我们没到任务图编排量级，最小闭环就够：pnpm 管依赖 + lerna 管发布。
+我们用 pnpm 加 lerna 不用 yarn，也没上 Nx，原因是工作量刚好卡在『依赖管控加版本发布』这一档。pnpm 相比 yarn v1 能把 node_modules 从 GB 级降到百 MB，严格 peer 解析能直接暴露幽灵依赖，幽灵依赖一旦在 CI 报错就不会带病发版。
 
-一致性踩过坑：早期两个 project 间接升级了不同版本的 @vue/composition-api，SSR Pinia 水合异常。修复后立了三条纪律：① 根 package.json 锚定 TS/ESLint/Vue 家族版本；② workspace 间一律 workspace:^；③ Orange CI 跑 pnpm install --frozen-lockfile。
+一致性上我们出过一次问题。早期两个 project 间接升级到了不同版本的 @vue/composition-api，SSR 下 Pinia 水合异常，线上才发现。修完之后我们立了三条规矩：根 package.json 锚定 TS、ESLint、Vue 这些核心家族的版本；workspace 之间一律 workspace:^；Orange CI 跑 pnpm install --frozen-lockfile，本地装不上的人改 lockfile 才能 push。
 
-发布走 lerna independent 模式：guild-components 小修复不需要带动 guild-pb 升版本，但 detect changed 会标记需要重建的下游 project。发布时 lerna 把 workspace:^ 替换成真实语义化版本写入 registry。
+发布走 lerna independent 模式。guild-components 修一个 bug 不需要带动 guild-pb 升版本，但 lerna 的 detect changed 会标出下游哪些 project 需要重建。发包时 lerna 把 workspace:^ 替换成真实 semver 写进 registry。
 
-相对 Nx 我们放弃了 task graph caching，因为 Nuxt 3 build 已经有 Vite cache，再套 affected graph 边际收益小且抬高新人门槛；代价是失去跨包并发构建极致速度，但 pnpm --filter 也能拿到 80% 的收益。
+为什么不切 Nx？Nx 的 affected graph 能在大仓 CI 上精准跳过未变更 project，理论上 CI 时间能再降几成。但我们的 Nuxt 3 build 已经带 Vite cache，再套一层 affected 收益不大，还会抬高新人理解成本，文档和 onboarding 也要重新写。代价是跨包并发构建速度不是最快，但 pnpm --filter 能拿回大部分收益，目前团队还能接受。
+
+回头看这套组合，pnpm 解决了底层依赖管理的硬伤，lerna 把发布流程的纪律明文化，两者职责清晰、互不重叠。新人入职第一周通常先读 lerna.json 和 pnpm-workspace.yaml，看一眼就能理解仓库怎么组织。Orange CI 的角色是兜底，本地疏忽的场景到 CI 这道闸门一定会被拦下来。这套结构已经稳定运行了两年多，目前没看到必须重构的理由。
 
 </details>
 
@@ -108,7 +120,7 @@ guild_web 的核心命题是『一份代码同时服务 5 种宿主形态』。�
 #### 追问（面试官深挖向）
 
 - ⚖️ **如果让你现在选，是否会切到 Nx monorepo？收益和代价是什么？**（trade-off）
-  > Nx affected graph 能在 CI 精准跳过未变更 project，大仓 CI 耗时可能降 40%+；代价是引入新 DSL、TS path 复杂度、与 Nuxt build hook 冲突，迁移成本 2-3 周。
+  > Nx 的 affected graph 能让 CI 跳过未变更 project，大仓 CI 时间可能降几成。代价是引入新 DSL、TS path 复杂度、和 Nuxt build hook 的冲突，迁移成本大概两到三周。
 
 
 #### Evidence
@@ -136,23 +148,25 @@ guild_web 的核心命题是『一份代码同时服务 5 种宿主形态』。�
 
 #### 三档回答
 
-**🟢 一句话**：三类对应『外部实体引用 / 富媒体标签 / UX 占位』不同生命周期，靠 exeditor3 plugin registry + PluginKey 状态隔离。
+**🟢 一句话**：三个插件对应三种生命周期——外部实体引用、富媒体标签、UX 占位，靠 exeditor3 的 PluginKey 做状态隔离。
 
 **🔵 标准**（默认）：
 
-富文本核心难点是『可扩展性 vs 状态耦合』。exeditor3 提供 plugin 注册机制，每个插件维护自己的 schema/commands/keyboard 钩子。AtPlugin 关心用户实体 ID 持久化，对接 guild-types；EmojiPlugin 处理表情图片渲染兜底；PlaceholderPlugin 只做 UX 占位，纯 decoration 不进 schema。后续要加 PollPlugin 等新插件不会触碰已有三者，状态通过 PluginKey 隔离，跨插件通信走 transaction.meta。
+富文本的麻烦在可扩展和状态耦合。exeditor3 让每个插件维护自己的 schema、commands 和 keyboard 钩子。AtPlugin 关心用户实体 ID 的持久化，和 guild-types 对接。EmojiPlugin 处理表情图片的渲染兜底。PlaceholderPlugin 只做 UX 占位，纯 decoration，不进 schema。后面要加 PollPlugin 这种新插件不会动到已有三个。状态靠 PluginKey 隔离，每个 plugin 一个独立 slot，跨插件通信走 transaction.meta，事件之间不会互相覆盖。新插件接入时只需关注自己的 schema 和命令注册，不感知其他插件状态。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-三个插件的职责边界和踩过的坑：
+三个插件各自的边界和我们出过的问题。
 
-① AtPlugin 最复杂，因为 @某人 需要按 plainText / StRichText / HTML 三种格式分别序列化。StRichText 是手 Q 后端结构化协议，要求 at 是 segment node 包含 uid/tinyId/nick。我们在 plugin 的 serialize 钩子里按 output format 分支，避免业务侧散落序列化逻辑。
+AtPlugin 最复杂。@某人 要按 plainText、StRichText、HTML 三种格式分别序列化。StRichText 是手 Q 后端的结构化消息协议，at 要是一个 segment node，带 uid、tinyId、nick。我们在 plugin 的 serialize 钩子里按输出格式分支，业务侧不用写序列化代码，新增一个输出格式只动 plugin。
 
-② EmojiPlugin 曾经栽过：早期 emoji 直接存 Unicode，iOS 15 某版本手 Q webview 渲染不出新 emoji，只能回退到 SVG。现在有一层『宿主能力探测 → 策略选择』分支，复用 useHostCapability。
+EmojiPlugin 出过问题。早期 emoji 直接存 Unicode，后来在某个版本手 Q 的 iOS webview 上渲染不出新 emoji，只能回退到 SVG。现在多了一层宿主能力探测到策略选择的分支，复用 useHostCapability。
 
-③ PlaceholderPlugin 单独抽出来的原因是：它不能进 schema，否则用户开始输入时 placeholder 文本会被当作正文落库。正解是走 exeditor3 decorations API 在 EditorView 渲染时动态插入，不落 doc。这是 ProseMirror 社区的常见误用教训。
+PlaceholderPlugin 单独抽出来是因为它不能进 schema。进了 schema 的话用户一开始输入，placeholder 文本会被当成正文落库。正确做法是走 exeditor3 的 decorations API，在 EditorView 渲染时动态插入，不进 doc。这是 ProseMirror 社区的常见误用，我们踩过一次，回滚之后专门写了一篇内部 wiki 标注边界。
 
-状态隔离靠 plugin registry：每个插件有独立 plugin state（PluginKey），事件总线只透传 transaction，跨插件通信走 meta 字段。相比方案 A『全局 store + dispatch action』，plugin state 让插件保持可插拔单元，跨插件耦合走 meta 比走 store 更好查问题；代价是 At/Emoji 未来需要联动（@某人带表情）时要显式走 plugin.apply 读对方 state。
+状态隔离靠 plugin registry。每个插件有自己的 plugin state（PluginKey），事件总线只透传 transaction，跨插件通信走 meta。相比方案 A（全局 store 加 dispatch），plugin state 让插件保持可插拔，跨插件耦合走 meta 比走共享 store 更好查问题。代价是 At 和 Emoji 未来要联动（比如 @某人带表情）时得显式 plugin.apply 读对方 state。
+
+这种分层思路最大的好处是让插件能独立演进。AtPlugin 改一次序列化逻辑不会牵动 Emoji 渲染，PlaceholderPlugin 改 UX 占位策略也不会影响业务数据。维护成本从『改一个插件要回归整个编辑器』降到『改一个插件只回归这个插件本身』，发布节奏明显加快。
 
 </details>
 
@@ -200,21 +214,23 @@ guild_web 的核心命题是『一份代码同时服务 5 种宿主形态』。�
 
 #### 三档回答
 
-**🟢 一句话**：useHostCapability 做能力探测、composable 做能力适配、fallback 组件做 UI 兜底，三层从底到上。
+**🟢 一句话**：三层——useHostCapability 探测能力，composable 做适配，fallback 组件做 UI 兜底。
 
 **🔵 标准**（默认）：
 
-诉求是同一份业务代码跑 5 个宿主、又不在业务侧写 if (isQQ) ... if (isH5) ...。最底层 useHostCapability 通过 UA / window 全局 / JSBridge 探测出 share/clipboard/file/login 等能力位；中间层比如 useShare、useUpload、useLogin 是 composable，根据能力位选择实现（JSBridge / Web API / 弹窗兜底）；UI 层提供 fallback 组件，比如分享在不支持原生分享的宿主上退化成 share-qrcode 二维码弹窗。业务层永远只调 useShare()，不感知宿主。
+我们的要求是同一份业务代码跑 5 个宿主，还不能在业务侧写 if (isQQ)。最底层 useHostCapability 通过 UA、window 全局、JSBridge 探测 share、clipboard、file、login 这些能力位。中间层是 composable，比如 useShare、useUpload、useLogin，根据能力位选择 JSBridge、Web API 或弹窗兜底。UI 层提供 fallback 组件，比如分享在不支持原生分享的宿主上降级成 share-qrcode 二维码弹窗。业务层永远只调 useShare()，不感知宿主，新加宿主只新增一组 adapter。整体目标是让业务方写代码时只感受到一个统一接口，宿主差异隐藏在三层之下。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-5 个宿主能力矩阵粗略：① PC Web 能力最弱但最通用；② H5 在手 Q 内嵌时多了 mqq jsapi；③ qq-guild（Electron）能力最强，能直接读文件系统、调系统通知；④ qqbrowser 内嵌走 QQ 浏览器自家 jsapi；⑤ 长贴发布器是手 Q 终端 SDK 套壳，分享/上传都要走端能力。
+5 个宿主能力差异大致是：PC Web 能力最弱但最通用；H5 在手 Q 内嵌里多了 mqq jsapi；qq-guild 是 Electron，能力最强，能读文件系统和调系统通知；qqbrowser 走 QQ 浏览器自家的 jsapi；长贴发布器是手 Q 终端 SDK 套壳，分享和上传都要走端能力。
 
-实战踩坑：早期没分层时，分享逻辑散在十几个组件里，新增『分享到群』要改十几个 if，且 Electron 升级后多了系统级 share menu，回归测试爆炸。引入分层后只动 useShare 一个 composable + 加一个 ElectronAdapter。
+没分层之前我们踩过一次。分享逻辑散在十几个组件里，加『分享到群』要改十几个 if。后来 Electron 升级多了系统级 share menu，回归测试工作量一下子变大。分层之后只动 useShare 一个 composable 加一个 ElectronAdapter，业务侧没动一行。
 
-fallback 选择有讲究：比如 clipboard，Web 有 navigator.clipboard.writeText，H5 在某些低版本宿主不可用，要 fallback 到 document.execCommand('copy')；再不行就唤起『复制弹窗 + 文本框 + 用户手动选中复制』，三段式优雅降级。
+fallback 本身有讲究。clipboard 为例，Web 有 navigator.clipboard.writeText，某些低版本宿主不支持，要退到 document.execCommand('copy')，再不行就弹窗让用户手动选中复制，三段式降级。
 
-抽象的边界：『纯业务态』不进抽象层（比如分享文案）；『能力是否可用』和『调用方式不同』才进。否则会出现 useShare 里塞业务文案的反模式。代价：业务方第一次接入时要学三层语义；收益是 5 个宿主平均维护成本下降，新增第六个宿主（比如未来 Vision Pro）只需要写一个 Adapter。
+抽象的边界我们守得很严。业务态不进抽象层，比如分享文案。能力是否可用和调用方式不同才进。否则会出现 useShare 里塞业务文案这种反模式。代价是业务方第一次接入要学三层语义，收益是 5 个宿主的平均维护成本下降，加第六个宿主时只需要新增一组 adapter，原有调用方完全不感知。
+
+回头看这套三层抽象，最大的价值不在性能或体积，而在心智成本。业务方接手新页面时只要懂 composable 的语义，不必先理解五个宿主的差异。新成员入职一周后就能独立交付，这是分层最直接的回报。
 
 </details>
 
@@ -240,7 +256,7 @@ fallback 选择有讲究：比如 clipboard，Web 有 navigator.clipboard.writeT
 #### 追问（面试官深挖向）
 
 - ⚖️ **如果要再加一个鸿蒙 webview 宿主，你的分层架构哪一层要改？**（architecture）
-  > 只动最底层：useHostCapability 加鸿蒙 UA 检测和 jsapi 探测；中间层 useShare 多 register 一个 HarmonyAdapter；UI 层和业务层不动。
+  > 只动最底层——useHostCapability 加鸿蒙 UA 检测和 jsapi 探测。中间层 useShare 再 register 一个 HarmonyAdapter。UI 层和业务层不动。
 
 
 #### Evidence
@@ -268,27 +284,33 @@ fallback 选择有讲究：比如 clipboard，Web 有 navigator.clipboard.writeT
 
 #### 三档回答
 
-**🟢 一句话**：guild 管频道全局元数据、detail 管当前贴子瞬时态；按 route key 实例化 + PATCH diff 同步，水合 mismatch 看 timestamp 与 cookie 来源。
+**🟢 一句话**：guild 管频道元数据，detail 管当前贴子瞬时态，按 route key 实例化，PATCH diff 同步；mismatch 先看 cookie 和时间戳。
 
 **🔵 标准**（默认）：
 
-边界划分：guild store 是『频道维度的元数据』——guildId、成员权限、频道配置、CDN 域名、用户在频道里的角色，这些在频道生命周期内基本稳定。detail store 是『当前打开的贴子』——postId、评论列表、点赞态、富文本内容，会随路由切换重置。这两个 store 都按 route key 实例化（同时打开两个频道详情页时各持一份），通过 useShare composable 做跨 store 的派生数据。SSR 水合时 server 把 store snapshot 序列化进 __NUXT__ 全局，CSR 端 hydrate 时反序列化注入 pinia。
+边界划分上，guild store 是频道维度的元数据——guildId、成员权限、频道配置、CDN 域名、用户在频道里的角色，这些在频道生命周期里基本稳定。detail store 是当前打开的贴子——postId、评论列表、点赞态、富文本内容，随路由切换重置。两个 store 都按 route key 实例化，同时打开两个频道详情页时各持一份。跨 store 的派生数据走 useShare composable。SSR 水合时 server 把 store snapshot 序列化进 __NUXT__，CSR 端 hydrate 时反序列化注入 pinia。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-实战教训：
+几个实战经验。
 
-（1）边界争议：『当前用户在当前频道的角色』属于 guild 还是 detail？最终归 guild，因为切贴子时角色不变；但角色对应的权限位会被 detail 的『按钮可见性』派生使用，这种『谁拥有数据 / 谁消费派生』要严格分开，否则两 store 互相 import 容易出循环。
+边界上有过争议。『当前用户在当前频道的角色』属于 guild 还是 detail？最后归 guild，因为切贴子时角色不变。但角色对应的权限位会被 detail 的『按钮可见性』派生使用。谁拥有数据和谁消费派生要分开，否则两个 store 互相 import 容易循环。
 
-（2）PATCH-style diff-only 同步：detail 切贴子时不要整个 reset，因为评论列表、点赞态有部分可复用（比如同一作者的下一篇贴子，用户信息已在缓存）。我们用 store.$patch 增量更新，未变更字段保留，配合后端按 etag 返回 diff，能省 30% 流量。
+PATCH diff-only 同步。detail 切贴子时不要整体 reset。评论列表和点赞态有部分可复用，比如同一个作者的下一篇贴子，作者信息已经在缓存里。我们用 store.$patch 增量更新，后端按 etag 返回 diff，流量能省大约三成，弱网下感知最明显。
 
-（3）SSR 水合 mismatch 排查方法学，按出现频率排：
-  - cookie 在 server / client 差异：服务端能读 httpOnly 而客户端读不到，导致登录态分裂，最终某个 v-if 在两端结果不同；定位手段是给 SSR 的 setup 加 console.log + req.headers.cookie 时间戳；
-  - 时间戳：server render 时 Date.now() 是 server 时间，hydrate 时 client 时间，差几秒就 mismatch；解决方案是在 store 里写入 server 时间，client 端不允许再生成；
-  - 第三方 widget 没等 nextTick：比如 turingSdk 注入了 DOM 节点，hydrate 时被 patch 删除；解决方案是 ClientOnly 包裹；
-  - 列表 v-for 没 key 或 key 用 index：server 和 client 顺序略异时会 mismatch。
+SSR 水合 mismatch 的排查按出现频率来。
 
-（4）排查工具链：开 Vue devtools Pinia 面板 → 看 server / client snapshot diff；开 Chrome Performance → 看 Hydration 阶段耗时；最后才是 console.log。
+一是 cookie 在 server 和 client 侧的差异。服务端能读 httpOnly，客户端读不到，最后某个 v-if 在两端结果不同。定位方法是给 SSR 的 setup 加日志，打 req.headers.cookie 和时间戳。
+
+二是时间戳。server render 时 Date.now() 是 server 时间，hydrate 时是 client 时间，差几秒就 mismatch。解法是把 server 时间写进 store，client 端不再重新生成。
+
+三是第三方 widget 没等 nextTick，比如 turingSdk 注入的 DOM 节点在 hydrate 时被 patch 删掉。解法是用 ClientOnly 包住。
+
+四是 v-for 没 key 或者 key 用 index。server 和 client 顺序略有差异时会 mismatch。
+
+工具链上，先开 Vue devtools Pinia 面板看 server 和 client snapshot 的 diff，再开 Chrome Performance 看 hydration 阶段耗时，最后才上 console.log。
+
+这套排查路径已经成了团队默认 SOP，新人遇到 mismatch 警告会先按顺序走一遍，不再瞎猜。我们也写了一段内部 wiki 把每类 mismatch 的典型现象和复现方式列了出来。
 
 </details>
 
@@ -335,25 +357,27 @@ fallback 选择有讲究：比如 clipboard，Web 有 navigator.clipboard.writeT
 
 #### 三档回答
 
-**🟢 一句话**：lerna independent + workspace:^ 内部联动、SemVer 对外发版、PB 类型走 codegen 强约束，breaking change 必须发 major。
+**🟢 一句话**：lerna independent 加 workspace:^ 内部联动，SemVer 对外发版，PB 类型走 codegen 强约束，breaking change 必须发 major。
 
 **🔵 标准**（默认）：
 
-三类包性质不同：① guild-components 是 UI/业务组件库，独立 SemVer，升级 minor 业务方拉新即可；② guild-pb 是 protobuf 生成的请求/响应类型，每次接口变更走 PB codegen 自动生成，breaking change 必须 major，CI 卡 type check；③ guild-types 是手写的领域类型，独立维护。开发期通过 workspace:^ 让 6 个 project 直接吃 packages 源码；发布期 lerna detect changed + lerna version 把 workspace:^ 替换成真实版本号写入 registry。跨业务方冲突主要靠『谁先升 → 通知群同步』+ Orange CI 卡住 lockfile 一致性来兜底。
+三类包性质不同。guild-components 是 UI 加业务组件库，独立 SemVer，升 minor 业务方拉新即可。guild-pb 是 protobuf 生成的请求/响应类型，每次接口变更走 PB codegen 自动生成，breaking change 必须 major，CI 卡 type check。guild-types 是手写的领域类型，独立维护。开发期通过 workspace:^ 让 6 个 project 直接吃 packages 源码。发布期 lerna detect changed 加 lerna version 把 workspace:^ 替换成真实版本号写进 registry。跨业务方冲突主要靠『谁先升 → 群里通知同步』加 Orange CI 卡住 lockfile 一致性来兜底。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-版本管理的几个真实痛点和应对：
+版本管理的几个真实痛点。
 
-（1）SemVer 在大型 UI 库的边界很模糊：组件改了一个 default slot 内容算 breaking 吗？我们的纪律是『暴露给业务的 props/events/slots 契约』变更才算 breaking，内部样式微调算 patch，对外行为变化但 API 不变算 minor。
+SemVer 在大 UI 库的边界是模糊的。组件改了一个 default slot 内容算不算 breaking？我们的规矩是『暴露给业务的 props、events、slots 契约』变更才算 breaking，内部样式微调算 patch，对外行为变化但 API 不变算 minor。
 
-（2）PB 类型的强约束：guild-pb 由 .proto 文件 codegen，每次接口微服务发版会触发新一次 codegen + npm publish。问题是 6 个 project 可能装的版本不同，A project 装 v2.3 而 B 装 v2.4，但他们引同一个 Pinia store；运行时 type 是 erase 的所以不会爆，但 IDE 类型对不齐会让人困惑。解法是 root package.json 锚定 guild-pb 版本（peer 强约束），保证 6 个 project 同时升。
+PB 类型的强约束。guild-pb 由 .proto codegen，每次接口微服务发版会触发一次 codegen 加 npm publish。问题是 6 个 project 可能装的版本不同，A project 装 v2.3 而 B 装 v2.4，但他们引同一个 Pinia store。运行时 type 是 erase 的所以不会报错，但 IDE 类型对不齐会让人困惑。解法是 root package.json 锚定 guild-pb 版本（peer 强约束），让 6 个 project 同时升。
 
-（3）lerna independent 模式的痛点：detect-changed 准但有限——能告诉你 packages/A 改了，下游 X 和 Y 需要重建，但不能自动决定 X 和 Y 是 major / minor / patch，开发者要手写 conventional commits + lerna 解析。
+lerna independent 的痛点。detect-changed 准但有限——能告诉你 packages/A 改了，下游 X 和 Y 需要重建，但不能自动决定 X 和 Y 是 major、minor、patch，开发者要写 conventional commits 加 lerna 解析，靠人工判断。
 
-（4）跨业务方升级协同：我们的纪律是『发包前在群里 @ 所有 owner 公告 changelog，等 24h』，breaking change 还要写 migration guide 链接进 changelog。这看似土，但比任何工具都管用——比 codemod 自动迁移命中率高。
+跨业务方升级协同。我们的规矩是『发包前在群里 @ 所有 owner 公告 changelog，等 24 小时』。breaking change 还要在 changelog 里链 migration guide。看起来土，但比任何工具都管用，比 codemod 自动迁移命中率高，每次发包人都到位。
 
-（5）media-link 这种通用底层组件最危险：被 5 个 project 共用，改一行 props 就是 breaking。我们的策略是『加 prop 永远 default 兼容、删 prop 必须先 deprecate 一个版本』，配合 ESLint 自定义 rule 在 deprecated 时 warn 业务方。
+media-link 这种通用底层组件最敏感，被 5 个 project 共用，改一行 props 就是 breaking。我们的策略是『加 prop 永远 default 兼容，删 prop 必须先 deprecate 一个版本』，配合 ESLint 自定义 rule 在 deprecated 时 warn 业务方。
+
+整套版本治理的核心思路是『把约定明文化』。靠工具自动化的部分尽量自动化，靠人沟通的部分用 changelog 加群公告兜底，两者结合才稳。我们没追求完全自动化，因为 UI 库的语义边界本身就模糊，强行让工具判断容易误伤。
 
 </details>
 
@@ -403,25 +427,27 @@ fallback 选择有讲究：比如 clipboard，Web 有 navigator.clipboard.writeT
 
 #### 三档回答
 
-**🟢 一句话**：按业务实体（身份/任务/简介/昵称）拆 5 个独立页 + 各自 editor 组件，pages 层做动态路由，views 层只管 UI。
+**🟢 一句话**：按业务实体拆 5 个独立页加各自的 editor 组件，pages 层做动态路由，views 层只管 UI。
 
 **🔵 标准**（默认）：
 
-AI Agent 是频道里的虚拟成员，它的属性按业务实体天然分块：身份卡（identity）/ 任务（tasks）/ 简介（bio）/ 昵称（nickname）/ 入口设置（agent-settings）。一开始的诉求是『让 Agent 拥有人格化的可配置面板』，全塞一个大表单会有三个问题：① 提交失败要整页回滚；② 单字段长加载阻塞全表单；③ 后端按实体维度切了不同微服务，前端再 fetch 一个聚合 BFF 反而拖慢。所以 pages/agent-settings/[guildId]/[tinyId]/index.vue 做主入口和导航，每个子页是独立路由配独立 editor 组件，编辑器内做局部提交。
+AI Agent 是频道里的虚拟成员，它的属性按业务实体天然分块——身份卡（identity）、任务（tasks）、简介（bio）、昵称（nickname）、入口设置（agent-settings）。一开始要求是『让 Agent 有一套人格化的可配置面板』。我们没做一个大表单，原因有三个：大表单提交失败要整页回滚；单字段加载慢会阻塞整表；后端已经按实体维度切了微服务，前端再套一个聚合 BFF 反而拖慢。所以 pages/agent-settings/[guildId]/[tinyId]/index.vue 是主入口和导航，每个子页是独立路由配独立 editor 组件，editor 内部做局部提交。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-拆分的真实驱动：① 后端实体维度服务化已成事实，前端聚合反而是反模式；② Agent 配置场景下用户是『进来改一项就走』，整页表单的 UX 反而差；③ 每个 editor 各自有特殊态（identity 涉及头像裁切、bio 接 guild-editor 富文本、tasks 涉及拖拽排序），代码量上做隔离后单页 50%+。
+拆分的真实驱动有三个。第一，后端实体维度已经微服务化了，前端再聚合反而反模式。第二，Agent 配置场景里用户是『进来改一项就走』，整页表单反而 UX 差。第三，每个 editor 有自己的特殊态，identity 涉及头像裁切，bio 接 guild-editor 富文本，tasks 涉及拖拽排序，代码量上隔离之后单页降了一半。
 
-工程上几个有意思的点：
+工程上几个点值得讲一下。
 
-（1）dynamic routing `[guildId]/[tinyId]` 双参数表达『某频道下的某个 Agent』，pages 层 useRoute().params 透传到 views，views 层不感知路由形状（方便后续移植到 PC）。
+动态路由用 [guildId]/[tinyId] 双参数表达『某频道下的某个 Agent』，pages 层读 useRoute().params 透传给 views，views 层不感知路由形状，后续移植到 PC 方便一些。
 
-（2）editor 抽象用 'controlled editor' 模式：editor 组件只暴露 v-model:value + onCommit，提交逻辑由父组件聚合调 BFF。这样新加一个 editor 不需要懂 store。
+editor 用 controlled editor 模式，组件只暴露 v-model:value 加 onCommit，提交逻辑由父组件聚合调 BFF。新加一个 editor 不需要懂 store，写新页面的人也不用从头读老代码。
 
-（3）跨 editor 的弱关联（比如 identity 改完想立刻 refresh tasks 的卡片）走 EventBus + invalidate 标记，不走 store 双绑——store 双绑会让某一个 editor 失败时其他 editor 看到中间态。
+跨 editor 的弱关联（比如改完 identity 想刷新 tasks 卡片）走 EventBus 加 invalidate 标记，不走 store 双绑。store 双绑会让某一个 editor 失败时其他 editor 看到中间态，是排查问题时最难复现的那种缺陷。
 
-反思：当前架构对『跨字段强联动』表达力弱，比如『改了 identity 自动改 nickname』就只能在父页加 effect。如果未来联动需求增多，可能需要引入 form-engine 抽象（类似 formily），但当前业务密度不够，引入复杂度不划算。
+当前架构对强联动（比如改 identity 自动改 nickname）表达力弱，只能在父页写 effect。如果未来联动需求多起来，可能要引入 form-engine（类似 formily），但现在业务密度不够，引入的复杂度不划算。
+
+整套架构走下来，最关键的一条是承认『不同业务实体有不同的生命周期和不同的失败语义』。强行合并会让最简单的页面也得承担其他页面的复杂度，分开之后每个 editor 都能用最合适的实现，整体工程量反而下降。
 
 </details>
 
@@ -471,27 +497,27 @@ AI Agent 是频道里的虚拟成员，它的属性按业务实体天然分块�
 
 #### 三档回答
 
-**🟢 一句话**：useShare 是单贴子的局部分享、useGlobalShare 是全局分享面板，宿主能力检测决定走 native / 截图弹窗 / 二维码三条路。
+**🟢 一句话**：useShare 是单贴子的局部分享，useGlobalShare 是全局分享面板，宿主能力检测决定走 native、截图弹窗、二维码三条路。
 
 **🔵 标准**（默认）：
 
-两个 composable 职责分明：useShare 接 props（贴子 ID/标题/缩略图），返回 share() 方法，调用者是贴子卡片这类局部 UI；useGlobalShare 是 app 级别的分享面板（顶部导航的分享入口），管全局状态。三条路径选择：① 宿主支持 native share（手 Q 内嵌、Electron、QQ 浏览器）走 jsapi 调起原生面板；② 不支持但能截图（PC 现代浏览器）走 share-screen-dialog，自动截屏 + 加水印 + 让用户下载或复制；③ 啥都不支持（老浏览器）走 share-qrcode 二维码弹窗。类型 guild-share.ts 统一封装 ShareTarget / ShareContent，避免业务侧写裸对象。
+两个 composable 职责分明。useShare 接 props（贴子 ID、标题、缩略图），返回 share() 方法，调用者是贴子卡片这类局部 UI。useGlobalShare 是 app 级别的分享面板（顶部导航的分享入口），管全局状态。三条路径的选择：宿主支持 native share（手 Q 内嵌、Electron、QQ 浏览器）走 jsapi 调起原生面板。不支持但能截图（PC 现代浏览器）走 share-screen-dialog，自动截屏加水印，让用户下载或复制。啥都不支持（老浏览器）走 share-qrcode 二维码弹窗。类型 guild-share.ts 统一封装 ShareTarget 和 ShareContent，业务侧不写裸对象。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-几个设计上的取舍：
+几个设计上的取舍。
 
-（1）为什么不把 useShare 和 useGlobalShare 合并成一个：它们生命周期不同。useShare 跟着贴子组件 mount/unmount，useGlobalShare 跟着 app 整个生命周期。如果合并，全局面板就要依赖某个具体贴子的上下文，反过来贴子卡片要订阅全局事件——耦合反向加重。当前拆开后，全局面板调 useGlobalShare.share(payload)，payload 由调用方注入（可能来自 useShare，可能来自截图模块），单向数据流。
+为什么不把 useShare 和 useGlobalShare 合成一个？它们生命周期不同。useShare 跟着贴子组件 mount 和 unmount，useGlobalShare 跟着 app 整个生命周期。合并的话，全局面板就要依赖某个具体贴子的上下文，反过来贴子卡片要订阅全局事件，耦合反向加重。当前拆开后，全局面板调 useGlobalShare.share(payload)，payload 由调用方注入（可能来自 useShare，也可能来自截图模块），单向数据流。
 
-（2）share-screen-dialog 的截图方案：用 html2canvas，但有几个坑：跨域图片要 CORS 代理；canvas size 太大某些手机会爆 OOM；最后加了 fallback——截不出来时退化为『分享文案 + 链接』纯文本分享。
+share-screen-dialog 的截图方案。用 html2canvas，有几个坑：跨域图片要 CORS 代理；canvas 太大某些手机会 OOM；最后加了 fallback——截不出来时退化为『分享文案加链接』纯文本分享。
 
-（3）二维码方案的 UX 退路：很多 PC 用户不带手机扫码，所以 share-qrcode 同时显示『短链复制按钮』作为二级 fallback。
+二维码方案的 UX 退路。很多 PC 用户不带手机扫码，所以 share-qrcode 同时显示『短链复制按钮』作为二级 fallback。
 
-（4）guild-share.ts 类型约束：ShareTarget 用联合类型枚举 'wechat' | 'qq' | 'weibo' | 'copy_link'，业务方在 IDE 里直接拿到智能提示，避免散落 string magic。ShareContent 用 discriminated union 区分『纯文本 / 图文 / 视频』，TypeScript exhaustiveness check 让漏分支编译失败。
+guild-share.ts 的类型约束。ShareTarget 用联合类型枚举 'wechat' | 'qq' | 'weibo' | 'copy_link'，业务方在 IDE 里直接拿到智能提示，避免散落 string magic。ShareContent 用 discriminated union 区分『纯文本、图文、视频』，TypeScript exhaustiveness check 让漏分支编译失败。
 
-（5）观测打点：每次 share 调用前后都打点（scene/target/result），Datong 能算出『每个宿主每个 share target 的成功率』。线上发现 H5 在某个版本手 Q webview 上微信分享成功率突降，1 小时内定位到是 mqq jsapi 接口变更导致 payload 字段名变了，秒级回滚旧路径。
+观测打点。每次 share 调用前后都打点（scene、target、result），Datong 能算出『每个宿主每个 share target 的成功率』。线上发现 H5 在某个版本手 Q webview 上微信分享成功率突然下来了，1 小时内定位到是 mqq jsapi 接口变更导致 payload 字段名变了，回滚了旧路径。
 
-反思：share-screen-dialog 当前还是『前端截图』，实际上后端有更准确的 OG 图生成服务，未来计划是把客户端截图改成后端服务，前端只调 API 拿图片 URL，能解决 OOM 和跨域两大顽疾。
+share-screen-dialog 当前还是前端截图，实际上后端有更准的 OG 图生成服务，未来计划是把客户端截图改成后端服务，前端只调 API 拿图片 URL，能解决 OOM 和跨域两大问题。
 
 </details>
 
@@ -542,21 +568,23 @@ AI Agent 是频道里的虚拟成员，它的属性按业务实体天然分块�
 
 #### 三档回答
 
-**🟢 一句话**：NUXT_SSR=false 切 CSR generate，自研 manualChunks 按页/组件/npm 包三层切，vendor 分 stable 与 guild 两层。
+**🟢 一句话**：NUXT_SSR=false 切 CSR generate，manualChunks 按页、组件、npm 包三层切，vendor 拆 stable 和 guild。
 
 **🔵 标准**（默认）：
 
-Nuxt 3 默认 SSR，runtime config 读 NUXT_SSR 切 generate 出 CSR，用于无法跑 Node 的宿主（老 QQ 浏览器内核）；SSR 模式下 server/plugins/aegis.ts 在服务端就启动让首屏异常能被上报。rollup 分包写在 vite build.rollupOptions.output.manualChunks 里，三层切：① 页级一页一 chunk；② 重复率高的业务组件如 virtual-waterfall 单独成 chunk；③ npm 依赖按包名做二级 group，vendor 拆 stable（lodash、dayjs）和 guild（@tencent/guild-*）两层。
+Nuxt 3 默认走 SSR，runtime config 读 NUXT_SSR 就能切 nuxt generate 产 CSR 产物，用在没法跑 Node 的宿主上，比如老版 QQ 浏览器内核。SSR 模式下 server/plugins/aegis.ts 在服务端就启动，让首屏异常也能上报。分包写在 vite build.rollupOptions.output.manualChunks 里，按三层切。第一层是页级，一页一个 chunk。第二层是高复用业务组件，比如 virtual-waterfall 单独成 chunk。第三层是 npm 依赖按包名二级分组，vendor 拆成 stable（lodash、dayjs）和 guild（@tencent/guild-*）两层，缓存命中率按层评估。整体目标是把工程复杂度限制在配置层，业务侧只感知页面和组件。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-根源是宿主多样性：Web 浏览器 + QQ 浏览器内嵌 + 手 Q webview + 微信小程序 webview，各家 SSR 支持度不一样，老手 Q 内核甚至没法处理 server-rendered cookie 续签，必须双构建。
+原因是宿主差异太大。浏览器、QQ 浏览器内嵌、手 Q webview、微信小程序 webview 对 SSR 的支持不一样，老手 Q 内核甚至处理不了 server-rendered cookie 续签，所以必须双构建，单一产物覆盖不了所有场景。
 
-SSR 与 CSR 差别不止 flag：① useFetch 只能在 setup 同步阶段生效，onMounted 调用会直接 resolve undefined，README 专门列出来过这条坑；② server/plugins/aegis.ts 只在 SSR 侧生效，CSR 模式必须在客户端 app.vue 再 mount 一次；③ Pinia 的 serialize 在 CSR 是冗余的，但为代码路径统一没剪。
+SSR 和 CSR 的差别不止一个 flag。useFetch 只能在 setup 同步阶段生效，onMounted 里调会直接 resolve undefined，我们把这条写进了 README 和 lint 规则。server/plugins/aegis.ts 只在 SSR 生效，CSR 模式得在 app.vue 再 mount 一次。Pinia 的 serialize 在 CSR 是冗余的，但为了代码路径统一我们没剪。
 
-分包来自实测：最初 vendor.js 1.2MB+，3G LCP 4s+。自定义 manualChunks 的规则是『同层级变更概率相近的代码放一起』：lodash + dayjs 半年不动 → vendor-stable ~180KB 长缓存；@tencent/guild-* 随版本变动 → vendor-guild ~260KB 更新频繁但可 sourcemap 追踪；页级 chunk 路由切换时才加载。分完后 vendor-stable 缓存命中率从 60% 抬到 85%+。
+分包规则来自实测。一开始 vendor.js 超过 1.2MB，3G 下 LCP 超过 4 秒。我们定的规则是『变更概率相近的代码放一起』。lodash 和 dayjs 半年不动，进 vendor-stable，大概 180KB，长期缓存。@tencent/guild-* 随版本变动，进 vendor-guild，大概 260KB，更新频繁但 sourcemap 能追。页级 chunk 只在路由切换时加载。分完之后 vendor-stable 的缓存命中率从 60% 升到 85%，CDN 命中率提升直接体现在二次访问的 LCP 上。
 
-权衡：我们主动放弃 Nuxt 3 默认『按依赖图自动分包』，因为它会把只被一个页引用的 npm 包塞进页级 chunk，相似页之间重复下载相同依赖。手写规则失去自动化优势，但能把缓存命中率显著拉高。
+取舍上，我们主动放弃了 Nuxt 3 的默认按依赖图分包。它会把只被一个页用的 npm 包塞进页级 chunk，相邻页之间重复下载同一个依赖。手写规则牺牲了自动化，但缓存命中率能拉上来，业务方对发版前后体验的预期也更可控。
+
+这套分包规则在实际版本迭代中持续验证。每次发版前我们都会跑一遍构建产物分析，确认 vendor-stable 没被新依赖污染，确认页级 chunk 的体积没有意外膨胀。一旦发现某个 chunk 异常变大，就用 source-map-explorer 单独追查源头。规则本身没有动态扩展，要新加分组就改 manualChunks 函数。
 
 </details>
 
@@ -582,7 +610,7 @@ SSR 与 CSR 差别不止 flag：① useFetch 只能在 setup 同步阶段生效�
 #### 追问（面试官深挖向）
 
 - ⚖️ **为什么不直接用 Nuxt 3 默认的 route-based splitting？**（trade-off）
-  > 默认按依赖图分会把只被一个页用的 npm 包塞进页级 chunk，相似页面重复下载；手写规则虽失去自动化但把缓存命中率从 60% 抬到 85%。
+  > 默认按依赖图分会把只被一个页用的 npm 包塞进页级 chunk，相邻页面重复下载。手写规则没有自动化但缓存命中率能从 60% 升到 85%。
 
 
 #### Evidence
@@ -608,25 +636,27 @@ SSR 与 CSR 差别不止 flag：① useFetch 只能在 setup 同步阶段生效�
 
 #### 三档回答
 
-**🟢 一句话**：DOM 复用池 + IntersectionObserver 触发懒加载 + ResizeObserver 异步分片测高，三件套就稳了。
+**🟢 一句话**：DOM 复用池加 IntersectionObserver 触发懒加载，图片高度变化用 ResizeObserver 异步分片测。
 
 **🔵 标准**（默认）：
 
-瀑布流难点是高度未知、双列错位。我们的实现：① 用 virtual-waterfall 维护一个固定大小的 DOM 复用池（比如 50 个 item DOM），随用户滚动把上方滚出视口的节点回收复用给下方；② IntersectionObserver 监听『预触底 sentinel』触发翻页；③ 图片高度未知时先用预估高度占位，图片 load 完后用 ResizeObserver 异步分片更新真实高度，避免一次 reflow 大量 item。④ guild-waterfall-feed 在 web-guild 和 h5-guild 两份实现，差异只在列数与卡片样式，核心算法走 packages/guild-components 复用。
+瀑布流的麻烦在高度未知和双列错位。我们的实现是：virtual-waterfall 维护一个固定大小的 DOM 复用池，比如 50 个 item DOM，滚出视口的节点回收给下方复用。IntersectionObserver 监听预触底 sentinel 触发翻页。图片高度未知时先用预估高度占位，图片 load 完用 ResizeObserver 异步分片更新真实高度，避免一次 reflow 大批 item。guild-waterfall-feed 在 web-guild 和 h5-guild 各有一份，差别只在列数和卡片样式，核心算法沉淀在 packages/guild-components。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-几个关键性能问题和解法：
+几个关键性能问题和解法。
 
-（1）DOM 复用 vs Vue 响应式：v-for + key 的天然做法每条数据一个 vnode，10k 条直接爆。复用池的关键是『池大小 = 视口高度 ÷ 最小卡片高度 × 缓冲倍数』，比如 50 个 DOM 节点覆盖 100 个虚拟 item，滚动时通过 transform: translateY 重定位，data 用 ref 替换。我们没用 vue-virtual-scroller 是因为它对双列瀑布流支持差，且不能自定义图片 lazy 时机。
+DOM 复用和 Vue 响应式。原生 v-for + key 每条数据一个 vnode，1 万条直接撑不住。复用池的关键是『池大小等于视口高度除以最小卡片高度乘以缓冲倍数』，比如 50 个 DOM 节点覆盖 100 个虚拟 item，滚动时 transform: translateY 重定位，数据用 ref 替换。我们没用 vue-virtual-scroller，一是它对双列瀑布流支持弱，二是没法自定义图片 lazy 的时机。
 
-（2）高度测量的批处理：图片 load 是异步事件，10 张图同时 load 会触发 10 次 reflow。我们用 requestIdleCallback 把测量请求合并到 16ms 一帧内，统一 batch 应用到 column heights。代价是首屏列高短暂错位，肉眼几乎不可见。
+高度测量要批处理。图片 load 是异步事件，10 张图同时 load 触发 10 次 reflow。我们用 requestIdleCallback 把测量请求合并到 16ms 一帧，统一 batch apply 到 column heights。代价是首屏列高会短暂错位，看上去不太明显，业务方接受。
 
-（3）IntersectionObserver vs scroll 事件：scroll 事件 60fps 触发是性能噩梦，IO 由浏览器自己 schedule，掉帧友好。我们把『翻页 sentinel』『卡片懒加载』两类 IO 分开实例（避免回调合并导致响应慢），thresholds 都精心调过。
+IntersectionObserver 和 scroll 事件。scroll 60fps 触发对性能不友好，IO 是浏览器自己 schedule，掉帧少。我们把翻页 sentinel 和卡片懒加载两类 IO 分开实例，避免回调合并让响应变慢，thresholds 也调过。
 
-（4）H5 vs PC 的差异：H5 屏小、列数少（2 列），DOM 复用池可以更小（20-30）；PC 屏宽，3-4 列，池大小 70+。两份配置而非两份实现。
+H5 和 PC 的差别是配置而不是实现。H5 屏小 2 列，复用池 20 到 30 就够。PC 屏宽 3 到 4 列，池大小 70 以上。
 
-性能数据：1 万条 mock 数据下 FPS 稳定 55+，内存占用相比朴素实现降 ~80%。
+实测 1 万条 mock 数据 FPS 稳在 55 以上，内存相比朴素实现降了大概 80%，是上线前压测脚本跑出来的数。
+
+这套虚拟列表是 packages/guild-components 里被复用最多的底层组件之一，几乎所有列表场景都基于它扩展。后续要做的优化方向是引入 IntersectionObserver v2 加 trustworthy 字段，对反作弊场景下的真实曝光识别更精确。
 
 </details>
 
@@ -652,7 +682,7 @@ SSR 与 CSR 差别不止 flag：① useFetch 只能在 setup 同步阶段生效�
 #### 追问（面试官深挖向）
 
 - ⚖️ **如果改成无限滚动 + 跳锚回顶（用户点 anchor 跳到第 5000 条），架构要怎么改？**（feature）
-  > 需要把列高数据持久化到 store，跳锚时先恢复列高数组、再用 estimatedHeight × index 推算 scrollTop；中途未测高的位置用预估值，跳到后用 ResizeObserver 修正。
+  > 列高数据要持久化到 store。跳锚时先恢复列高数组，再用 estimatedHeight 乘 index 推算 scrollTop，中途未测高的位置用预估值，跳到后用 ResizeObserver 修正。
 
 
 #### Evidence
@@ -681,27 +711,29 @@ SSR 与 CSR 差别不止 flag：① useFetch 只能在 setup 同步阶段生效�
 
 #### 三档回答
 
-**🟢 一句话**：一阶段批申请签名 + 二阶段并发上传，避免每文件单次握手；登录态按 pskey/skey/access_token 三套适配 header。
+**🟢 一句话**：一阶段批申请签名，二阶段并发上传，避免每文件单次握手。登录态按 pskey、skey、access_token 三套适配 header。
 
 **🔵 标准**（默认）：
 
-两阶段：① fileBatchUpload 一次发文件元数据列表（filename/size/md5），后端返回每个文件的上传 URL + 签名 + uploadId；② 客户端拿 URL 并发 PUT 真实文件内容（fileUpload）。优势：握手只走一次，大批量上传（比如发 9 图贴）能省 8 次签名往返；后端也能在阶段一做风控/容量预检查。多登录态：手 Q 登录用 pskey、PC 登录用 skey、第三方授权用 access_token，三套放在不同 header（uin/pskey vs Authorization），我们用 axios interceptor 按宿主探测自动注入。
+两阶段是这样：fileBatchUpload 一次发文件元数据列表（filename、size、md5），后端返回每个文件的上传 URL、签名、uploadId。客户端拿 URL 并发 PUT 真实文件内容，也就是 fileUpload。好处是握手只走一次，大批量上传时（比如发 9 图贴）能省 8 次签名往返。后端也能在阶段一做风控和容量预检查。多登录态上，手 Q 登录用 pskey，PC 登录用 skey，第三方授权用 access_token，三套放在不同 header（uin/pskey 对 Authorization）。我们用 axios interceptor 按宿主探测自动注入。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-工程化几个深入点：
+工程上几个深入点。
 
-（1）md5 客户端计算的代价：文件大 (>10MB) 时主线程算 md5 直接卡住界面，要丢到 Web Worker 跑分片增量 md5。我们在 upload-button 内部封装了 spark-md5 + worker，业务侧只看到 await getMd5(file)。
+md5 客户端计算的代价。文件大于 10MB 时主线程算 md5 会卡住界面，要丢到 Web Worker 跑分片增量 md5。我们在 upload-button 里封装了 spark-md5 加 worker，业务侧只看到 await getMd5(file)。
 
-（2）并发度控制：阶段二能并发，但浏览器对同源连接上限 6 个；超过会自动排队，但有些宿主 webview 限制更严（4 个）。我们用一个 Semaphore 控制 max=4，未上传成功的 chunk 走断点续传重试。
+并发度控制。阶段二能并发，但浏览器对同源连接上限 6 个。超过会自动排队，但有些宿主 webview 限制更严，到 4 个。我们用一个 Semaphore 控制 max=4，未上传成功的 chunk 走断点续传重试。
 
-（3）断点续传：阶段二每个 PUT 失败时拿 uploadId 重试，最多 3 次指数退避；超过 30% 文件失败则整批 abort 让用户重新触发，避免半成功状态污染 UI。
+断点续传。阶段二每个 PUT 失败时拿 uploadId 重试，最多 3 次指数退避。超过 30% 文件失败就整批 abort 让用户重新触发，避免半成功状态污染 UI。
 
-（4）多登录态适配的踩坑：早期 axios interceptor 写在每个 project，三处实现不一致，导致 H5 在某些路径丢 pskey。后来抽到 packages/guild-components/src/base-components/media-link，业务层 import 这个 composable 即可。media-link.vue 渲染时根据 url scheme 决定是否要走鉴权重写——比如 cdn.xxx 的 url 已经签好名，pskey 反而干扰。
+多登录态适配的坑。早期 axios interceptor 写在每个 project，三处实现不一致，导致 H5 在某些路径丢 pskey。后来抽到 packages/guild-components/src/base-components/media-link，业务层 import 这个 composable 就行。media-link.vue 渲染时根据 url scheme 决定要不要走鉴权重写，比如 cdn.xxx 的 url 已经签好名，pskey 反而干扰。
 
-（5）whistle 抓包：联调时本地需要让请求走线上后端但带本地 cookie，配 whistle 规则即可。新人入职文档里专门有一段。
+whistle 抓包。联调时本地需要让请求走线上后端但带本地 cookie，配 whistle 规则即可。新人入职文档里专门有一段说明常见配法。
 
-反思：如果重做，会考虑用 tus.io 协议替代自家两阶段，社区生态更成熟。当前没切是因为腾讯后端基建是按两阶段协议设计的，切要协同后端，ROI 不高。
+如果重做，会考虑用 tus.io 协议替代自家两阶段，社区生态更成熟。当前没切，是因为腾讯后端基建是按两阶段协议设计的，切要协同后端，ROI 不高。
+
+这套上传方案目前还在演进，下一步打算把 worker 改成 SharedWorker，让多个上传任务共用一份 md5 计算上下文，进一步降低主线程压力。
 
 </details>
 
@@ -747,35 +779,31 @@ SSR 与 CSR 差别不止 flag：① useFetch 只能在 setup 同步阶段生效�
 
 #### 三档回答
 
-**🟢 一句话**：编辑器实时 + 提交前 lint-staged + push 前 husky pre-push + CI Orange，四道闸门，越往后越贵。
+**🟢 一句话**：编辑器实时、提交前 lint-staged、push 前 husky pre-push、CI Orange，四道闸门，越往后越贵。
 
 **🔵 标准**（默认）：
 
-四道闸门：① 编辑器（VSCode + ESLint 插件）实时高亮，最便宜；② 提交时 lint-staged 对暂存区文件跑 ESLint + Prettier，Husky 的 pre-commit hook 触发；③ push 前 husky pre-push 跑 type check 和 unit test（可选）；④ Orange CI 跑 lint + type check + build + unit test 全套，最贵。ESLint 9 切到了 flat config（eslint.config.mjs），优势是配置可编程、能根据文件 glob 套不同规则集。CI 卡『100% 必须通过』，本地是『100% 建议通过』，开发者 emergency 可以 --no-verify 但必须在 PR 描述里说明。
+四道闸门是这样：编辑器（VSCode 加 ESLint 插件）实时高亮，最便宜；提交时 lint-staged 对暂存区文件跑 ESLint 加 Prettier，由 Husky 的 pre-commit hook 触发；push 前 husky pre-push 跑 type check 和 unit test（可选）；Orange CI 跑 lint、type check、build、unit test 全套，最贵。ESLint 9 切到了 flat config（eslint.config.mjs），优势是配置可编程、能根据文件 glob 套不同规则集。CI 卡的是『必须通过』，本地是『建议通过』，开发者紧急情况下可以 --no-verify，但必须在 PR 描述里说明原因。整体目标是让大多数错误在最便宜的环节就被拦下来，CI 只处理那些必须跨机器才能复现的问题。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-为什么不能只靠 CI——四个理由：
+为什么不只靠 CI，有四个理由。
 
-（1）反馈循环时长：编辑器实时反馈是『毫秒级』，CI 反馈是『5-15 分钟』。开发者写一行错代码到 CI 失败再改，注意力切换成本 10 倍。
+反馈循环时长。编辑器实时反馈是毫秒级，CI 反馈是 5 到 15 分钟。开发者写一行错代码到 CI 失败再改，注意力切换成本翻 10 倍。
 
-（2）热路径分流：CI 资源有限，全公司排队。把『一定错的』在本地拦下，CI 只跑『可能错的』，资源用在刀刃。
+热路径分流。CI 资源有限，全公司排队。把『一定错的』在本地拦下，CI 只跑『可能错的』，资源用在刀刃。
 
-（3）保护 main 分支：CI 跑过的代码才能合入 main，但 push 前没卡，开发者会习惯性推一堆 broken commit 到 feature 分支，污染 git 历史。
+保护 main 分支。CI 跑过的代码才能合入 main，但 push 前没卡，开发者会习惯推一堆 broken commit 到 feature 分支，污染 git 历史，code review 时也难定位真实变更。
 
-（4）渐进教育：lint-staged 在提交时 auto-fix（比如 prettier 格式化），开发者『写错了→工具帮你改对了』循环重复 100 次，肌肉记忆就成了。
+渐进教育。lint-staged 在提交时 auto-fix（比如 prettier 格式化），开发者『写错了→工具帮你改对了』循环重复 100 次，肌肉记忆就成了。
 
-ESLint 9 flat config 的切换价值：
+ESLint 9 flat config 的切换值。老的 .eslintrc 是配置黑盒，rules 继承链不可见。flat config 是普通 JS 模块，导出数组，每条配置是一个对象（files、rules、plugins），按 glob 命中。可读性大幅提升。能 dynamic import 插件：比如只在 packages/guild-components 启用 vue/strongly-recommended，其他地方走宽松版，写在一份 config 文件里。pnpm 加 flat config 没有 monorepo 配置歧义：以前 .eslintrc 会被 ESLint 沿目录树自动 merge，packages 和 projects 里各放一份就互相污染。flat config 显式声明 files glob，作用范围清晰。
 
-（a）老的 .eslintrc 是『配置黑盒』，rules 继承链不可见；flat config 是普通 JS 模块，导出数组，每条配置是一个对象 { files, rules, plugins }，按 glob 命中。可读性大幅提升。
+踩过的坑。lint-staged 和 husky 9.x 集成有 known bug，会在 Windows 上 stash 失败丢文件。我们 pin 在 9.0.0 加内部脚本 workaround。
 
-（b）能 dynamic import 插件：比如只在 packages/guild-components 启用 vue/strongly-recommended，其他地方走宽松版，写在一份 config 文件里。
+CI 速度仍是瓶颈，目前 5 分钟左右，想优化到 2 分钟以内需要『lint 增量化加 test 按 affected』。Nx 在这方面优势明显，但前面说过没切。
 
-（c）pnpm + flat config 没有 monorepo 配置歧义：以前 .eslintrc 会被 ESLint 沿目录树自动 merge，packages 和 projects 里各放一份就互相污染；flat config 显式声明 files glob，作用范围清晰。
-
-踩过的坑：lint-staged 与 husky 9.x 集成有 known bug，会在 Windows 上 stash 失败丢文件；我们 pin 在 9.0.0 + 内部脚本 workaround。
-
-反思：CI 速度仍是瓶颈，目前 5 分钟左右，想优化到 2 分钟以内需要『lint 增量化 + test 按 affected』。Nx 在这方面优势明显，但前面说过没切。
+四道闸门的设计是有顺序的：编辑器修日常 typo，提交时修格式与 lint 错误，push 时修明显的类型问题，CI 跑全套保证主分支干净。每一层关注点不同，叠在一起才能让代码质量稳定可控。
 
 </details>
 
@@ -825,31 +853,33 @@ ESLint 9 flat config 的切换价值：
 
 #### 三档回答
 
-**🟢 一句话**：Aegis 抓前端异常/性能、Datong 跑业务埋点、OTel 跨服务链路追踪，三家各管一档不重叠。
+**🟢 一句话**：Aegis 抓前端异常和性能，Datong 跑业务埋点，OTel 跨服务链路追踪，三家各管一档不重叠。
 
 **🔵 标准**（默认）：
 
-三家分工：① AegisV2 是腾讯前端监控平台，抓 JS 异常、性能指标（LCP/FID/CLS）、白屏，强项是浏览器侧错误聚合和报警；② Datong V4 是数据中台埋点系统，强项是业务指标分析、漏斗、用户分群，所有『按钮点击 / 页面停留』走它；③ OpenTelemetry 跑分布式 trace，从浏览器请求一直到后端各微服务，关联同一 traceId，强项是排查慢请求和跨服务依赖。server/plugins/aegis.ts 在 Nuxt SSR 阶段就启动 Aegis，让首屏白屏也能上报。三者通过统一封装的 useObserve composable 对外暴露 reportError/reportEvent/startSpan，业务侧不感知底层。
+三家分工是这样。AegisV2 是腾讯前端监控平台，抓 JS 异常、性能指标（LCP、FID、CLS）、白屏，强项在浏览器侧错误聚合和报警。Datong V4 是数据中台的埋点系统，强项是业务指标分析、漏斗、用户分群，按钮点击和页面停留这种走它。OpenTelemetry 跑分布式 trace，从浏览器请求一直到后端各微服务，用同一个 traceId 串起来，强项是排查慢请求和跨服务依赖。server/plugins/aegis.ts 在 Nuxt SSR 阶段就启动 Aegis，让首屏白屏也能上报。三家通过统一封装的 useObserve composable 对外暴露 reportError、reportEvent、startSpan，业务侧不感知底层。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-为什么不挑一个全用——核心是『工具的强项不可替代』：
+为什么不挑一家用，是因为每家的强项替代不了。
 
-（1）AegisV2 强在错误指纹聚合：同样的错误 1 万次会被去重成一条记录，自动 sourcemap 解析。Datong 是分析平台不会做这种聚合；OTel 关心 span 不关心 fingerprint。
+AegisV2 强在错误指纹聚合。同一个错误一万次会被去重成一条记录，自动 sourcemap 解析。Datong 是分析平台，不会做这种聚合。OTel 关心 span 不关心 fingerprint。
 
-（2）Datong 强在业务漏斗：『打开频道 → 进入贴子 → 点赞 → 评论』链路 retention rate，要按用户分群、按时间切片。Aegis 没这种 OLAP 能力。
+Datong 强在业务漏斗。『打开频道、进入贴子、点赞、评论』这种链路的 retention，要按用户分群和按时间切片。Aegis 没有这种 OLAP 能力。
 
-（3）OTel 强在跨服务关联：贴子加载慢，Aegis 能告诉你前端慢 800ms，但不知道是 BFF 慢还是后端 RPC 慢；OTel 沿 traceId 链路看一眼，定位哪个 service 的哪个 span。
+OTel 强在跨服务关联。贴子加载慢，Aegis 能告诉你前端慢 800ms，但不知道是 BFF 慢还是后端 RPC 慢。OTel 沿 traceId 链路看一眼就能定位到哪个 service 的哪个 span。
 
-如果硬要用一家：用 Aegis 做分析？维度爆炸、查询慢；用 Datong 抓错误？没聚合、没 sourcemap；用 OTel 做业务分析？没现成的 BI 报表。
+如果硬挑一家：用 Aegis 做分析，维度爆炸、查询慢；用 Datong 抓错误，没聚合、没 sourcemap；用 OTel 做业务分析，没现成 BI 报表，业务方做月报会很痛。
 
-工程上的协同设计：
+工程上的协同。
 
-（a）统一 traceId：进入页面时生成一个 traceId，三家上报都带上。这样在 Aegis 看到一个错误，能拿 traceId 去 OTel 看完整链路，去 Datong 看用户路径，三家就是一个用户的三视角。
+统一 traceId。进入页面时生成一个 traceId，三家上报都带上。从 Aegis 看到一个错误，能拿 traceId 去 OTel 看完整链路，去 Datong 看用户路径，三家就是同一个用户的三视角。
 
-（b）采样策略错峰：Aegis 默认全量（错误本来就稀有）；Datong 按场景采样（核心漏斗 100%、非核心 10%）；OTel 头采样 10% + 错误尾采样 100%。这样总流量可控但关键场景全留。
+采样策略错峰。Aegis 默认全量，错误本来稀有。Datong 按场景采样，核心漏斗 100%，非核心 10%。OTel 头采样 10% 加错误尾采样 100%。这样总流量可控但关键场景全留。
 
-（c）SSR 注入要小心：Aegis 在 server 端注入时不能用 window，要用 globalThis；Datong 通常只在 client 端跑，SSR 阶段 stub；OTel 的 trace context 通过 HTTP header 跨 server/client 传递。我们在 server/plugins/aegis.ts 里只 boot Aegis，其余两家在 plugins/client/observe.ts。
+SSR 注入要小心。Aegis 在 server 端注入时不能用 window，用 globalThis。Datong 通常只在 client 端跑，SSR 阶段 stub。OTel 的 trace context 通过 HTTP header 跨 server/client 传递。我们在 server/plugins/aegis.ts 只 boot Aegis，其余两家在 plugins/client/observe.ts。
+
+三家观测平台的协同最终落到一句话：让每个用户的一次行为在三个视角里都可追溯。
 
 </details>
 
@@ -898,31 +928,31 @@ ESLint 9 flat config 的切换价值：
 
 #### 三档回答
 
-**🟢 一句话**：用户高风险动作触发滑块验证 → SDK 出 ticket → 业务把 ticket 随请求带给后端 → 后端核销；一次一票，绝不缓存。
+**🟢 一句话**：高风险动作触发滑块校验，SDK 出 ticket，业务带上 ticket 给后端，后端核销。一次一票，不缓存。
 
 **🔵 标准**（默认）：
 
-图灵盾是腾讯统一风控网关。流程：① 高风险动作（发帖、关注、点赞超限等）触发 turingSdk.verify({ scene })；② SDK 弹滑块/拼图/无感校验 UI，校验通过返回 ticket（一次性凭证，含 scene/ts/sign）；③ 业务把 ticket 放进 request header 或 body，跟着业务请求一起到后端；④ 后端把 ticket 拿到图灵盾后端服务核销，核销通过才执行真实业务；⑤ ticket 核销即作废，重放无效。PC 和 H5 各有一份 utils/turingSdk/index.ts 是因为加载源不同（PC 走 CDN script、H5 走宿主 jsapi），但对外 API 统一。
+图灵盾是腾讯的统一风控网关。流程是这样：高风险动作（发帖、关注、点赞超限）触发 turingSdk.verify({ scene })。SDK 弹滑块或拼图或无感校验 UI，校验通过返回 ticket，里面含 scene、ts、sign。业务把 ticket 放进 request header 或 body，跟业务请求一起到后端。后端把 ticket 拿到图灵盾后端服务核销，核销通过才执行真实业务。核销之后 ticket 即作废，重放无效。PC 和 H5 各有一份 utils/turingSdk/index.ts，是因为加载源不同——PC 走 CDN script，H5 走宿主 jsapi——但对外 API 统一。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-为什么 ticket 不能缓存——三重设计：
+ticket 不能缓存，背后是三层设计。
 
-（1）防重放：缓存 ticket 等于把『一次性凭证』退化成『长期 token』，攻击者拿到一个 ticket 后能批量重放高风险接口。图灵盾后端的核销是原子操作，重复核销直接拒绝。
+一是防重放。缓存 ticket 等于把一次性凭证退化成长期 token，拿到一个 ticket 就能批量重放高风险接口。图灵盾后端的核销是原子操作，重复核销直接拒绝，没有可绕的口子。
 
-（2）防场景串扰：不同 scene（发帖 / 关注 / 充值）的风险等级不同，发帖低风险可能只触发无感校验，充值高风险触发滑块。如果缓存复用，等于用低强度凭证调用高风险接口。SDK API 强制传 scene，业务侧无法绕过。
+二是防场景串扰。不同 scene（发帖、关注、充值）的风险等级不同，发帖低风险可能只触发无感校验，充值高风险触发滑块。缓存复用等于用低强度凭证调高风险接口。SDK API 强制传 scene，业务侧无法绕过。
 
-（3）防时间窗口攻击：ticket 内含 ts 时间戳，后端有 60 秒过期窗口；不缓存就避免了『拿一个 ticket 等到深夜风控阈值变化时再用』。
+三是防时间窗口。ticket 内含 ts，后端有 60 秒过期窗口。不缓存就避免了『拿一个 ticket 等到深夜风控阈值变化时再用』。
 
- PC/H5 双端统一抽象的工程要点：
+PC 加 H5 双端统一抽象，几个工程要点。
 
-（a）懒加载：turingSdk 是 300KB+ 的脚本，正常用户大概率永远不会触发，所以做成懒加载，第一次调 verify 时才 inject script，载入后缓存 promise；
+懒加载。turingSdk 是 300KB 以上的脚本，正常用户大概率不会触发，所以做成懒加载，第一次调 verify 时才 inject script，载入后缓存 promise。
 
-（b）兜底：SDK 加载失败、网络超时怎么办？我们用 try/catch + 60 秒 fallback 时间窗：超时则上报降级日志、引导用户重试，绝不无 ticket 通过——这是安全侧底线；
+兜底。SDK 加载失败或网络超时怎么办？我们用 try/catch 加 60 秒 fallback 时间窗。超时就上报降级日志、引导用户重试，绝不无 ticket 通过。这是安全侧底线。
 
-（c）H5 在手 Q 内嵌环境特殊：宿主可以唤起原生验证 UI，体验更好，所以 H5 版本会先检测 mqq jsapi，存在则走 native，不存在再 fallback CDN script。
+H5 在手 Q 内嵌里更特殊。宿主能唤起原生验证 UI，体验更好。H5 版本会先检测 mqq jsapi，存在就走 native，不存在再 fallback 到 CDN script。
 
-（d）观测：每次 verify 上报 scene/duration/result 三个字段到 Aegis，能在 dashboard 看到各 scene 的成功率/平均耗时，异常时可秒级发现。
+观测。每次 verify 上报 scene、duration、result 三个字段到 Aegis，dashboard 能看到各 scene 的成功率和平均耗时，异常能快速发现。
 
 </details>
 

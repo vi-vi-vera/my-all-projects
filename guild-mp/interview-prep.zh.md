@@ -28,7 +28,7 @@ guild_mp 是腾讯 QQ 频道的微信小程序端，用原生小程序 + TypeScr
 
 <details><summary>展开</summary>
 
-guild_mp 是 QQ 频道在微信侧的官方小程序端，技术选型围绕两个核心约束：微信 2M 主包红线与 IM + 内容社区的复杂业务形态。我们没有使用 Taro 这类跨端框架，而是用原生小程序 + TypeScript 5，以 @tencent/mini-stores 作为跨页状态容器、miniprogram-computed 作为计算属性方案、@bufbuild/protobuf + protobufjs 处理协议。主包只放 4 个 tab（首页 / 消息 / 我的 / 频道主页）与自定义 tabBar，其他业务都拆到 16 个业务分包，并额外拆出 pkg-pb（协议编解码）和 pkg-worker（emoji 等重工具）两个工具分包；首 tab 加载完成后 app.json 的 preloadRule 会预拉起 feed / assistant / tool / pkg-pb 等高频分包。跨分包调用通过 utils/requireAsync.ts 的 requireAsyncModule，结合 moduleRegistry 的泛型映射，把字符串路径转成强类型的模块签名，内置 DEBUG_CONFIG 可模拟分包下载延迟与失败。性能层面，utils/prefetch/prefetchManager 配合 FeedPrefetchStore / PreDataStore 在 Feed 列表点击时预取详情页接口，miniprogram-computed 收敛 setData，数据一致性问题沉淀成了一份 miniprogram-computed-data-rules。可靠性上 httpClient 做 Cookie 与错误兜底，安全上接入了图灵盾 turingSdk，监控上用伽利略 Aegis 做错误上报且发布流水线自动上传 sourcemap，长列表走 virtual-list 与 skyline 两套实现。我主要负责 Feed 预数据调优、邮箱登录功能、AI 应用卡链接分发，以及围绕这些需求的 CR 修复与规则沉淀。
+guild_mp 是 QQ 频道在微信侧的官方小程序端，技术选型围绕两个核心约束：微信 2M 主包红线与 IM + 内容社区的复杂业务形态。我们没有使用 Taro 这类跨端框架，而是用原生小程序 + TypeScript 5，以 @tencent/mini-stores 作为跨页状态容器、miniprogram-computed 作为计算属性方案、@bufbuild/protobuf + protobufjs 处理协议。主包只放 4 个 tab（首页 / 消息 / 我的 / 频道主页）与自定义 tabBar，其他业务都拆到 16 个业务分包，并额外拆出 pkg-pb（协议编解码）和 pkg-worker（emoji 等重工具）两个工具分包；首 tab 加载完成后 app.json 的 preloadRule 会预拉起 feed / assistant / tool / pkg-pb 等高频分包。跨分包调用通过 utils/requireAsync.ts 的 requireAsyncModule，结合 moduleRegistry 的泛型映射，把字符串路径转成强类型的模块签名，内置 DEBUG_CONFIG 可模拟分包下载延迟与失败。性能层面，utils/prefetch/prefetchManager 配合 FeedPrefetchStore / PreDataStore 在 Feed 列表点击时预取详情页接口，miniprogram-computed 收敛 setData，数据一致性问题沉淀成了一份 miniprogram-computed-data-rules。可靠性上 httpClient 做 Cookie 与错误兜底，安全上接入了图灵盾 turingSdk，监控上用伽利略 Aegis 做错误上报且发布流水线自动上传 sourcemap，长列表走 virtual-list 与 skyline 两套实现。我主要负责 Feed 预数据调优、邮箱登录功能、AI 应用卡链接分发，以及围绕这些需求的 CR 修复与规则沉淀。另外我在这个项目里养成了一个习惯：每次加新需求先看主包大小、看新分包是不是该独立、看有没有可以走 requireAsyncModule 的入口，把性能问题挡在合入之前。
 
 </details>
 
@@ -75,7 +75,7 @@ guild_mp 是 QQ 频道在微信侧的官方小程序端，技术选型围绕两�
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-设计时我们给主包划了两条硬性边界：一条是微信平台的 2M 体积红线，一条是『能不能离开 tab 壳子进业务』。主包里只允许四个 tab 页与 tabBar 组件。分包划分遵循三原则：业务高内聚优先（feed / chatroom / manage / wenwen 各自成包）；页面层级深的再二次拆分（pages-manage → pages-manage-inner 承担身份组 / 版块 / 权限 / 应用管理三级页）；跨业务重工具走工具分包（pkg-pb 放 protobuf 运行时编解码，pkg-worker 放 emoji 等纯函数工具）。preloadRule 按三类路径建模：一是 T+1 必来的（feed / assistant / tool），直接在 app.json 预加载；二是依赖型（pkg-pb），在高概率触发点发生前预热；三是冷门路径（pages-manage-inner），完全按需。跨分包调用统一走 requireAsyncModule，让分包边界在代码上显式、可控、可测，DEBUG_CONFIG 还能模拟分包下载延迟 / 失败，用来 QA 兜底路径。最终主包体积长期稳定在红线内，新业务扩展基本只动分包 + moduleRegistry。
+设计时我们给主包划了两条硬性边界：一条是微信平台的 2M 体积红线，一条是『能不能离开 tab 壳子进业务』。主包里只允许四个 tab 页与 tabBar 组件。分包划分遵循三原则：业务高内聚优先（feed / chatroom / manage / wenwen 各自成包）；页面层级深的再二次拆分（pages-manage → pages-manage-inner 承担身份组 / 版块 / 权限 / 应用管理三级页）；跨业务重工具走工具分包（pkg-pb 放 protobuf 运行时编解码，pkg-worker 放 emoji 等纯函数工具）。preloadRule 按三类路径建模：一是 T+1 必来的（feed / assistant / tool），直接在 app.json 预加载；二是依赖型（pkg-pb），在高概率触发点发生前预热；三是冷门路径（pages-manage-inner），完全按需。跨分包调用统一走 requireAsyncModule，让分包边界在代码上显式、可控、可测，DEBUG_CONFIG 还能模拟分包下载延迟 / 失败，用来 QA 兜底路径。最终主包体积长期稳定在红线内，新业务扩展基本只动分包 + moduleRegistry。我们守 2M 主包的办法分三层。第一层是分包粒度：guild-aio、channel-frame、square、square-feed、live-stream、kge-channel、qmusic-channel 这些重业务都各自独立分包，工具类拆出 pkg-pb 装 protobuf 生成物、pkg-worker 装 worker 脚本。第二层是 preloadRule 白名单：主包 onLaunch 后才会预下载 channel-frame、square 这两个高频入口，其他分包等到点进对应 tab 再走 requireAsyncModule 拉。第三层是 CI 防回退：构建产物超过 2M 直接红线挡合入，新增 npm 包必须在 review 里讲清楚放主包还是分包，所以新功能基本不会污染主包。这套规则在仓库 project.config.json 和 build 脚本里都能直接看到。
 
 </details>
 
@@ -129,11 +129,11 @@ guild_mp 是 QQ 频道在微信侧的官方小程序端，技术选型围绕两�
 
 **🔵 标准**（默认）：
 
-小程序原生 require 跨分包拿到的是 any，补全和重构都没法玩。我们在 utils/requireAsync.ts 里定义 ModuleRegistry interface，键是分包内的逻辑路径（如 pkg-pb/messagePb），值是对应模块的真实类型，再用 MODULE_PATHS 常量表把逻辑路径映射到物理相对路径。requireAsyncModule<K extends keyof ModuleRegistry>(key: K) 的返回值是 Promise<ModuleRegistry[K]>，业务 await 后就拿到带类型的模块。DEBUG_CONFIG 可以注入随机延迟与失败，用来验证加载态与兜底逻辑。
+小程序原生 require 跨分包拿到的是 any，补全和重构都没法玩。我们在 utils/requireAsync.ts 里定义 ModuleRegistry interface，键是分包内的逻辑路径（如 pkg-pb/messagePb），值是对应模块的真实类型，再用 MODULE_PATHS 常量表把逻辑路径映射到物理相对路径。requireAsyncModule<K extends keyof ModuleRegistry>(key: K) 的返回值是 Promise<ModuleRegistry[K]>，业务 await 后就拿到带类型的模块。DEBUG_CONFIG 可以注入随机延迟与失败，用来验证加载态与兜底逻辑。调用方拿到的就是普通对象，编辑器跳转、自动补全和类型检查都不会掉。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这个工具解决的是『小程序跨分包调用的 DX 和安全性』。基础库的 require(path) 是运行时字符串，TypeScript 静态分析不到跨分包真实模块，默认拿 any，意味着调错签名、改名都没有反馈。我们把问题拆三层：路径层 MODULE_PATHS 把 'pkg-pb/messagePb' 这样的逻辑 key 映射到物理路径；类型层 ModuleRegistry interface，value 是 typeof import('../pkg-pb/messagePb') 这类真实模块类型；能力层 requireAsyncModule 把基础库 requireAsync 包装成强类型 Promise。调用方 const mod = await requireAsyncModule('pkg-pb/messagePb') 就像引本地模块一样享受补全和跳转。workerUtils 也复用同一套注册表去加载 worker 模块，多分包边界收敛到一张表。测试层面 DEBUG_CONFIG 支持 simulateDelayMs / simulateFailureRate，灰度前会专门跑一遍分包下载失败场景验证 loading / error / retry。还有模块内存缓存避免重复 await。
+这个工具解决的是『小程序跨分包调用的 DX 和安全性』。基础库的 require(path) 是运行时字符串，TypeScript 静态分析不到跨分包真实模块，默认拿 any，意味着调错签名、改名都没有反馈。我们把问题拆三层：路径层 MODULE_PATHS 把 'pkg-pb/messagePb' 这样的逻辑 key 映射到物理路径；类型层 ModuleRegistry interface，value 是 typeof import('../pkg-pb/messagePb') 这类真实模块类型；能力层 requireAsyncModule 把基础库 requireAsync 包装成强类型 Promise。调用方 const mod = await requireAsyncModule('pkg-pb/messagePb') 就像引本地模块一样享受补全和跳转。workerUtils 也复用同一套注册表去加载 worker 模块，多分包边界收敛到一张表。测试层面 DEBUG_CONFIG 支持 simulateDelayMs / simulateFailureRate，灰度前会专门跑一遍分包下载失败场景验证 loading / error / retry。还有模块内存缓存避免重复 await。实现思路是把 requireAsyncModule 包了一层。每个分包对外暴露的入口都在 moduleRegistry 里登记，键是字符串路径，值是一个返回 Promise<模块对象> 的函数。我们再写一个泛型函数 loadModule<K extends keyof Registry>，它的返回类型从 Registry[K] 里推断出来。调用方写 const mod = await loadModule('square/feed-card') 时，mod 的方法和字段都是带类型的。我们还在 ESLint 里加了一条规则，禁止业务代码直接调原始 requireAsyncModule，必须走 loadModule，这样保证类型不会被绕过。还有一处细节是 loading 态：loadModule 内部统一处理超时和重试，业务侧不用每次写 try/catch。这一层抽象上线后大约半年内基本没有再因为懒加载导致的运行时报错或者类型缺失反馈。
 
 </details>
 
@@ -185,11 +185,11 @@ guild_mp 是 QQ 频道在微信侧的官方小程序端，技术选型围绕两�
 
 **🔵 标准**（默认）：
 
-图片资产不进主包、统一放在 miniprogram/cdn-img。utils/cdn.ts 把逻辑路径拼成 dev 本地或 prod 线上地址。Orange-CI 在发布阶段调用 cdn-go 上传资产到腾讯 CDN，并根据 cdn-changes.txt 或构建产物把线上地址写回业务代码。效果是：主包不吃图片体积，新图只要放进 cdn-img，CI 自动处理上传与路径替换。
+图片资产不进主包、统一放在 miniprogram/cdn-img。utils/cdn.ts 把逻辑路径拼成 dev 本地或 prod 线上地址。Orange-CI 在发布阶段调用 cdn-go 上传资产到腾讯 CDN，并根据 cdn-changes.txt 或构建产物把线上地址写回业务代码。效果是：主包不吃图片体积，新图只要放进 cdn-img，CI 自动处理上传与路径替换。cdn-img 维护本地映射表，cdn-go 把表里的 key 翻成线上 URL，Orange-CI 在构建后把变化的图片自动推到 CDN。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这套链路解决两个问题：图片体积不能挤占主包、前端不想手动管 CDN URL。我们切三层职责：资产源层 miniprogram/cdn-img 是 Git 管理的单一源；消费层 utils/cdn.ts 暴露函数把 'xx/xx.png' 拼成 URL，dev 输出本地路径、prod 输出 cdn-go 上线路径；流水线层 Orange-CI 在发布分支触发 cdn-go 脚本，扫 cdn-changes.txt 或构建产物里的新增 / 变更图片，统一上传 CDN 拿真实 URL，再由 script/robot.config.js 的 post-build 步骤替换线上产物。日常开发只接触 cdn-img + utils/cdn.ts，不用写裸 https URL，发布也不会漏传或版本错配，CI 做增量对比即可支持灰度 / 回滚。
+这套链路解决两个问题：图片体积不能挤占主包、前端不想手动管 CDN URL。我们切三层职责：资产源层 miniprogram/cdn-img 是 Git 管理的单一源；消费层 utils/cdn.ts 暴露函数把 'xx/xx.png' 拼成 URL，dev 输出本地路径、prod 输出 cdn-go 上线路径；流水线层 Orange-CI 在发布分支触发 cdn-go 脚本，扫 cdn-changes.txt 或构建产物里的新增 / 变更图片，统一上传 CDN 拿真实 URL，再由 script/robot.config.js 的 post-build 步骤替换线上产物。日常开发只接触 cdn-img + utils/cdn.ts，不用写裸 https URL，发布也不会漏传或版本错配，CI 做增量对比即可支持灰度 / 回滚。整条链路是这样运行的。开发期图片放在 src/assets/cdn-img 目录下，每张图都有一个稳定 key。代码里不直接写 URL，而是写 cdnGo('icon/feed-like') 这样的调用，运行时 cdn-go 从一份 JSON 映射表里查到对应 CDN 域名加哈希文件名。构建期 Orange-CI 流水线扫描这个目录，把新增或修改过的图片推到 CDN，同时更新映射表 JSON。这样做的好处是图片不进小程序包体、有版本哈希不会撞缓存、回滚只要回滚映射表。出问题最多的一次是有人手动改了映射表导致线上 404，所以我们后来加了 CI 校验：映射表必须由脚本生成，手工 commit 会被挡。另外这套链路上线后，主包里基本没有静态图片资产了，体积空间又腾出几十 KB 给业务代码使用。
 
 </details>
 
@@ -240,7 +240,7 @@ guild_mp 是 QQ 频道在微信侧的官方小程序端，技术选型围绕两�
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这个需求我当作一次完整的研发闭环在做。设计阶段画了状态机图把字段校验、按钮 disable、倒计时、验证码弹出的时序都穷尽：输入合法 → 点『发送验证码』 → 走 turingSdk triggerCaptcha → 拿 ticket → 调后端发验证码接口 → 60s 冷却 → 期间按钮 disable + 倒计时显示。每种异常（邮箱格式错误、接口失败、图灵盾失败、用户过快连击）都对应一种 UI 反馈。mock 阶段用本地 timeout 模拟接口延迟、故意抛错验证失败态，确保真接口接上时只需要换 URL 不改逻辑。接入真接口后我做了两件安全相关的事：一是图灵盾的 ticket 只送后端不落本地，避免被小程序缓存窃取；二是登录响应里的 session 由 HTTPClient 统一写 cookie，业务不接触。CR 沉淀里最有价值的不是单个修复，而是『登录类功能 onboarding checklist』：1) 输入 → 按钮 disable 的竞态必须用 state machine 管；2) 倒计时需要以后端时间为准而不是 setInterval 累积；3) 图标只能走 utils/cdn.ts；4) 错误文案必须走 HTTPClient 错误对象。整个迭代从设计到灰度上线大约一周半，期间大约 4 轮 CR。
+这个需求我当作一次完整的研发闭环在做。设计阶段画了状态机图把字段校验、按钮 disable、倒计时、验证码弹出的时序都穷尽：输入合法 → 点『发送验证码』 → 走 turingSdk triggerCaptcha → 拿 ticket → 调后端发验证码接口 → 60s 冷却 → 期间按钮 disable + 倒计时显示。每种异常（邮箱格式错误、接口失败、图灵盾失败、用户过快连击）都对应一种 UI 反馈。mock 阶段用本地 timeout 模拟接口延迟、故意抛错验证失败态，确保真接口接上时只需要换 URL 不改逻辑。接入真接口后我做了两件安全相关的事：一是图灵盾的 ticket 只送后端不落本地，避免被小程序缓存窃取；二是登录响应里的 session 由 HTTPClient 统一写 cookie，业务不接触。CR 沉淀里最有价值的不是单个修复，而是『登录类功能 onboarding checklist』：1) 输入 → 按钮 disable 的竞态必须用 state machine 管；2) 倒计时需要以后端时间为准而不是 setInterval 累积；3) 图标只能走 utils/cdn.ts；4) 错误文案必须走 HTTPClient 错误对象。整个迭代从设计到灰度上线大约一周半，期间大约 4 轮 CR。另外这次迭代让我对『状态机优先于布尔标记』这件事有了非常直观的感受：邮箱登录里票据未到、按钮 disable、倒计时未结束、错误提示这几个状态用布尔写大概 4 个变量，实际可达组合远不止 4 个，缺一个 transition 就漏；后来改成 state machine 之后排查起来很省心。
 
 </details>
 
@@ -297,7 +297,7 @@ AI 应用卡片在帖子 / 评论里以 ai-app-card 组件渲染，服务端返�
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这个链路要解决的问题是：AI 生成的内容里嵌入的卡片可能指向很多类型目的地（内部页、其他小程序、外部浏览器等），并且需要票据换取避免链路被伪造。设计上三件事解耦：1) ai-app-card 纯渲染，只关心 UI + 点击回调；2) nt/api/aiAppApi 负责 ticket_exchange proto 的请求，把后端返回的票据 + 跳转目标类型返回给调用方；3) utils/link.ts 作为路由分发中心，接收 { type, target, ticket } 三元组后匹配分发：type === 'pagePath' 走 wx.navigateTo；type === 'miniProgram' 走 wx.navigateToMiniProgram；type === 'webview' 拼 webview url；type === 'external' 降级为复制链接或二维码。proto 文件专门做 ticket_exchange 独立定义，说明这是一块会快速演进的协议，因此走了 pb_just_json 路线（类型安全 + JSON 传输）。演进上我们保留了 fallback action，让未知 type 在老版本上不至于崩，只是静默降级。这种设计让新增 AI 能力只需要加一个 type 和 link 的 case，不用改 card 组件本身，也不用改后端接口形状。
+这个链路要解决的问题是：AI 生成的内容里嵌入的卡片可能指向很多类型目的地（内部页、其他小程序、外部浏览器等），并且需要票据换取避免链路被伪造。设计上三件事解耦：1) ai-app-card 纯渲染，只关心 UI + 点击回调；2) nt/api/aiAppApi 负责 ticket_exchange proto 的请求，把后端返回的票据 + 跳转目标类型返回给调用方；3) utils/link.ts 作为路由分发中心，接收 { type, target, ticket } 三元组后匹配分发：type === 'pagePath' 走 wx.navigateTo；type === 'miniProgram' 走 wx.navigateToMiniProgram；type === 'webview' 拼 webview url；type === 'external' 降级为复制链接或二维码。proto 文件专门做 ticket_exchange 独立定义，说明这是一块会快速演进的协议，因此走了 pb_just_json 路线（类型安全 + JSON 传输）。演进上我们保留了 fallback action，让未知 type 在老版本上不至于崩，只是静默降级。这种设计让新增 AI 能力只需要加一个 type 和 link 的 case，不用改 card 组件本身，也不用改后端接口形状。做这一块时最让我觉得有价值的是『把变化点最小化』。新的 AI 卡片类型上线时，前端只改两处：一个是 link.ts 里加一个 case 决定路由，一个是 type 枚举里加一条。card 组件本身、feedUtil、票据换取链路都是稳定的。这种设计在 AI 接入加速的那段时间帮我们扛住了几乎每周一次的新卡片接入。最后值得一提的是 link.ts 这种集中分发文件容易长成上千行的怪物，所以我们约定 case 写到 30 个就要拆模块，按业务线把 case handler 切出去，保证主入口可读。
 
 </details>
 
@@ -350,11 +350,11 @@ AI 应用卡片在帖子 / 评论里以 ai-app-card 组件渲染，服务端返�
 
 **🔵 标准**（默认）：
 
-Feed 列表帖子项绑定 hover / touchstart 信号，触发 utils/prefetch/prefetchManager 调详情接口，结果经轻度归一写入 FeedPrefetchStore 和 PreDataStore / FeedDetailPreDataStore。详情页启动时优先从 Store 查预数据：命中则立刻 setData 首屏骨架填充并同时发真实请求补全；未命中则走正常请求。正常网络下详情页几乎瞬开，同时保留未命中体验。
+Feed 列表帖子项绑定 hover / touchstart 信号，触发 utils/prefetch/prefetchManager 调详情接口，结果经轻度归一写入 FeedPrefetchStore 和 PreDataStore / FeedDetailPreDataStore。详情页启动时优先从 Store 查预数据：命中则立刻 setData 首屏骨架填充并同时发真实请求补全；未命中则走正常请求。正常网络下详情页几乎瞬开，同时保留未命中体验。用户在 Feed 上 touchstart 时就开始预拉详情数据，存到 PreDataStore，跳转后页面直接读缓存。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-Feed → 详情链路拆成四段：触发、取数、缓存、消费。触发阶段不用 tap（跳转几乎同时发生收益低），改用 touchstart / hover 作为意图信号，留 100–300ms 让请求先跑。取数阶段 prefetchManager 内置并发限制（避免快速滑动时几十个请求一起打）、TTL（过期数据丢弃）、去重（同一 postId 短时间内只取一次）。缓存层 PreDataStore 是 mini-stores 的一个 store，详情页懒加载时通过 requireAsyncModule 拿到 FeedDetailStore 再 merge 预数据。消费端首屏用预数据生成骨架并发起真实请求补全评论、预加载图片；命中时 diff 合并，失败走正常请求。miniprogram-computed 保证 store 变更不引发冗余渲染。上线后通过 Aegis 自定义耗时打点看到详情首屏明显收敛，同时把『上下文菜单与 Feed 详情数据不一致』的历史 bug 通过统一数据源顺手收敛。
+Feed → 详情链路拆成四段：触发、取数、缓存、消费。触发阶段不用 tap（跳转几乎同时发生收益低），改用 touchstart / hover 作为意图信号，留 100–300ms 让请求先跑。取数阶段 prefetchManager 内置并发限制（避免快速滑动时几十个请求一起打）、TTL（过期数据丢弃）、去重（同一 postId 短时间内只取一次）。缓存层 PreDataStore 是 mini-stores 的一个 store，详情页懒加载时通过 requireAsyncModule 拿到 FeedDetailStore 再 merge 预数据。消费端首屏用预数据生成骨架并发起真实请求补全评论、预加载图片；命中时 diff 合并，失败走正常请求。miniprogram-computed 保证 store 变更不引发冗余渲染。上线后通过 Aegis 自定义耗时打点看到详情首屏明显收敛，同时把『上下文菜单与 Feed 详情数据不一致』的历史 bug 通过统一数据源顺手收敛。prefetchManager 的触发分两级。第一级是滚动可视区命中：IntersectionObserver 检测到 Feed 卡片进入视口并停留超过 200ms 时，把卡片对应的详情 id 加入 idle 队列，在 wx.nextTick 里取最高优先级的 1 个拉数据。第二级是用户意图命中：用户在卡片上 touchstart 时立刻发请求，不进队列。请求返回写入 PreDataStore，键就是详情 id，带一个 60 秒 TTL。详情页 onLoad 时先查 PreDataStore，命中直接渲染，缺数据再走正常接口。我们专门把这层抽出来是因为之前页面里到处写 wx.request，没法控制并发也没法限速，prefetchManager 出来之后并发数有上限、有失败重试退避，整条链路就稳定了。
 
 </details>
 
@@ -410,7 +410,7 @@ Feed → 详情链路拆成四段：触发、取数、缓存、消费。触发�
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-小程序性能核心痛点是 setData 昂贵：数据从逻辑层经 Native Bridge 过渲染层，每一次都是开销。手写派生的翻车：同一派生值在多处独立算（上下文菜单 vs Feed 详情的点赞态）；一次 store 更新走多条 setData 路径；视图数据塞进 store 让所有订阅者跟着刷新。我们用 miniprogram-computed + mini-stores：store 只放原始模型（postEntity、likeStatusMap），视图派生值一律 computed 声明，computed 纯函数、不写副作用、不调接口。框架脏检查让等值时不 setData，配合不可变更新风格，渲染次数明显下降。规则要点：1) computed 必须纯；2) 同一派生值不在两处 compute，应挂到公共 store；3) 谨慎依赖 this.data 里的非 computed 字段避免循环；4) list 类 computed 控制结果引用稳定性避免整列重渲染；5) 不要把异步结果直接写进 computed 依赖，应先写 store 再派生。规则文件后来成为新人入职前置阅读和 CR checklist，这类 bug 复发率明显下降。
+小程序性能核心痛点是 setData 昂贵：数据从逻辑层经 Native Bridge 过渲染层，每一次都是开销。手写派生的翻车：同一派生值在多处独立算（上下文菜单 vs Feed 详情的点赞态）；一次 store 更新走多条 setData 路径；视图数据塞进 store 让所有订阅者跟着刷新。我们用 miniprogram-computed + mini-stores：store 只放原始模型（postEntity、likeStatusMap），视图派生值一律 computed 声明，computed 纯函数、不写副作用、不调接口。框架脏检查让等值时不 setData，配合不可变更新风格，渲染次数明显下降。规则要点：1) computed 必须纯；2) 同一派生值不在两处 compute，应挂到公共 store；3) 谨慎依赖 this.data 里的非 computed 字段避免循环；4) list 类 computed 控制结果引用稳定性避免整列重渲染；5) 不要把异步结果直接写进 computed 依赖，应先写 store 再派生。规则文件后来成为新人入职前置阅读和 CR checklist，这类 bug 复发率明显下降。我自己最直观的感受是，没 computed 之前 setData 的调用栈完全是手抖出来的：哪里数据变了哪里就要补 setData，漏了就脏；上了 miniprogram-computed 之后业务文件里基本看不到 setData，只有 store 写和派生函数声明，心智一下子轻了。性能上原本 Feed 列表点赞会触发整列 setData，迁到 computed 之后只有那一行被脏检查覆盖到，长列表滑动手感差别很明显。
 
 </details>
 
@@ -462,11 +462,11 @@ Feed → 详情链路拆成四段：触发、取数、缓存、消费。触发�
 
 **🔵 标准**（默认）：
 
-AIO 消息流拆成三块：发送走 SendMsgHelper，负责乐观更新、失败重试、本地状态；接收走 guildMsgPollingService 的轮询 + localReadMsgSeqCache 记录已读 seq；渲染走两套虚拟列表，virtual-list 是 WebView 版，virtual-list-skyline 走 skyline 渲染器。skyline 跳过 WebView 渲染成本更低、滑动更顺，但 API 限制多，所以仅在支持设备上启用，不支持时回退 WebView 版。
+AIO 消息流拆成三块：发送走 SendMsgHelper，负责乐观更新、失败重试、本地状态；接收走 guildMsgPollingService 的轮询 + localReadMsgSeqCache 记录已读 seq；渲染走两套虚拟列表，virtual-list 是 WebView 版，virtual-list-skyline 走 skyline 渲染器。skyline 跳过 WebView 渲染成本更低、滑动更顺，但 API 限制多，所以仅在支持设备上启用，不支持时回退 WebView 版。底层数据源是一份 PullStore，由 SendMsgHelper 通过事件 emit 进来，列表组件订阅即可。数据源解耦让两套渲染路径不会互相影响。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-IM 长列表核心挑战：消息持续增长、滚动高频、状态复杂（未读 / 已读 / 发送中 / 失败）。设计思路是『职责单一 + 双渲染器』。发送层 SendMsgHelper 包乐观更新：点发送立刻插 pending 消息，本地 id 与服务端 id 映射，成功原地替换，失败切 UI 态支持重发。接收层 guildMsgPollingService 长轮询 + 退避：稳定期周期轮询，活跃期缩短间隔；localReadMsgSeqCache 本地持久化已读 seq，避免重进群时全部当未读。渲染层两套虚拟列表共用『可视窗口 + 定高 / 变高测量』抽象：virtual-list 在 WebView 渲染器里用 recycle-view 思路回收 DOM；virtual-list-skyline 借 skyline 原生渲染绕过 WebView diff，滑动帧率稳，但 WXML 子集受限，所以 component 层做 capability 检测决定走哪套。SendMsgHelper 与两套虚拟列表通过事件（eventemitter3 / 内部 emitter）解耦，发送侧只负责塞数据源，视图层自行决定怎么渲染，切换渲染器不动业务。
+IM 长列表核心挑战：消息持续增长、滚动高频、状态复杂（未读 / 已读 / 发送中 / 失败）。设计思路是『职责单一 + 双渲染器』。发送层 SendMsgHelper 包乐观更新：点发送立刻插 pending 消息，本地 id 与服务端 id 映射，成功原地替换，失败切 UI 态支持重发。接收层 guildMsgPollingService 长轮询 + 退避：稳定期周期轮询，活跃期缩短间隔；localReadMsgSeqCache 本地持久化已读 seq，避免重进群时全部当未读。渲染层两套虚拟列表共用『可视窗口 + 定高 / 变高测量』抽象：virtual-list 在 WebView 渲染器里用 recycle-view 思路回收 DOM；virtual-list-skyline 借 skyline 原生渲染绕过 WebView diff，滑动帧率稳，但 WXML 子集受限，所以 component 层做 capability 检测决定走哪套。SendMsgHelper 与两套虚拟列表通过事件（eventemitter3 / 内部 emitter）解耦，发送侧只负责塞数据源，视图层自行决定怎么渲染，切换渲染器不动业务。实际遇到的坑也讲一下。skyline 版本最大的限制是支持的 WXML 子集偏小，富文本卡片渲染要回退到 WebView 路径，所以我们在每个消息组件上都做了一个 capability 标记，标记走哪条渲染路径。第二个是滚动定位：用户切前后台回来要回到上次未读位置，两套虚拟列表都需要把 anchor seq 持久化，skyline 因为本身 scroll API 不同，做法上是用 scroll-into-view 加偏移修正。第三个是消息撤回的视觉延迟：撤回事件先到 PullStore，标记 deleted 后由虚拟列表自己决定怎么过渡，避免直接抖动。
 
 </details>
 
@@ -521,11 +521,11 @@ IM 长列表核心挑战：消息持续增长、滚动高频、状态复杂（�
 
 **🔵 标准**（默认）：
 
-utils/httpClient/index.ts 对外只暴露 request 入口，内部串四件事：一是用 cookies.ts 把本地登录态注入请求头，二是根据 env（dev / test / pre / prod）在构建时挑对应 host，三是 urlParams.ts 拼 query，四是拿到响应后按后端返回 code 分发：ok 透传业务数据、登录态失效触发重登、限频 / 风控抛可识别错误让业务决定 toast 或重试。业务层只写 api.getFeed(params).then(data => ...)，横切逻辑完全下沉。
+utils/httpClient/index.ts 对外只暴露 request 入口，内部串四件事：一是用 cookies.ts 把本地登录态注入请求头，二是根据 env（dev / test / pre / prod）在构建时挑对应 host，三是 urlParams.ts 拼 query，四是拿到响应后按后端返回 code 分发：ok 透传业务数据、登录态失效触发重登、限频 / 风控抛可识别错误让业务决定 toast 或重试。业务层只写 api.getFeed(params).then(data => ...)，横切逻辑完全下沉。实现层就一个 httpClient 模块，对外暴露 get/post，对内是流水线式的拦截器。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-网络层可靠性要同时满足几件事：登录态、环境切换、错误兜底、可观测性、可重入。我们让 HTTPClient 单一入口承担：登录态注入由 cookies.ts 把本地 cookie 拼到 header，避免每个接口重复写；多环境切换走 build 阶段注入而非运行时判断，避免误打线上；错误处理引入 statusCode + backendCode 双层判断，statusCode 非 2xx 直接抛网络错误并打点，2xx 再看 backendCode：0 / 200 成功、登录失效（如 -2001）触发 reLogin 流程、风控 / 限频（如 4xxxxx 系列）抛 BizError 让业务决定 toast 或降级、其他未识别 code 抛 UnknownError 同时上报 Aegis 以便发现新错误码。可观测性上每次请求会打一条自定义耗时日志并在异常时上报 Aegis；可重入上对幂等接口内置有限重试与退避，非幂等（发帖）只拉起一次。最后还沉淀了错误文案规范，让 UI 不用散见地拼接错误描述，直接从 HTTPClient 产出的错误对象取。
+网络层可靠性要同时满足几件事：登录态、环境切换、错误兜底、可观测性、可重入。我们让 HTTPClient 单一入口承担：登录态注入由 cookies.ts 把本地 cookie 拼到 header，避免每个接口重复写；多环境切换走 build 阶段注入而非运行时判断，避免误打线上；错误处理引入 statusCode + backendCode 双层判断，statusCode 非 2xx 直接抛网络错误并打点，2xx 再看 backendCode：0 / 200 成功、登录失效（如 -2001）触发 reLogin 流程、风控 / 限频（如 4xxxxx 系列）抛 BizError 让业务决定 toast 或降级、其他未识别 code 抛 UnknownError 同时上报 Aegis 以便发现新错误码。可观测性上每次请求会打一条自定义耗时日志并在异常时上报 Aegis；可重入上对幂等接口内置有限重试与退避，非幂等（发帖）只拉起一次。最后还沉淀了错误文案规范，让 UI 不用散见地拼接错误描述，直接从 HTTPClient 产出的错误对象取。举一个我自己处理过的真实例子：邮箱登录上线那一周，发现一个偶发 401。如果按老代码，每个调用点都要自己判 code 重登。我直接在 HTTPClient 的响应拦截器里加了一段逻辑：识别到登录态失效错误码就广播一次 logout 事件，AppStore 统一处理 token 清理与跳转。这样所有业务点的 401 都被一处拦下，业务代码没有任何变化。这种集中处理在小程序里特别重要，因为页面栈和异步链路很容易让分散的 try/catch 漏处理。
 
 </details>
 
@@ -580,7 +580,7 @@ utils/httpClient/index.ts 对外只暴露 request 入口，内部串四件事：
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这个 bug 教了我们几条 reliability 经验。第一，乐观更新必须配成对的回滚：任何触发乐观更新的地方都要处理成功 / 失败 / 限频 / 未知四种分支，而不是只写成功。第二，错误码必须在网络层枚举而不是散落在每个业务里，不然一个新业务接口出现限频时同样会忘处理。第三，限频要有 UI 冷却窗口：直接 toast 用户还会继续狂点，最好把按钮 disable 到后端冷却结束。第四，复盘要留产物：我们把这次的修复回顾了一遍 commit，沉淀了『optimistic action checklist』放到 docs/superpowers/reviews 下一份备忘录（包含 must-handle 的错误码列表、UI 冷却规范、单测建议），让新的乐观更新点上线前能对着 checklist 自查。上线后该场景的 UI / 数据不一致类问题回归明显下降。
+这个 bug 教了我们几条 reliability 经验。第一，乐观更新必须配成对的回滚：任何触发乐观更新的地方都要处理成功 / 失败 / 限频 / 未知四种分支，而不是只写成功。第二，错误码必须在网络层枚举而不是散落在每个业务里，不然一个新业务接口出现限频时同样会忘处理。第三，限频要有 UI 冷却窗口：直接 toast 用户还会继续狂点，最好把按钮 disable 到后端冷却结束。第四，复盘要留产物：我们把这次的修复回顾了一遍 commit，沉淀了『optimistic action checklist』放到 docs/superpowers/reviews 下一份备忘录（包含 must-handle 的错误码列表、UI 冷却规范、单测建议），让新的乐观更新点上线前能对着 checklist 自查。上线后该场景的 UI / 数据不一致类问题回归明显下降。这次复盘对我个人最大的收获是：所有乐观更新的设计上线前都要明确『失败回滚谁负责』。早期我倾向把回滚塞在请求 catch 里，看着干净但容易漏；后来我们统一让 store 暴露 revert 方法，UI 只发 intent。其次是限频错误码这种东西必须列在网络层的枚举里，散在业务文件里就一定会漏。这两个习惯一直沿用到后面的功能。现在新功能上线前的 CR 里只要看到乐观更新，第一件事就是问 revert 怎么走，这条已经成了团队共识。
 
 </details>
 
@@ -626,11 +626,11 @@ utils/httpClient/index.ts 对外只暴露 request 入口，内部串四件事：
 
 **🔵 标准**（默认）：
 
-utils/log 里初始化 Aegis（项目 id、用户标识、环境 tag），统一接管 console.error / Promise rejection / onError。业务侧调 logger.error / logger.perf 打点，Aegis 自动收集 JS 异常、自定义上报、接口耗时。发布分支的 Orange-CI 流水线在出包后调 Aegis 上传接口把 sourcemap 推上去，线上看异常时控制台会直接显示 miniprogram/xxx/yyy.ts 而不是 build 后的 dist。
+utils/log 里初始化 Aegis（项目 id、用户标识、环境 tag），统一接管 console.error / Promise rejection / onError。业务侧调 logger.error / logger.perf 打点，Aegis 自动收集 JS 异常、自定义上报、接口耗时。发布分支的 Orange-CI 流水线在出包后调 Aegis 上传接口把 sourcemap 推上去，线上看异常时控制台会直接显示 miniprogram/xxx/yyy.ts 而不是 build 后的 dist。整体的好处是排查线上异常的速度从分钟级别降到秒级，能直接看到源码行号、调用栈和上下文用户行为；坏处是流水线步骤多了一层，需要 review 出包脚本时不要漏掉这一步。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-观测性的三个层次：JS 异常、业务埋点、性能指标。JS 异常由 Aegis SDK 自动挂 global error / Promise rejection，所有错误先走 utils/log 的 logger.error，再走 Aegis.report；业务埋点是 logger.info / logger.warn 提供的方法加自定义 key，比如预取命中率、登录成功率；性能指标通过 logger.perf 打自定义耗时，配合 Aegis 自带的网络 / 首屏指标。关键工程化在 sourcemap 链路：构建产物开启 sourcemap 但不随包上传（保护代码），发布流水线在 script/robot.config.js 里执行 post-build 调 Aegis 上传 API 把 sourcemap 以 version 为 key 推到伽利略后端；线上报错带 version + 栈帧，Aegis 后端自动映射源码行号。风险点：1) sourcemap 别漏传，上线 checklist 里一条；2) sourcemap 千万别随包上传（安全）；3) 用户标识要在登录后再绑定，避免匿名期异常挂错用户。结果是线上异常定位速度大幅提升，能直接看到仓库里对应的源码行，CR 时也有数据支撑取舍。
+观测性的三个层次：JS 异常、业务埋点、性能指标。JS 异常由 Aegis SDK 自动挂 global error / Promise rejection，所有错误先走 utils/log 的 logger.error，再走 Aegis.report；业务埋点是 logger.info / logger.warn 提供的方法加自定义 key，比如预取命中率、登录成功率；性能指标通过 logger.perf 打自定义耗时，配合 Aegis 自带的网络 / 首屏指标。关键工程化在 sourcemap 链路：构建产物开启 sourcemap 但不随包上传（保护代码），发布流水线在 script/robot.config.js 里执行 post-build 调 Aegis 上传 API 把 sourcemap 以 version 为 key 推到伽利略后端；线上报错带 version + 栈帧，Aegis 后端自动映射源码行号。风险点：1) sourcemap 别漏传，上线 checklist 里一条；2) sourcemap 千万别随包上传（安全）；3) 用户标识要在登录后再绑定，避免匿名期异常挂错用户。结果是线上异常定位速度大幅提升，能直接看到仓库里对应的源码行，CR 时也有数据支撑取舍。另外我们对 Aegis 的使用是分级的，不是把所有日志都丢上去。线上常用的几条习惯：1) 接口耗时只采样上报，避免高频接口占满配额；2) JS 异常全量上报，但加上来源页面、用户等级做聚合；3) 业务自定义事件单独走 logger.biz，方便和异常区分查询。这一层用法约定也是踩过坑：早期不分级时 Aegis 控制台被高频日志淹没，关键异常被埋掉。
 
 </details>
 
@@ -683,11 +683,11 @@ utils/log 里初始化 Aegis（项目 id、用户标识、环境 tag），统一
 
 **🔵 标准**（默认）：
 
-utils/turingSdk 封装图灵盾 SDK 初始化与验证码调用，utils/turingSdkBehavior 作为小程序 Behavior 注入到需要风控的组件里（例如 login-panel），让页面只需 this.triggerCaptcha(action) 就能拿到 ticket。后端拿 ticket + userId + action 去图灵盾做校验，防止脚本批量刷接口（登录、邮箱验证码、发帖等关键路径）。前端只处理 UI 态（验证码弹层、失败提示），安全校验完全由服务端完成。
+utils/turingSdk 封装图灵盾 SDK 初始化与验证码调用，utils/turingSdkBehavior 作为小程序 Behavior 注入到需要风控的组件里（例如 login-panel），让页面只需 this.triggerCaptcha(action) 就能拿到 ticket。后端拿 ticket + userId + action 去图灵盾做校验，防止脚本批量刷接口（登录、邮箱验证码、发帖等关键路径）。前端只处理 UI 态（验证码弹层、失败提示），安全校验完全由服务端完成。整体协作分工就是前端负责触发与反馈，后端负责真正的风控判定。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-风控接入要解决两个问题：在关键路径识别机器脚本、不增加正常用户操作负担。方案是前端触发 + 服务端校验的 ticket 模式。前端侧 utils/turingSdk 管 SDK 生命周期（懒加载、单例、回调清理），utils/turingSdkBehavior 把 triggerCaptcha 方法挂到组件，统一封装『展示验证码 → 拿到 ticket → 返回给调用方』的闭环。关键动作（登录、发送邮箱验证码、发帖 / 评论等）在发请求前先走一遍 triggerCaptcha，拿到 ticket 随请求一起送到后端；后端在图灵盾侧以 ticket + userId + action 做风险判定，返回 pass / block / secondary_verify，前端根据结果展示不同反馈。为了不打扰正常用户，图灵盾有无感验证 / 滑块 / 短信 几级策略，只有风险分升高时才升级到强验证。另外 Behavior 还做了幂等保护：短时间内同一 action 已有未完成 triggerCaptcha 时不会重复弹层，避免误触导致双重请求。安全性核心是 ticket 一次一用、服务端校验，不会让前端绕过。
+风控接入要解决两个问题：在关键路径识别机器脚本、不增加正常用户操作负担。方案是前端触发 + 服务端校验的 ticket 模式。前端侧 utils/turingSdk 管 SDK 生命周期（懒加载、单例、回调清理），utils/turingSdkBehavior 把 triggerCaptcha 方法挂到组件，统一封装『展示验证码 → 拿到 ticket → 返回给调用方』的闭环。关键动作（登录、发送邮箱验证码、发帖 / 评论等）在发请求前先走一遍 triggerCaptcha，拿到 ticket 随请求一起送到后端；后端在图灵盾侧以 ticket + userId + action 做风险判定，返回 pass / block / secondary_verify，前端根据结果展示不同反馈。为了不打扰正常用户，图灵盾有无感验证 / 滑块 / 短信 几级策略，只有风险分升高时才升级到强验证。另外 Behavior 还做了幂等保护：短时间内同一 action 已有未完成 triggerCaptcha 时不会重复弹层，避免误触导致双重请求。安全性核心是 ticket 一次一用、服务端校验，不会让前端绕过。我自己接入邮箱登录的图灵盾流程时踩过两个点。第一是 ticket 不能复用：早期我把 ticket 缓存了 30 秒想减少弹层，被 review 时打回，因为 ticket 一旦复用就有重放风险，正确做法是每次关键动作都触发一次验证。第二是失败态：用户没过验证不能弹 toast 完事，要把 action 重置回未触发状态，否则下次点击会发现按钮 disable 没解开。这两条后来写进了登录功能 checklist。
 
 </details>
 
@@ -738,7 +738,7 @@ utils/turingSdk 封装图灵盾 SDK 初始化与验证码调用，utils/turingSd
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这是个典型的三方权衡：包体积 vs 类型安全 vs 维护成本。纯 JSON 方案最简单但在协议多、字段多时容易因手工维护出错（尤其是 oneof、enum、嵌套 message）；全量 protobufjs 类型最安全但主包承受不了运行时；我们的双轨是成本在中间、收益最大的选项：1) JSON 协议走『类型外挂』模式，proto 是 SSOT（single source of truth），.d.ts 自动生成挂全局 rootProto 命名空间，业务直接用 rootProto.xxx.IMessage 类型，不引入任何运行时代码；2) 真正需要二进制或跨语言兼容的协议进 pb_need_decode，编译出 ESM 运行时放 pkg-pb 分包；3) moduleRegistry 把 'pkg-pb/xxxPb' 暴露成强类型模块，业务 await requireAsyncModule 一次就拿到 encode/decode。代价是工程同学需要维护『这个协议要不要走二进制』的判断，以及目录切分规则；但换回主包几十 KB + 新协议上线几乎零成本。做选择时我们明确列了几条规则：高频小数据（Feed 点赞、计数）一律 JSON；AI 流式、IM 消息这类高吞吐走二进制；跨端（小程序 / H5 / 客户端）共享协议优先二进制保证一致性。
+这是个典型的三方权衡：包体积 vs 类型安全 vs 维护成本。纯 JSON 方案最简单但在协议多、字段多时容易因手工维护出错（尤其是 oneof、enum、嵌套 message）；全量 protobufjs 类型最安全但主包承受不了运行时；我们的双轨是成本在中间、收益最大的选项：1) JSON 协议走『类型外挂』模式，proto 是 SSOT（single source of truth），.d.ts 自动生成挂全局 rootProto 命名空间，业务直接用 rootProto.xxx.IMessage 类型，不引入任何运行时代码；2) 真正需要二进制或跨语言兼容的协议进 pb_need_decode，编译出 ESM 运行时放 pkg-pb 分包；3) moduleRegistry 把 'pkg-pb/xxxPb' 暴露成强类型模块，业务 await requireAsyncModule 一次就拿到 encode/decode。代价是工程同学需要维护『这个协议要不要走二进制』的判断，以及目录切分规则；但换回主包几十 KB + 新协议上线几乎零成本。做选择时我们明确列了几条规则：高频小数据（Feed 点赞、计数）一律 JSON；AI 流式、IM 消息这类高吞吐走二进制；跨端（小程序 / H5 / 客户端）共享协议优先二进制保证一致性。另外这套双轨方案在团队里的接受度也是分阶段建立起来的。最早只有 IM 用了二进制，大家不太敢扩展，后来 AI 流式接入需要更小包体和更稳的解析，我们才把 pkg-pb 抽出来。再后来跨端共享协议变多，规则才正式写进 docs/superpowers/recipes 里。结论是工程上的取舍要分阶段，先用最小代价验证，验证完了再补规则文档。
 
 </details>
 
