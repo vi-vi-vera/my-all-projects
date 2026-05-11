@@ -1,0 +1,239 @@
+{
+  "schema_version": "1.0",
+  "role": "前端",
+  "level": "中级",
+  "points": [
+    {
+      "id": "tp-001",
+      "topic": "Next.js 15 middleware.ts 边缘路径守卫 + openid/access_token/appid 三件套 cookie 拦截",
+      "scope": "fullstack",
+      "primary_dimension": "security",
+      "sub_project": "next-guild",
+      "evidence": [
+        "middleware.ts",
+        "pages/api/auth.ts"
+      ],
+      "depth_tags": ["middleware", "auth", "cookie", "redirect", "edge"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-002",
+      "topic": "itopencodeparam 解密 + @tencent/checkurl 白名单 (subhost) 防开放重定向",
+      "scope": "fullstack",
+      "primary_dimension": "security",
+      "sub_project": "next-guild",
+      "evidence": [
+        "pages/api/auth.ts"
+      ],
+      "depth_tags": ["rpcsdk-msdk-decrypt", "checkurl", "open-redirect", "httpOnly"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-003",
+      "topic": "pages/api/v2/[...slug].ts BFF：路径 -> (cmd, serviceType) 静态表映射 + x-oidb 覆写",
+      "scope": "fullstack",
+      "primary_dimension": "architecture",
+      "sub_project": "next-guild",
+      "evidence": [
+        "pages/api/v2/[...slug].ts",
+        "src/common/msdkRequest.ts"
+      ],
+      "depth_tags": ["bff", "oidb", "path-mapping", "x-oidb-header"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-004",
+      "topic": "pages/api/guild/[...slug].ts axios stream 透传代理 + Set-Cookie 保留",
+      "scope": "fullstack",
+      "primary_dimension": "reliability",
+      "sub_project": "next-guild",
+      "evidence": [
+        "pages/api/guild/[...slug].ts"
+      ],
+      "depth_tags": ["proxy", "axios-stream", "pipe", "error-layer"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-005",
+      "topic": "三类 axios 实例 + isInMSDK 分发（request / oidbRequest / msdkRequest）",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "next-guild",
+      "evidence": [
+        "src/common/request.ts",
+        "src/common/oidbRequest.ts",
+        "src/common/msdkRequest.ts",
+        "pages/api/game-guild.ts",
+        "src/utils/os.ts"
+      ],
+      "depth_tags": ["axios", "interceptor", "multi-env", "webview-detection"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-006",
+      "topic": "getServerSideProps + trpc.withLog 通用封装 + OpenTelemetry traceparent 串联",
+      "scope": "fullstack",
+      "primary_dimension": "observability",
+      "sub_project": "next-guild",
+      "evidence": [
+        "src/server-side/trpc.ts",
+        "src/server-side/grayGroupInfo.ts",
+        "src/server-side/sign.ts",
+        "src/utils/report.ts"
+      ],
+      "depth_tags": ["ssr", "trpc", "traceparent", "opentelemetry", "withLog"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-007",
+      "topic": "log4js dateFile + @tencent/atta UDP 双通道日志",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "sub_project": "next-guild",
+      "evidence": [
+        "src/utils/logger/index.ts",
+        "src/utils/logger/atta.ts",
+        "src/utils/logger/shared.ts"
+      ],
+      "depth_tags": ["log4js", "atta", "udp", "json-layout", "dual-channel"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-008",
+      "topic": "Aegis RUM + Next reportWebVitals + 大同 analytics/v2_upload 三通道前端监控",
+      "scope": "frontend",
+      "primary_dimension": "observability",
+      "sub_project": "next-guild",
+      "evidence": [
+        "pages/_app.tsx",
+        "src/utils/report.ts",
+        "src/utils/datong.ts"
+      ],
+      "depth_tags": ["aegis", "web-vitals", "datong", "universal-report", "rum"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-009",
+      "topic": "MSDK WebViewJavascriptBridge 桥接 + 屏幕方向 / 全屏 / 关窗 / 复制",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "next-guild",
+      "evidence": [
+        "src/utils/msdk.ts",
+        "src/utils/os.ts",
+        "pages/_app.tsx"
+      ],
+      "depth_tags": ["msdk", "webview-bridge", "iframe-probe", "ios-compat", "copy-text"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-010",
+      "topic": "Hybrid 路由模式：Pages Router + react-next-keep-alive 页面缓存 + NoSSR 异步导入",
+      "scope": "frontend",
+      "primary_dimension": "trade-off",
+      "sub_project": "next-guild",
+      "evidence": [
+        "pages/_app.tsx",
+        "src/utils/async-module/mqq/",
+        "src/utils/is-server.ts",
+        "README.md"
+      ],
+      "depth_tags": ["keep-alive", "ssr-csr", "dynamic-import", "window-guard"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-011",
+      "topic": "Redux Toolkit + next-redux-wrapper 极简 store（刻意只放 walletSlice）",
+      "scope": "frontend",
+      "primary_dimension": "trade-off",
+      "sub_project": "next-guild",
+      "evidence": [
+        "src/store/store.ts",
+        "src/store/wallet.ts"
+      ],
+      "depth_tags": ["redux-toolkit", "next-redux-wrapper", "minimal-store", "state-locality"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-012",
+      "topic": "postcss-px-to-viewport（viewportWidth 1284，vw）+ GameGuild 目录显式排除",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "next-guild",
+      "evidence": [
+        "postcss.config.js"
+      ],
+      "depth_tags": ["postcss", "viewport-units", "responsive", "exclude-pattern"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-013",
+      "topic": "Orange CI 双流水线 + 双 Docker tag + stke:update 自动滚动发布 test 环境",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "sub_project": "next-guild",
+      "evidence": [
+        ".orange-ci.yml",
+        "Dockerfile",
+        "README.md"
+      ],
+      "depth_tags": ["orange-ci", "docker", "stke", "tke", "release-automation"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-014",
+      "topic": "trpc_nodejs.yaml Knock-Knock 鉴权 + IsDev 下 @tcp PrxServer 本地代理",
+      "scope": "backend",
+      "primary_dimension": "security",
+      "sub_project": "next-guild",
+      "evidence": [
+        "trpc_nodejs.yaml",
+        "src/server-side/trpc.ts",
+        "src/server-side/sign.ts",
+        "src/server-side/grayGroupInfo.ts"
+      ],
+      "depth_tags": ["knocknock", "trpc-auth", "server-id", "dev-proxy"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-015",
+      "topic": "mocker + tapi（pb2sdk / pb2material / rick2rules）+ rickNodeStubNpm 部分 pb 走真实服务",
+      "scope": "infra",
+      "primary_dimension": "feature",
+      "sub_project": "next-guild",
+      "evidence": [
+        "mock.config.js",
+        "package.json"
+      ],
+      "depth_tags": ["tapi", "pb2sdk", "rick", "mock", "node-stub"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-016",
+      "topic": "Whistle（w2）本地代理：qun.qq.com -> localhost:3000 + vConsole 注入",
+      "scope": "infra",
+      "primary_dimension": "feature",
+      "sub_project": "next-guild",
+      "evidence": [
+        ".whistle.js",
+        "README.md"
+      ],
+      "depth_tags": ["whistle", "dev-proxy", "vconsole", "mobile-debug"],
+      "interview_value": "低"
+    },
+    {
+      "id": "tp-017",
+      "topic": "standard-version 自动化发版 + CHANGELOG 累积到 v0.1.190",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "sub_project": "next-guild",
+      "evidence": [
+        "package.json",
+        "CHANGELOG.md",
+        ".orange-ci.yml"
+      ],
+      "depth_tags": ["semver", "changelog", "release", "standard-version"],
+      "interview_value": "中"
+    }
+  ]
+}

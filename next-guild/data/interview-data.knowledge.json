@@ -1,0 +1,790 @@
+{
+  "schema_version": "1.0",
+  "mode": "knowledge",
+  "platform_name": "QQ 频道 Hybrid H5 (next-guild)",
+  "knowledge_map": {
+    "topics": [
+      {
+        "name": "Next.js 15 middleware 生命周期",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-01"
+        ],
+        "must_read": [
+          "middleware.ts 全文",
+          "pages/api/auth.ts 全文",
+          "Next.js middleware 官方文档（matcher / request 对象）"
+        ],
+        "hands_on": [
+          "用 Next.js 15 middleware 加一个只拦 /admin 的 role 检查",
+          "为 middleware 加一个简单的基于 cookie 的白名单放行"
+        ]
+      },
+      {
+        "name": "req.cookies API 与 httpOnly/SameSite",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-01"
+        ],
+        "must_read": [
+          "middleware.ts 全文",
+          "pages/api/auth.ts 全文",
+          "Next.js middleware 官方文档（matcher / request 对象）"
+        ],
+        "hands_on": [
+          "用 Next.js 15 middleware 加一个只拦 /admin 的 role 检查",
+          "为 middleware 加一个简单的基于 cookie 的白名单放行"
+        ]
+      },
+      {
+        "name": "302 redirect 与回跳参数设计",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-01"
+        ],
+        "must_read": [
+          "middleware.ts 全文",
+          "pages/api/auth.ts 全文",
+          "Next.js middleware 官方文档（matcher / request 对象）"
+        ],
+        "hands_on": [
+          "用 Next.js 15 middleware 加一个只拦 /admin 的 role 检查",
+          "为 middleware 加一个简单的基于 cookie 的白名单放行"
+        ]
+      },
+      {
+        "name": "开放重定向 (Open Redirect) 常见变体",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "pages/api/auth.ts 全文",
+          "@tencent/checkurl README 与 subhost 模式说明",
+          "OWASP Open Redirect 指南"
+        ],
+        "hands_on": [
+          "写一组 fixtures 覆盖 10+ 种开放重定向变体并跑过 checkurl",
+          "手写一个小工具用 WHATWG URL 做 host 后缀白名单"
+        ]
+      },
+      {
+        "name": "@tencent/checkurl subhost 模式语义",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "pages/api/auth.ts 全文",
+          "@tencent/checkurl README 与 subhost 模式说明",
+          "OWASP Open Redirect 指南"
+        ],
+        "hands_on": [
+          "写一组 fixtures 覆盖 10+ 种开放重定向变体并跑过 checkurl",
+          "手写一个小工具用 WHATWG URL 做 host 后缀白名单"
+        ]
+      },
+      {
+        "name": "httpOnly / SameSite / Secure 三元组",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "pages/api/auth.ts 全文",
+          "@tencent/checkurl README 与 subhost 模式说明",
+          "OWASP Open Redirect 指南"
+        ],
+        "hands_on": [
+          "写一组 fixtures 覆盖 10+ 种开放重定向变体并跑过 checkurl",
+          "手写一个小工具用 WHATWG URL 做 host 后缀白名单"
+        ]
+      },
+      {
+        "name": "URL 标准解析（WHATWG URL）",
+        "level": "加分项",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "pages/api/auth.ts 全文",
+          "@tencent/checkurl README 与 subhost 模式说明",
+          "OWASP Open Redirect 指南"
+        ],
+        "hands_on": [
+          "写一组 fixtures 覆盖 10+ 种开放重定向变体并跑过 checkurl",
+          "手写一个小工具用 WHATWG URL 做 host 后缀白名单"
+        ]
+      },
+      {
+        "name": "Next.js catch-all API route ([...slug])",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "pages/api/v2/[...slug].ts 全文",
+          "src/common/msdkRequest.ts",
+          "Next.js catch-all & dynamic API route 文档"
+        ],
+        "hands_on": [
+          "用表驱动重写一个 10+ 接口的 mock BFF",
+          "为 x-oidb 覆写加一个 JSON schema 校验"
+        ]
+      },
+      {
+        "name": "oidb 协议 cmd + serviceType 模型",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "pages/api/v2/[...slug].ts 全文",
+          "src/common/msdkRequest.ts",
+          "Next.js catch-all & dynamic API route 文档"
+        ],
+        "hands_on": [
+          "用表驱动重写一个 10+ 接口的 mock BFF",
+          "为 x-oidb 覆写加一个 JSON schema 校验"
+        ]
+      },
+      {
+        "name": "表驱动设计 (table-driven) vs 代码驱动",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "pages/api/v2/[...slug].ts 全文",
+          "src/common/msdkRequest.ts",
+          "Next.js catch-all & dynamic API route 文档"
+        ],
+        "hands_on": [
+          "用表驱动重写一个 10+ 接口的 mock BFF",
+          "为 x-oidb 覆写加一个 JSON schema 校验"
+        ]
+      },
+      {
+        "name": "@tencent/rpcsdk oidbRequest 入参",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "pages/api/v2/[...slug].ts 全文",
+          "src/common/msdkRequest.ts",
+          "Next.js catch-all & dynamic API route 文档"
+        ],
+        "hands_on": [
+          "用表驱动重写一个 10+ 接口的 mock BFF",
+          "为 x-oidb 覆写加一个 JSON schema 校验"
+        ]
+      },
+      {
+        "name": "axios 实例与拦截器分层",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "src/common/request.ts / oidbRequest.ts / msdkRequest.ts",
+          "src/utils/os.ts",
+          "pages/api/game-guild.ts 顶部的 request 选择逻辑"
+        ],
+        "hands_on": [
+          "为 msdkRequest 加一个 response 拦截器统一处理 retcode",
+          "实现一个 feature-detect 版 isInMSDK"
+        ]
+      },
+      {
+        "name": "WebView 环境探测（UA / bridge / feature）",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "src/common/request.ts / oidbRequest.ts / msdkRequest.ts",
+          "src/utils/os.ts",
+          "pages/api/game-guild.ts 顶部的 request 选择逻辑"
+        ],
+        "hands_on": [
+          "为 msdkRequest 加一个 response 拦截器统一处理 retcode",
+          "实现一个 feature-detect 版 isInMSDK"
+        ]
+      },
+      {
+        "name": "BFF 与前端参数透传策略",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "src/common/request.ts / oidbRequest.ts / msdkRequest.ts",
+          "src/utils/os.ts",
+          "pages/api/game-guild.ts 顶部的 request 选择逻辑"
+        ],
+        "hands_on": [
+          "为 msdkRequest 加一个 response 拦截器统一处理 retcode",
+          "实现一个 feature-detect 版 isInMSDK"
+        ]
+      },
+      {
+        "name": "W3C trace-context (traceparent)",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "src/server-side/trpc.ts 全文",
+          "src/utils/report.ts 中 getTraceParent 实现",
+          "src/server-side/grayGroupInfo.ts / sign.ts 调用样例"
+        ],
+        "hands_on": [
+          "给一个 mock 异步函数套上 withLog 并校验 traceparent",
+          "把 retcode 判断从 parseInt 改成严格等值并补单测"
+        ]
+      },
+      {
+        "name": "TypeScript 泛型包装异步调用",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "src/server-side/trpc.ts 全文",
+          "src/utils/report.ts 中 getTraceParent 实现",
+          "src/server-side/grayGroupInfo.ts / sign.ts 调用样例"
+        ],
+        "hands_on": [
+          "给一个 mock 异步函数套上 withLog 并校验 traceparent",
+          "把 retcode 判断从 parseInt 改成严格等值并补单测"
+        ]
+      },
+      {
+        "name": "log4js context 与 SSR 请求隔离",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "src/server-side/trpc.ts 全文",
+          "src/utils/report.ts 中 getTraceParent 实现",
+          "src/server-side/grayGroupInfo.ts / sign.ts 调用样例"
+        ],
+        "hands_on": [
+          "给一个 mock 异步函数套上 withLog 并校验 traceparent",
+          "把 retcode 判断从 parseInt 改成严格等值并补单测"
+        ]
+      },
+      {
+        "name": "@opentelemetry/core RandomIdGenerator / TraceFlags",
+        "level": "加分项",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "src/server-side/trpc.ts 全文",
+          "src/utils/report.ts 中 getTraceParent 实现",
+          "src/server-side/grayGroupInfo.ts / sign.ts 调用样例"
+        ],
+        "hands_on": [
+          "给一个 mock 异步函数套上 withLog 并校验 traceparent",
+          "把 retcode 判断从 parseInt 改成严格等值并补单测"
+        ]
+      },
+      {
+        "name": "log4js appenders / layouts / categories 模型",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "src/utils/logger/index.ts",
+          "src/utils/logger/atta.ts",
+          "log4js 官方 layouts 与 context 文档"
+        ],
+        "hands_on": [
+          "把 getLogger 改成基于 AsyncLocalStorage 的 child logger",
+          "写一个 atta mock 跑 100 条日志观察 UDP 丢包率"
+        ]
+      },
+      {
+        "name": "SSR 并发下的 logger 实例隔离",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "src/utils/logger/index.ts",
+          "src/utils/logger/atta.ts",
+          "log4js 官方 layouts 与 context 文档"
+        ],
+        "hands_on": [
+          "把 getLogger 改成基于 AsyncLocalStorage 的 child logger",
+          "写一个 atta mock 跑 100 条日志观察 UDP 丢包率"
+        ]
+      },
+      {
+        "name": "UDP fire-and-forget 语义",
+        "level": "加分项",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "src/utils/logger/index.ts",
+          "src/utils/logger/atta.ts",
+          "log4js 官方 layouts 与 context 文档"
+        ],
+        "hands_on": [
+          "把 getLogger 改成基于 AsyncLocalStorage 的 child logger",
+          "写一个 atta mock 跑 100 条日志观察 UDP 丢包率"
+        ]
+      },
+      {
+        "name": "Aegis RUM（spa / reportApiSpeed / reportAssetSpeed）",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "pages/_app.tsx 中 Aegis/reportWebVitals 初始化",
+          "src/utils/report.ts generatePayload 与 A 字段映射",
+          "src/utils/datong.ts initUniversalReport 与 STANDARD 枚举"
+        ],
+        "hands_on": [
+          "写一个最小 reportWebVitals + 上报 demo",
+          "为大同事件加一个 debug-echo 的转发通道"
+        ]
+      },
+      {
+        "name": "Next.js reportWebVitals 机制",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "pages/_app.tsx 中 Aegis/reportWebVitals 初始化",
+          "src/utils/report.ts generatePayload 与 A 字段映射",
+          "src/utils/datong.ts initUniversalReport 与 STANDARD 枚举"
+        ],
+        "hands_on": [
+          "写一个最小 reportWebVitals + 上报 demo",
+          "为大同事件加一个 debug-echo 的转发通道"
+        ]
+      },
+      {
+        "name": "大同 universal-report 事件模型",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "pages/_app.tsx 中 Aegis/reportWebVitals 初始化",
+          "src/utils/report.ts generatePayload 与 A 字段映射",
+          "src/utils/datong.ts initUniversalReport 与 STANDARD 枚举"
+        ],
+        "hands_on": [
+          "写一个最小 reportWebVitals + 上报 demo",
+          "为大同事件加一个 debug-echo 的转发通道"
+        ]
+      },
+      {
+        "name": "time-aligned 排障方法论",
+        "level": "加分项",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "pages/_app.tsx 中 Aegis/reportWebVitals 初始化",
+          "src/utils/report.ts generatePayload 与 A 字段映射",
+          "src/utils/datong.ts initUniversalReport 与 STANDARD 枚举"
+        ],
+        "hands_on": [
+          "写一个最小 reportWebVitals + 上报 demo",
+          "为大同事件加一个 debug-echo 的转发通道"
+        ]
+      },
+      {
+        "name": "WKWebView decidePolicyForNavigationAction 拦截",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "src/utils/msdk.ts 全文",
+          "src/utils/os.ts 中 isiOS / isInMSDK",
+          "MSDK iOS/Android 官方 bridge 接入指南"
+        ],
+        "hands_on": [
+          "自写一个 iOS jsbridge，用 iframe 触发 WKNavigationDelegate",
+          "把 copyText 改成 Clipboard API 优先 + execCommand fallback"
+        ]
+      },
+      {
+        "name": "iOS/Android 协议枚举差异",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "src/utils/msdk.ts 全文",
+          "src/utils/os.ts 中 isiOS / isInMSDK",
+          "MSDK iOS/Android 官方 bridge 接入指南"
+        ],
+        "hands_on": [
+          "自写一个 iOS jsbridge，用 iframe 触发 WKNavigationDelegate",
+          "把 copyText 改成 Clipboard API 优先 + execCommand fallback"
+        ]
+      },
+      {
+        "name": "WVJBCallbacks 队列模型",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "src/utils/msdk.ts 全文",
+          "src/utils/os.ts 中 isiOS / isInMSDK",
+          "MSDK iOS/Android 官方 bridge 接入指南"
+        ],
+        "hands_on": [
+          "自写一个 iOS jsbridge，用 iframe 触发 WKNavigationDelegate",
+          "把 copyText 改成 Clipboard API 优先 + execCommand fallback"
+        ]
+      },
+      {
+        "name": "Clipboard API 兼容 (execCommand copy)",
+        "level": "加分项",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "src/utils/msdk.ts 全文",
+          "src/utils/os.ts 中 isiOS / isInMSDK",
+          "MSDK iOS/Android 官方 bridge 接入指南"
+        ],
+        "hands_on": [
+          "自写一个 iOS jsbridge，用 iframe 触发 WKNavigationDelegate",
+          "把 copyText 改成 Clipboard API 优先 + execCommand fallback"
+        ]
+      },
+      {
+        "name": "Orange CI YAML 触发器 (tag_push / push / pr)",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-09"
+        ],
+        "must_read": [
+          ".orange-ci.yml 全文",
+          "Dockerfile",
+          "README.md 里正式发布段落"
+        ],
+        "hands_on": [
+          "为当前项目加一个 smoke-test stage 在 push 后跑",
+          "为 stke:update 步骤加 retry 并写一段 fallback 告警脚本"
+        ]
+      },
+      {
+        "name": "Docker 双 tag 策略 (time + latest)",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-09"
+        ],
+        "must_read": [
+          ".orange-ci.yml 全文",
+          "Dockerfile",
+          "README.md 里正式发布段落"
+        ],
+        "hands_on": [
+          "为当前项目加一个 smoke-test stage 在 push 后跑",
+          "为 stke:update 步骤加 retry 并写一段 fallback 告警脚本"
+        ]
+      },
+      {
+        "name": "TKE StatefulSetPlus 滚动发布",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-09"
+        ],
+        "must_read": [
+          ".orange-ci.yml 全文",
+          "Dockerfile",
+          "README.md 里正式发布段落"
+        ],
+        "hands_on": [
+          "为当前项目加一个 smoke-test stage 在 push 后跑",
+          "为 stke:update 步骤加 retry 并写一段 fallback 告警脚本"
+        ]
+      },
+      {
+        "name": "git:rebaseCheck / git:changeLog / git:release 内建步骤",
+        "level": "加分项",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-09"
+        ],
+        "must_read": [
+          ".orange-ci.yml 全文",
+          "Dockerfile",
+          "README.md 里正式发布段落"
+        ],
+        "hands_on": [
+          "为当前项目加一个 smoke-test stage 在 push 后跑",
+          "为 stke:update 步骤加 retry 并写一段 fallback 告警脚本"
+        ]
+      },
+      {
+        "name": "Redux Toolkit slice / configureStore",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-10"
+        ],
+        "must_read": [
+          "src/store/store.ts 与 src/store/wallet.ts",
+          "next-redux-wrapper 官方 HYDRATE 文档",
+          "Redux Toolkit slice / extraReducers 章节"
+        ],
+        "hands_on": [
+          "为 walletSlice 补一个 HYDRATE case 支持 SSR 注入",
+          "做一个小 demo 对比 useState vs Zustand vs Redux 的可读性"
+        ]
+      },
+      {
+        "name": "next-redux-wrapper HYDRATE 流程",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-10"
+        ],
+        "must_read": [
+          "src/store/store.ts 与 src/store/wallet.ts",
+          "next-redux-wrapper 官方 HYDRATE 文档",
+          "Redux Toolkit slice / extraReducers 章节"
+        ],
+        "hands_on": [
+          "为 walletSlice 补一个 HYDRATE case 支持 SSR 注入",
+          "做一个小 demo 对比 useState vs Zustand vs Redux 的可读性"
+        ]
+      },
+      {
+        "name": "状态本地化 vs 全局化决策",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-10"
+        ],
+        "must_read": [
+          "src/store/store.ts 与 src/store/wallet.ts",
+          "next-redux-wrapper 官方 HYDRATE 文档",
+          "Redux Toolkit slice / extraReducers 章节"
+        ],
+        "hands_on": [
+          "为 walletSlice 补一个 HYDRATE case 支持 SSR 注入",
+          "做一个小 demo 对比 useState vs Zustand vs Redux 的可读性"
+        ]
+      },
+      {
+        "name": "Zustand / Jotai 对比",
+        "level": "加分项",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-10"
+        ],
+        "must_read": [
+          "src/store/store.ts 与 src/store/wallet.ts",
+          "next-redux-wrapper 官方 HYDRATE 文档",
+          "Redux Toolkit slice / extraReducers 章节"
+        ],
+        "hands_on": [
+          "为 walletSlice 补一个 HYDRATE case 支持 SSR 注入",
+          "做一个小 demo 对比 useState vs Zustand vs Redux 的可读性"
+        ]
+      },
+      {
+        "name": "postcss-px-to-viewport 核心配置",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-11"
+        ],
+        "must_read": [
+          "postcss.config.js",
+          "postcss-px-to-viewport 官方文档",
+          "GameGuild* 目录下任意一个 .scss"
+        ],
+        "hands_on": [
+          "搭一个 1284 基线 demo 并对比 750 基线在 iPhone 上的实际渲染",
+          "为某个目录配 exclude 并写一个 lint 验证被排除"
+        ]
+      },
+      {
+        "name": "viewportWidth 与设计稿的关系",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-11"
+        ],
+        "must_read": [
+          "postcss.config.js",
+          "postcss-px-to-viewport 官方文档",
+          "GameGuild* 目录下任意一个 .scss"
+        ],
+        "hands_on": [
+          "搭一个 1284 基线 demo 并对比 750 基线在 iPhone 上的实际渲染",
+          "为某个目录配 exclude 并写一个 lint 验证被排除"
+        ]
+      },
+      {
+        "name": "selectorBlackList / exclude 两层 opt-out",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-11"
+        ],
+        "must_read": [
+          "postcss.config.js",
+          "postcss-px-to-viewport 官方文档",
+          "GameGuild* 目录下任意一个 .scss"
+        ],
+        "hands_on": [
+          "搭一个 1284 基线 demo 并对比 750 基线在 iPhone 上的实际渲染",
+          "为某个目录配 exclude 并写一个 lint 验证被排除"
+        ]
+      },
+      {
+        "name": "Next.js CSS code-split",
+        "level": "加分项",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-11"
+        ],
+        "must_read": [
+          "postcss.config.js",
+          "postcss-px-to-viewport 官方文档",
+          "GameGuild* 目录下任意一个 .scss"
+        ],
+        "hands_on": [
+          "搭一个 1284 基线 demo 并对比 750 基线在 iPhone 上的实际渲染",
+          "为某个目录配 exclude 并写一个 lint 验证被排除"
+        ]
+      }
+    ]
+  },
+  "role": "前端",
+  "level": "中级"
+}

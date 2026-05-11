@@ -1,0 +1,153 @@
+{
+  "schema_version": "1.0",
+  "platform_name": "QQ 频道 Hybrid H5 (next-guild)",
+  "one_liner": "QQ 频道相关的 Hybrid H5 门户，基于 Next.js 15 Pages Router + TypeScript，承担「游戏频道聚合页 / 签约中心 / 钱包 / 违禁词 / 赠礼任务 / 频道分享升级」等多条业务线，通过 Next.js API Routes 做 BFF（axios 透传 + 按 path 映射 cmd/serviceType 调 oidb 与 TRPC），在 QQ 客户端内与 MSDK 游戏 WebView 中同域复用。",
+  "domain": "QQ 频道（腾讯 IM 客户端业务）移动端 H5 + 游戏内 WebView",
+  "platform_tech_stack": {
+    "languages": ["TypeScript 4.9", "TSX", "SCSS"],
+    "frameworks": [
+      "Next.js 15.3 (Pages Router)",
+      "React 18.2",
+      "Redux Toolkit 1.9 + next-redux-wrapper 8",
+      "antd-mobile 5",
+      "react-next-keep-alive",
+      "swiper 11",
+      "react-transition-group",
+      "@tencent/exeditor3 富文本",
+      "@tencent/universal-report 大同埋点",
+      "@tencent/trpc-rpc-client"
+    ],
+    "infra": [
+      "Node 20 Alpine Docker",
+      "Orange CI（master tag_push + test push 两条流水线）",
+      "csighub.tencentyun.com 镜像仓库",
+      "StatefulSetPlus on TKE（v4 内网 kubernetes）",
+      "Whistle 本地代理（w2）",
+      "trpc_nodejs.yaml Knock-Knock 鉴权",
+      "winston / log4js + atta 双日志",
+      "Aegis RUM 监控",
+      "next/web-vitals -> 大同 analytics/v2_upload"
+    ]
+  },
+  "sub_projects": [
+    {
+      "name": "next-guild",
+      "path": ".",
+      "scope": "fullstack",
+      "tech_stack": {
+        "router": "Next.js Pages Router + middleware.ts",
+        "state": "Redux Toolkit（单 walletSlice） + next-redux-wrapper",
+        "http_client": "axios ×3：request（/qunng/http2rpc/gotrpc/v1）/ oidbRequest（/qunng/guild/gotrpc/v1）/ msdkRequest（/qunng/next/h5/api/v2）",
+        "bff": "pages/api/guild/[...slug].ts 反向代理到 http://11.167.13.42，pages/api/v2/[...slug].ts 基于 path2cmdAndServiceType 映射后走 @tencent/rpcsdk oidbRequest",
+        "ssr": "pages/qunshare 等用 getServerSideProps 通过 @tencent/trpc-rpc-client 调后端 trpc proxy",
+        "auth": "middleware.ts 拦截 /game-* -> 无 openid/access_token/appid 跳 /api/auth -> 用 @tencent/rpcsdk decrypt(itopencodeparam) 解密后下发 httpOnly cookie",
+        "style": "Sass + postcss-px-to-viewport (viewportWidth 1284, vw)，对 GameGuild* 相关目录排除"
+      },
+      "modules": [
+        { "name": "middleware", "path": "middleware.ts", "responsibility": "/game-* 路径下做 openid/access_token/appid cookie 守卫，缺失即重定向 /api/auth 并带 redirect 回跳参数" },
+        { "name": "pages/api/auth", "path": "pages/api/auth.ts", "responsibility": "用 @tencent/rpcsdk msdk.decrypt 解密 itopencodeparam/gameid/channelid；用 @tencent/checkurl 对 redirect URL 做 subhost 白名单校验；httpOnly 下发 cookie 并 302 回原页" },
+        { "name": "pages/api/guild/[...slug]", "path": "pages/api/guild/[...slug].ts", "responsibility": "axios 透传代理到 http://11.167.13.42，流式 pipe、保留 Set-Cookie、错误分 axiosError/500 两档" },
+        { "name": "pages/api/v2/[...slug]", "path": "pages/api/v2/[...slug].ts", "responsibility": "MSDK 入口 BFF：根据 path 后两段在 path2cmdAndServiceType 表里查 cmd + serviceType，支持 x-oidb header 覆写 serviceType，再调 rpcsdk oidbRequest" },
+        { "name": "pages/_app", "path": "pages/_app.tsx", "responsibility": "全局壳：挂 KeepAliveProvider、initUniversalReport（大同）、Aegis SDK、qqapi.js；reportWebVitals 导出接 next web-vitals" },
+        { "name": "pages/_document", "path": "pages/_document.tsx", "responsibility": "静态 meta：viewport、no-cache、screen-orientation portrait、dns-prefetch、pd_token.css" },
+        { "name": "pages/qunshare", "path": "pages/qunshare/", "responsibility": "群升级频道页：getServerSideProps 拉 grayGroupInfo；低版本浏览器跳 qun-update；调 mqq.invoke 透明 titlebar + webviewCanScroll + setActionButton" },
+        { "name": "pages/signing-center & guild-signing-center", "path": "pages/signing-center/ 与 pages/guild-signing-center/", "responsibility": "频道签约中心双端，依赖 @tencent/tpro_group_pro_channel_sign_svr_* 一组 trpc pb sdk" },
+        { "name": "pages/wallet", "path": "pages/wallet/", "responsibility": "频道创作者钱包（收入/礼物明细），对接 walletSlice 与 trpc wallet_svr" },
+        { "name": "pages/banned-keywords", "path": "pages/banned-keywords/", "responsibility": "违禁词管理，调 cmd0x1157 SaveSpeakingRules" },
+        { "name": "pages/free-gift-tasks / gift-ranks / star-ranks", "path": "pages/free-gift-tasks/ 等", "responsibility": "免费送礼、礼物榜、之星榜单活动页" },
+        { "name": "pages/game-guild-main & game-guild-detail & game-connect", "path": "pages/game-*/", "responsibility": "游戏频道聚合主页 / 详情 / 连接授权，postcss-px-to-viewport 显式排除以保持原尺寸" },
+        { "name": "pages/contract-register", "path": "pages/contract-register/", "responsibility": "签约注册流程，对接 ContractRegister trpc 服务" },
+        { "name": "src/common/request & oidbRequest & msdkRequest", "path": "src/common/", "responsibility": "三类 axios 实例：gotrpc 走 HTTP2RPC 网关、oidb 走频道网关、msdk 在 game-webview 里自动在请求 URL 拼 itopencodeparam/gameid/channelid" },
+        { "name": "src/server-side", "path": "src/server-side/", "responsibility": "SSR 侧 trpc 调用封装：grayGroupInfo/guildRegister/userRegister/sign/signingContract/guidePageInfo；getCallee 在 IsDev 下追加 @tcp PrxServer 地址" },
+        { "name": "src/server-side/trpc.withLog", "path": "src/server-side/trpc.ts", "responsibility": "trpc 调用统一封装：挂 traceparent（OpenTelemetry 规范）、支持 IsDev proxy=1、retCode!=0 抛 JSON.stringify(error)，错误上日志" },
+        { "name": "src/utils/logger + atta", "path": "src/utils/logger/", "responsibility": "log4js dateFile 输出到 /data/log/project/log/global，json layout 注入 uid/trace/path/cost；atta 通道通过 @tencent/atta UDP 上报到 04900055524" },
+        { "name": "src/utils/report (web-vitals + traceparent)", "path": "src/utils/report.ts", "responsibility": "baseReport 构造大同 v2_upload payload（灯塔 appKey + events + udf_kv），封装 reportWebVitalNameValue；用 @opentelemetry/core RandomIdGenerator 生成 traceId 组 traceparent" },
+        { "name": "src/utils/datong", "path": "src/utils/datong.ts", "responsibility": "@tencent/universal-report 初始化，BEACON_KEY 切换；定义 STANDARD 枚举 PGIN/PGOUT/IMP/IMPEND/CLCK；init 复用 datongInstance 单例" },
+        { "name": "src/utils/msdk", "path": "src/utils/msdk.ts", "responsibility": "WebViewJavascriptBridge iOS 初始化（iframe __bridge_loaded__）；setScreenOrientation / setFullScreen / closeWebView；copyText 处理 @uin 正则还原" },
+        { "name": "src/utils/async-module/mqq & utils/is-server", "path": "src/utils/async-module/mqq/, src/utils/is-server.ts", "responsibility": "异步导入 window 依赖模块（SSR 友好），IsServer 常量统一判定" },
+        { "name": "src/store (Redux Toolkit)", "path": "src/store/", "responsibility": "configureStore 组装 walletSlice；createWrapper 注入 next-redux-wrapper；wallet.giftDetail 保存礼物明细" },
+        { "name": "src/component-viewport", "path": "src/component-viewport/", "responsibility": "按视窗单位（vw）的页面级组件集合：GameGuildMain(40 文件)、GameGuildDetail(23 文件)、SigningCenter(20 文件)、Wallet、QunShare、QunUpdate、GuildGift、BannedKeywords、TitleBar、HalfScreenPanel、GameConnect" },
+        { "name": "trpc_nodejs.yaml", "path": "trpc_nodejs.yaml", "responsibility": "Knock-Knock 鉴权插件配置：caller=http2rpc / server_id / server_pass / auth_timing=60000" },
+        { "name": ".whistle.js", "path": ".whistle.js", "responsibility": "本地 w2 转发规则：qun.qq.com/qunng/next/h5 -> localhost:3000/qunng/next/h5 + vConsole 注入" },
+        { "name": "mocker + mock.config.js", "path": "mocker/, mock.config.js", "responsibility": "tapi pb2sdk/pb2material/rick2rules 本地 mock；rickNodeStubNpm 声明可被 rick 服务覆盖的 pb 包" },
+        { "name": "Dockerfile", "path": "Dockerfile", "responsibility": "FROM node:20-alpine，ENV NODE_OPTIONS=--max_old_space_size=4096，yarn install --frozen-lockfile + yarn build，CMD next start；CICD/VERSION/DEPLOY_ENV 通过 ARG 注入" },
+        { "name": ".orange-ci.yml", "path": ".orange-ci.yml", "responsibility": "tag_push -> 构建 nextguild 双 tag（time + latest）推 csighub + 企微通知 + git comment + git changeLog + git release；test push -> rebaseCheck + 构建 nextguild_test + stke:update 自动更新 test 集群 StatefulSetPlus" }
+      ],
+      "active_areas": [
+        "game-guild-main / game-guild-detail（主战场，组件最多）",
+        "signing-center / guild-signing-center / contract-register（签约中心）",
+        "free-gift-tasks / gift-ranks / star-ranks（活动页）",
+        "wallet（频道创作者钱包）",
+        "qunshare / qunupdate（群升级频道）",
+        "standard-version release 自动化（CHANGELOG 已到 v0.1.190）"
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "title": "middleware.ts + pages/api/auth：/game-* 路径的 Cookie 守卫 + itopencodeparam 解密授权",
+      "scope": "fullstack",
+      "summary": "Next.js 15 middleware 在边缘拦截 /game-* 前缀，缺失 openid/access_token/appid 三件套就带 redirect 回跳参数 302 到 /api/auth；后者用 @tencent/rpcsdk 的 msdk.decrypt 解析 itopencodeparam，再用 @tencent/checkurl 对 redirect URL 做 subhost 白名单（qq.com / tencent.com）校验，防开放重定向后 httpOnly 下发 cookie 并 302 回原始页面。"
+    },
+    {
+      "title": "pages/api/v2/[...slug] 基于 path2cmdAndServiceType 200+ 条映射的 oidb BFF",
+      "scope": "fullstack",
+      "summary": "把 trpc.xxx/HandleProcess 这种后端路径在前端一张静态表里映射成 cmd（如 0xf57）+ serviceType（如 125）两部分，用下划线编码；x-oidb 请求头可由客户端覆写 serviceType；映射完成后交给 @tencent/rpcsdk/dist/lib/node-common/sdk/oidbRequest 去拼包、透传 cookies、打日志。这样前端只写「路径」，不需要每个接口单独写 BFF 代码。"
+    },
+    {
+      "title": "三类 axios 实例 + isInMSDK 决定走哪条",
+      "scope": "frontend",
+      "summary": "request（gotrpc 网关）/ oidbRequest（频道网关，带 bkn）/ msdkRequest（游戏 WebView 场景，拦截器自动在 URL 拼 itopencodeparam/gameid/channelid）。pages/api/game-guild.ts 里顶层一行 const request = isInGameWebview ? msdkRequest : oidbRequest; 完成分发，业务代码感知不到差异。"
+    },
+    {
+      "title": "SSR（getServerSideProps）+ trpc.withLog 通用封装 + OpenTelemetry traceparent",
+      "scope": "fullstack",
+      "summary": "src/server-side/trpc.ts 的 withLog<T,R> 接 trpc proxy 方法，自动注入 option.context.traceparent（用 @opentelemetry/core RandomIdGenerator 生成 traceId + spanId，按 W3C trace-context 规范拼成 00-traceId-spanId-01），IsDev 下自动 proxy=1，retCode!=0 或 error.code!=0 直接抛 JSON.stringify(error)；配合 getLogger() 用 log4js addContext('trace', traceId) 实现端到端 trace 串联。"
+    },
+    {
+      "title": "日志双通道：log4js dateFile + @tencent/atta UDP 上报",
+      "scope": "backend",
+      "summary": "本地写 /data/log/project/log/global.yyyy-MM-dd.log（json layout 注入 uid/trace/path/cost）；atta 通道按 fields [project, level, ip, uid, ctx, payload, trace, env] UDP 发到 04900055524，两条通道解耦（atta 挂了不影响本地落盘）。"
+    },
+    {
+      "title": "Aegis RUM + Next reportWebVitals + 大同 analytics/v2_upload 三通道监控",
+      "scope": "frontend",
+      "summary": "_app.tsx 初始化 new window.Aegis({ spa: true }) 接 RUM；导出 reportWebVitals 把 LCP/FID/CLS/web-vital 实时推到 baseReport；另一条大同上报通道用 universal-report SDK 走 beacon，STANDARD 枚举统一 PGIN/PGOUT/IMP/IMPEND/CLCK。"
+    },
+    {
+      "title": "游戏 WebView 桥接（MSDK）+ 屏幕方向/全屏/关窗/复制控制",
+      "scope": "frontend",
+      "summary": "src/utils/msdk.ts 的 setupWebViewJavascriptBridge 用 iframe src=https://__bridge_loaded__ 触发 iOS 原生回调；封装 setLandscapeFullScreen / closeWebView / copyText（正则还原 @uin 昵称）；isiOS 判定 iPad 13 以上 MacIntel + maxTouchPoints > 1 的兼容。_app 用 Script strategy=beforeInteractive 加载 qqapi.js。"
+    },
+    {
+      "title": "antd-mobile 移动端 + postcss-px-to-viewport（1284vw 基线）+ GameGuild 目录排除",
+      "scope": "frontend",
+      "summary": "postcss-px-to-viewport 以 1284 为 viewportWidth，unitPrecision: 3、selectorBlackList [.ignore, max-view]；exclude 显式跳过 GameGuildMain/GameGuildDetail/GameGuildComponents 三个目录，这三个模块按自己的尺寸规则写死。"
+    },
+    {
+      "title": "react-next-keep-alive 做 Pages Router 页面缓存",
+      "scope": "frontend",
+      "summary": "_app.tsx 用 <KeepAliveProvider router={router}> 包裹 <Component />，让从详情页回到列表时保留滚动位置和状态；配合 SSR 首屏 + CSR 交互的 hybrid 模型。"
+    },
+    {
+      "title": "Redux Toolkit + next-redux-wrapper（极简单 store：只有 walletSlice）",
+      "scope": "frontend",
+      "summary": "用 createWrapper<AppStore>(makeStore) 让 getServerSideProps 和客户端共享 store 实例；walletSlice 只承担「礼物明细」跨页状态；业务刻意保持 store 极简，绝大部分局部状态用 Hooks / SSR props 下发。"
+    },
+    {
+      "title": "Orange CI 双流水线：master tag_push 构镜像发 release，test push 自动 stke:update",
+      "scope": "infra",
+      "summary": "$.tag_push 跑 docker login + 双 tag（time + latest）+ push + 企微通知 + git:comment + git:changeLog + git:release；test.push 加 git:rebaseCheck 保证合过主干，构建 nextguild_test 镜像后调 stke:update 去 ns-prjftchp-1605051-test 的 StatefulSetPlus/next-guild-test 自动回滚式更新。正式环境需要手动到 v4 kubernetes 后台更新 StatefulSetPlus 镜像。"
+    },
+    {
+      "title": "mocker + tapi 工具链 + rick node stub（pb 走真实服务）",
+      "scope": "infra",
+      "summary": "mock.config.js 声明 rickNodeStubNpm: ['@tencent/tpro_group_pro_gray_group_info']，tapi pb2sdk/pb2material/rick2rules 三条命令分别生成 TS SDK、物料、mock 规则；固定值 mock（tolstoy / 99 / false）让业务能快速占位调联。"
+    },
+    {
+      "title": "standard-version 自动发版：CHANGELOG 已到 v0.1.190（迭代高频）",
+      "scope": "infra",
+      "summary": "package.json scripts.release = 'standard-version && git push --follow-tags origin'，配合 .orange-ci.yml 的 git:changeLog + git:release 把 CHANGELOG.md 尾段写到 Release Notes；项目在 master 分支维护，CHANGELOG.md 121KB 已累积到 v0.1.190，证明高频迭代。"
+    }
+  ]
+}

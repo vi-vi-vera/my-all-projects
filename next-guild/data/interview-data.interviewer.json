@@ -1,0 +1,652 @@
+{
+  "schema_version": "1.0",
+  "mode": "interviewer",
+  "platform_name": "QQ 频道 Hybrid H5 (next-guild)",
+  "role": "前端",
+  "level": "中级",
+  "question_bank": [
+    {
+      "id": "iq-01",
+      "primary_dimension": "security",
+      "scope": "fullstack",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-001",
+      "depth": "中级",
+      "evidence": [
+        "middleware.ts",
+        "pages/api/auth.ts"
+      ],
+      "question": {
+        "zh": "讲讲你们 middleware.ts 做了什么，为什么选择 middleware 而不是 getServerSideProps？",
+        "en": "Walk me through middleware.ts. Why use middleware rather than getServerSideProps?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "middleware 里能调远端接口吗？这样做有什么风险？",
+            "en": "Can middleware call a remote API, and what risks come with that?"
+          }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": {
+            "zh": "matcher 配置和 pathname.startsWith 你会选哪个？为什么？",
+            "en": "Would you pick the matcher config or pathname.startsWith, and why?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-02",
+      "primary_dimension": "security",
+      "scope": "fullstack",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-002",
+      "depth": "中级",
+      "evidence": [
+        "pages/api/auth.ts"
+      ],
+      "question": {
+        "zh": "/api/auth 是怎么防开放重定向的？自己写正则不行吗？",
+        "en": "How does /api/auth prevent open-redirect, and why isn't a custom regex enough?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "security",
+          "question": {
+            "zh": "国际化域名同形异义字符怎么防？",
+            "en": "How do you guard against IDN homograph confusables?"
+          }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "如果 checkurl 宕机降级你会怎么做？",
+            "en": "If checkurl is unavailable how would you degrade gracefully?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-03",
+      "primary_dimension": "architecture",
+      "scope": "fullstack",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-003",
+      "depth": "中级",
+      "evidence": [
+        "pages/api/v2/[...slug].ts"
+      ],
+      "question": {
+        "zh": "pages/api/v2/[...slug].ts 那张 200+ 条 path 到 cmd 映射表怎么设计的？为什么不每个接口一个文件？",
+        "en": "Walk through the 200+ entry path-to-cmd table in pages/api/v2/[...slug].ts. Why not one file per endpoint?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "architecture",
+          "question": {
+            "zh": "表越来越大怎么治理？要不要拆文件？",
+            "en": "How do you govern the table as it grows, and should it be split?"
+          }
+        },
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "x-oidb 覆写 serviceType 如果传非法 JSON 会怎么样？",
+            "en": "What happens if x-oidb overriding serviceType sends invalid JSON?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-04",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-005",
+      "depth": "中级",
+      "evidence": [
+        "src/common/request.ts",
+        "src/common/oidbRequest.ts",
+        "src/common/msdkRequest.ts",
+        "src/utils/os.ts"
+      ],
+      "question": {
+        "zh": "三类 axios 实例你们是怎么分工的？isInMSDK 的判定逻辑为什么当前固定返回 true？",
+        "en": "How do the three axios instances divide labour, and why does isInMSDK currently return true unconditionally?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "仅用 UA 判定 MSDK 环境有什么风险？",
+            "en": "What is the risk of detecting MSDK purely from UA?"
+          }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "拦截器里把参数拼在 URL 还是 header 你会怎么选？",
+            "en": "In the interceptor, would you append parameters to the URL or to headers?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-05",
+      "primary_dimension": "observability",
+      "scope": "fullstack",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-006",
+      "depth": "中级",
+      "evidence": [
+        "src/server-side/trpc.ts",
+        "src/utils/report.ts"
+      ],
+      "question": {
+        "zh": "trpc.withLog 是怎么工作的？traceparent 四段字段的含义是什么？",
+        "en": "How does trpc.withLog work, and what do the four fields of traceparent mean?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "observability",
+          "question": {
+            "zh": "上游已经带 traceparent 时你会新建还是复用？",
+            "en": "If upstream already carries traceparent, do you create a new one or reuse?"
+          }
+        },
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "IsDev proxy=1 生产环境误开会怎么样？",
+            "en": "What happens if IsDev proxy=1 leaks into production?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-06",
+      "primary_dimension": "observability",
+      "scope": "backend",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-007",
+      "depth": "中级",
+      "evidence": [
+        "src/utils/logger/index.ts",
+        "src/utils/logger/atta.ts"
+      ],
+      "question": {
+        "zh": "服务端日志为什么要 log4js dateFile + atta 双通道？并发 SSR 下 context 覆写怎么处理？",
+        "en": "Why run log4js dateFile plus atta as a dual channel, and how do you avoid context overwrite across concurrent SSRs?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "atta UDP 丢包对业务有影响吗？",
+            "en": "Does UDP packet loss on atta affect the business?"
+          }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": {
+            "zh": "用 AsyncLocalStorage 做 per-request logger 你会怎么改造？",
+            "en": "How would you refactor to per-request loggers via AsyncLocalStorage?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-07",
+      "primary_dimension": "observability",
+      "scope": "frontend",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-008",
+      "depth": "中级",
+      "evidence": [
+        "pages/_app.tsx",
+        "src/utils/report.ts",
+        "src/utils/datong.ts"
+      ],
+      "question": {
+        "zh": "前端三通道监控（Aegis / web-vitals / 大同）职责怎么划分？排障时你怎么串起来用？",
+        "en": "Split the duties of the three frontend monitoring tracks (Aegis / web-vitals / Datong). How do you correlate them when debugging?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "observability",
+          "question": {
+            "zh": "spa:true 下 Next.js Pages Router 的 PV 捕获靠谱吗？",
+            "en": "With spa:true, how reliable is PV capture on Next.js Pages Router?"
+          }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "为什么不自己撸一个单通道 SDK 合并三者？",
+            "en": "Why not roll a single SDK to merge all three?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-08",
+      "primary_dimension": "feature",
+      "scope": "frontend",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-009",
+      "depth": "中级",
+      "evidence": [
+        "src/utils/msdk.ts",
+        "src/utils/os.ts"
+      ],
+      "question": {
+        "zh": "iOS 的 MSDK 桥接为什么要一个 iframe？setupWebViewJavascriptBridge 的竞态你是怎么处理的？",
+        "en": "Why does the iOS MSDK bridge need an iframe, and how do you handle the race in setupWebViewJavascriptBridge?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "bridge 还没就绪前业务先调了 msdkCall 会发生什么？",
+            "en": "What happens when business calls msdkCall before the bridge is ready?"
+          }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "为什么不用 window.webkit.messageHandlers？",
+            "en": "Why not use window.webkit.messageHandlers?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-09",
+      "primary_dimension": "reliability",
+      "scope": "infra",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-013",
+      "depth": "中级",
+      "evidence": [
+        ".orange-ci.yml",
+        "Dockerfile"
+      ],
+      "question": {
+        "zh": "master tag_push 和 test push 两条 Orange CI 流水线的分工是什么？为什么正式发布不自动？",
+        "en": "Describe the division between the master tag_push and test push pipelines. Why keep production deploy manual?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": {
+            "zh": "双 tag（time + latest）并发 push 怎么避免竞争？",
+            "en": "How do you avoid races between the time and latest tags on concurrent pushes?"
+          }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": {
+            "zh": "如果要加灰度流量切换你会怎么做？",
+            "en": "How would you add gray-release traffic switching?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "iq-10",
+      "primary_dimension": "trade-off",
+      "scope": "frontend",
+      "sub_project": "next-guild",
+      "source_tech_point": "tp-011",
+      "depth": "中级",
+      "evidence": [
+        "src/store/store.ts",
+        "src/store/wallet.ts"
+      ],
+      "question": {
+        "zh": "Redux 只放了 walletSlice 一个，为什么还要引入？未来如果状态增多你怎么演进？",
+        "en": "Why bring in Redux when only walletSlice lives in the store, and how will you evolve as state grows?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "trade-off",
+          "question": {
+            "zh": "为什么不直接用 Zustand 或 Context？",
+            "en": "Why not just use Zustand or Context?"
+          }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": {
+            "zh": "HYDRATE 对客户端初次渲染有哪些副作用？",
+            "en": "What side effects does HYDRATE have on the first client render?"
+          }
+        }
+      ]
+    }
+  ],
+  "rubrics": [
+    {
+      "qa_id": "iq-01",
+      "criteria": [
+        {
+          "name": "middleware 定位",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能说清 middleware 是边缘拦截、对比 getServerSideProps 的白屏差异，以及收窄前缀减少 CPU 开销的动机。", "en": "Articulates middleware as edge interception, contrasts with the flash from getServerSideProps, and justifies narrowing the prefix to cut edge CPU." },
+            "合格": { "zh": "知道 middleware 更早，但说不清 CPU/白屏细节。", "en": "Knows middleware runs earlier but cannot clearly explain CPU or flash details." },
+            "不合格": { "zh": "把 middleware 当成一个普通的 API handler。", "en": "Treats middleware as just another API handler." }
+          }
+        },
+        {
+          "name": "回跳参数设计",
+          "weight": 0.35,
+          "indicators": {
+            "优秀": { "zh": "能讲 basePath + pathname + search 拼回跳、nextUrl.clone() 结构化对象的必要性、参数长度截断等细节。", "en": "Explains joining basePath plus pathname plus search, why nextUrl.clone() is needed and how to bound the redirect length." },
+            "合格": { "zh": "知道要带 redirect 参数但忽略 basePath。", "en": "Knows to carry redirect but forgets basePath." },
+            "不合格": { "zh": "直接把 location.href 塞 redirect 不考虑路径结构。", "en": "Stuffs location.href into redirect without considering path structure." }
+          }
+        },
+        {
+          "name": "三件套 cookie 的可见性",
+          "weight": 0.25,
+          "indicators": {
+            "优秀": { "zh": "能区分 openid httpOnly false 的动机与另两个 httpOnly true 的动机，并讨论 XSS 防护。", "en": "Distinguishes openid being httpOnly false from the other two being httpOnly true and discusses XSS mitigation." },
+            "合格": { "zh": "记得 httpOnly 但说不清哪些字段不需要。", "en": "Remembers httpOnly but is unclear on which fields skip it." },
+            "不合格": { "zh": "全部 cookie 都当普通 cookie 设置。", "en": "Sets all cookies as plain cookies." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-02",
+      "criteria": [
+        {
+          "name": "开放重定向攻击面理解",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能列出至少三类变体（跳板 / @ 欺骗 / 后缀欺骗）并说明 checkurl 如何各个击破。", "en": "Lists at least three variants (springboard / @ spoofing / suffix spoofing) and explains how checkurl defeats each." },
+            "合格": { "zh": "能说两种并大致解释防御。", "en": "Lists two variants with rough defences." },
+            "不合格": { "zh": "不清楚自己是跳板角色只关心外部攻击。", "en": "Unaware of the springboard role and focuses only on external attackers." }
+          }
+        },
+        {
+          "name": "subhost 模式语义",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能说 subhost 与 host 模式差异，说明 IDN 解码和 userinfo/IP 拦截。", "en": "Explains subhost vs host, and how IDN decoding and userinfo/IP filtering work." },
+            "合格": { "zh": "知道是子域白名单但说不清内部实现。", "en": "Knows it is a subdomain whitelist but cannot explain the internal logic." },
+            "不合格": { "zh": "把 subhost 当成字符串 includes。", "en": "Treats subhost as a substring includes check." }
+          }
+        },
+        {
+          "name": "cookie 下发顺序",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "明确 Set-Cookie 必须在 res.redirect 之前，讨论部分浏览器顺序敏感。", "en": "States Set-Cookie must precede res.redirect and mentions browser sensitivity." },
+            "合格": { "zh": "知道顺序有关但说不清哪些浏览器。", "en": "Knows order matters but cannot name affected browsers." },
+            "不合格": { "zh": "不知道顺序影响。", "en": "Unaware ordering matters." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-03",
+      "criteria": [
+        {
+          "name": "表驱动抽象",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能讲「一张表吃掉 99% 重复 BFF 代码 + 表本身就是接口目录」并举 cmd_serviceType 结构。", "en": "Explains how one table absorbs 99% of duplicate BFF code and acts as an endpoint directory, citing cmd_serviceType." },
+            "合格": { "zh": "知道是表驱动但讲不出为什么不拆文件。", "en": "Knows it is table-driven but cannot argue against splitting files." },
+            "不合格": { "zh": "建议给每个接口写一个文件。", "en": "Suggests a file per endpoint." }
+          }
+        },
+        {
+          "name": "catch-all 路由细节",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲 slice(-2) 的原因、cmd_serviceType 下划线拆分和默认 2 的兜底。", "en": "Explains why slice(-2), how cmd_serviceType splits on underscore and the default 2 fallback." },
+            "合格": { "zh": "知道 slug 是数组但不讲细节。", "en": "Knows slug is an array but leaves out detail." },
+            "不合格": { "zh": "搞不清 slug 怎么解析。", "en": "Unsure how slug is parsed." }
+          }
+        },
+        {
+          "name": "x-oidb 覆写健壮性",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲 try-catch 包 JSON.parse、失败时回退默认 serviceType 并记错误日志。", "en": "Wraps JSON.parse in try/catch, falls back to the default serviceType and logs the error." },
+            "合格": { "zh": "知道要 parse 但没讲失败路径。", "en": "Remembers parse but not the failure path." },
+            "不合格": { "zh": "直接 JSON.parse 没有保护。", "en": "Calls JSON.parse without protection." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-04",
+      "criteria": [
+        {
+          "name": "三实例分工",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能说清每个实例对应的网关、bkn 需求、MSDK 参数拼 URL 的原因。", "en": "Nails the gateway each instance targets, bkn requirements and why MSDK params go in the URL." },
+            "合格": { "zh": "能说三实例存在但混淆职责。", "en": "Knows there are three instances but mixes duties." },
+            "不合格": { "zh": "主张合并成一个。", "en": "Argues for a single instance." }
+          }
+        },
+        {
+          "name": "isInMSDK 当前决策",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲固定 true 是业务决策以及历史 UA 判误判率高，保留 UA 代码做逃生口。", "en": "Explains the hard-coded true as a business call, the high UA mis-detection rate historically, and keeping UA code as an escape hatch." },
+            "合格": { "zh": "知道现在是 true 但讲不清原因。", "en": "Knows it is true but cannot say why." },
+            "不合格": { "zh": "认为应当继续靠 UA。", "en": "Advocates sticking with UA detection." }
+          }
+        },
+        {
+          "name": "拦截器细节",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲问号分隔符判断、baseURL 尾斜杠处理、URLSearchParams 空值兜底。", "en": "Covers the question-mark separator logic, baseURL trailing slash, and URLSearchParams empty fallback." },
+            "合格": { "zh": "能说拼参数但忽略边界。", "en": "Mentions appending params but ignores edge cases." },
+            "不合格": { "zh": "完全没关注拼接产生的双斜杠或空参数。", "en": "Ignores double-slash or empty-param issues." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-05",
+      "criteria": [
+        {
+          "name": "泛型封装",
+          "weight": 0.35,
+          "indicators": {
+            "优秀": { "zh": "能讲 withLog<T,R> 的入参、Response<R> 返回以及类型推断收益。", "en": "Explains withLog<T, R>, the Response<R> return and the type-inference benefit." },
+            "合格": { "zh": "知道是泛型但说不清推断。", "en": "Knows it uses generics but not the inference." },
+            "不合格": { "zh": "用 any 写。", "en": "Writes it with any." }
+          }
+        },
+        {
+          "name": "traceparent 字段语义",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能讲 version(00) / 32 位 traceId / 16 位 spanId / 1 字节 flags，以及 sampled 位。", "en": "Names version(00), 32-hex traceId, 16-hex spanId and the 1-byte flags with its sampled bit." },
+            "合格": { "zh": "知道格式大致结构但字段长度不准。", "en": "Knows the rough shape but not the field lengths." },
+            "不合格": { "zh": "完全不知道 W3C trace-context。", "en": "Unaware of W3C trace-context." }
+          }
+        },
+        {
+          "name": "dev proxy 安全边界",
+          "weight": 0.25,
+          "indicators": {
+            "优秀": { "zh": "强调 IsDev 双保险、生产禁用 proxy=1 的风险说明。", "en": "Stresses the IsDev double guard and the danger of production proxy=1." },
+            "合格": { "zh": "知道有 proxy 开关但没强调生产禁用。", "en": "Aware of the proxy toggle but does not stress the prod ban." },
+            "不合格": { "zh": "认为生产开 proxy 也可以。", "en": "Believes enabling proxy in prod is fine." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-06",
+      "criteria": [
+        {
+          "name": "双通道动机",
+          "weight": 0.35,
+          "indicators": {
+            "优秀": { "zh": "能说明本地真源 + 聚合补充、atta 走 UDP 的 fire-and-forget 语义、单通道失败不互相拖累。", "en": "Articulates local source of truth plus aggregation, atta's fire-and-forget UDP semantics and the channels not dragging each other." },
+            "合格": { "zh": "知道有两条但说不清动机。", "en": "Knows two channels exist but not the rationale." },
+            "不合格": { "zh": "主张只留一条通道。", "en": "Argues for keeping only one channel." }
+          }
+        },
+        {
+          "name": "context 隔离",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能指出 getLogger 单例在并发 SSR 下会互相覆盖，并讨论 AsyncLocalStorage / child logger 的演进。", "en": "Identifies the singleton context-overwrite risk under concurrent SSR and discusses AsyncLocalStorage / child logger evolution." },
+            "合格": { "zh": "知道要挂 trace 但说不清单例问题。", "en": "Knows to attach trace but not the singleton problem." },
+            "不合格": { "zh": "以为 log4js 默认是每请求独立。", "en": "Assumes log4js is per-request by default." }
+          }
+        },
+        {
+          "name": "异常防护",
+          "weight": 0.25,
+          "indicators": {
+            "优秀": { "zh": "能讲 atta .catch(() => false) 的动机和 unhandled rejection 曾崩溃的经验。", "en": "Explains the .catch(() => false) on atta and the crash history from unhandled rejection." },
+            "合格": { "zh": "知道要 catch 但讲不清后果。", "en": "Knows to catch but not the consequences." },
+            "不合格": { "zh": "直接链式 then 没防护。", "en": "Chains then without protection." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-07",
+      "criteria": [
+        {
+          "name": "三通道职责划分",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能讲 Aegis 是 RUM 自动采集、web-vitals 是性能指标、大同是业务事件，并给具体字段。", "en": "Explains Aegis as RUM auto-capture, web-vitals as perf metrics and Datong as business events, with concrete fields." },
+            "合格": { "zh": "能说三者存在但边界模糊。", "en": "Lists all three but with blurred boundaries." },
+            "不合格": { "zh": "认为可以合并成一个 SDK。", "en": "Believes they should merge into one SDK." }
+          }
+        },
+        {
+          "name": "负载 / 字段对齐",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲 A8/A99/A100/A119/A120 这些魔法字段在大同协议里的角色。", "en": "Explains the A8/A99/A100/A119/A120 magic fields in the Datong protocol." },
+            "合格": { "zh": "知道有魔法字段但讲不清对应。", "en": "Aware of magic fields but fuzzy on mapping." },
+            "不合格": { "zh": "没注意到字段约束。", "en": "Missed the field constraints." }
+          }
+        },
+        {
+          "name": "跨通道排障",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲 Aegis -> atta -> log4js -> web-vitals 的排查路径与时间戳对齐。", "en": "Describes Aegis -> atta -> log4js -> web-vitals debug path with timestamp alignment." },
+            "合格": { "zh": "知道要多通道关联但流程不清。", "en": "Knows to correlate but the flow is unclear." },
+            "不合格": { "zh": "只依赖一个通道排查。", "en": "Relies on a single channel to debug." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-08",
+      "criteria": [
+        {
+          "name": "iframe 桥接原理",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能讲 WKNavigationDelegate decidePolicyForNavigationAction 的拦截原理。", "en": "Explains WKNavigationDelegate decidePolicyForNavigationAction interception." },
+            "合格": { "zh": "知道 iframe 是信号但讲不清 native 侧逻辑。", "en": "Knows the iframe signals native but cannot explain the native side." },
+            "不合格": { "zh": "以为 iframe 加载真实资源。", "en": "Assumes the iframe loads a real resource." }
+          }
+        },
+        {
+          "name": "竞态三分支",
+          "weight": 0.35,
+          "indicators": {
+            "优秀": { "zh": "能讲 bridge 已在 / 待在队列 / 未在三种分支的处理。", "en": "Covers all three branches: bridge present, pending queue and missing." },
+            "合格": { "zh": "能说出两种分支。", "en": "Covers two branches." },
+            "不合格": { "zh": "只处理一种。", "en": "Handles only one branch." }
+          }
+        },
+        {
+          "name": "跨端协议一致性",
+          "weight": 0.25,
+          "indicators": {
+            "优秀": { "zh": "能讲 iOS 与 Android 协议枚举差异（3 vs 6）以及 fallback 到 prompt/alert。", "en": "Explains iOS vs Android enum differences (3 vs 6) and falling back to prompt/alert." },
+            "合格": { "zh": "知道两端略有差异但不具体。", "en": "Knows there is a difference but not the specifics." },
+            "不合格": { "zh": "以为协议完全一样。", "en": "Assumes identical protocols." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-09",
+      "criteria": [
+        {
+          "name": "双流水线职责划分",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能讲 master tag_push 只发镜像不部署、test push 自动 stke:update 的分工与动机。", "en": "Explains master tag_push ships images without deploy and test push auto stke:update, with rationale." },
+            "合格": { "zh": "能说两条流水线但混淆触发条件。", "en": "Lists both but confuses triggers." },
+            "不合格": { "zh": "以为 master 也自动部署。", "en": "Assumes master auto-deploys." }
+          }
+        },
+        {
+          "name": "双 tag 策略",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲 time tag 可溯源 / latest 便利，并提到并发竞争的风险规避。", "en": "Explains time tag for traceability, latest for convenience, and mitigations for concurrent races." },
+            "合格": { "zh": "知道有两个 tag 但讲不清竞争。", "en": "Aware of both tags but not the race." },
+            "不合格": { "zh": "只用 latest。", "en": "Uses only latest." }
+          }
+        },
+        {
+          "name": "人工确认动机",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲生产灰度 / 回滚需要人工，自动只到镜像 push 阶段是刻意设计。", "en": "Explains manual prod gating for gray and rollback, with automation stopping at image push by design." },
+            "合格": { "zh": "知道要人工但说不清动机。", "en": "Knows manual gating but not why." },
+            "不合格": { "zh": "主张一键全自动。", "en": "Advocates one-click full automation." }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-10",
+      "criteria": [
+        {
+          "name": "状态域决策",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": { "zh": "能讲页面局部 / SSR props / store 三档的选择依据，并解释 walletSlice 刻意极简。", "en": "Explains the three tiers (page-local, SSR props, store) and why walletSlice stays minimal." },
+            "合格": { "zh": "知道状态克制但理由一般。", "en": "Aware of restraint but reasons are weak." },
+            "不合格": { "zh": "主张全部搬进 store。", "en": "Argues to push everything into the store." }
+          }
+        },
+        {
+          "name": "next-redux-wrapper HYDRATE",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能讲 HYDRATE action merge、extraReducers 处理以及为什么 walletSlice 不需要。", "en": "Explains the HYDRATE merge action, extraReducers handling and why walletSlice skips it." },
+            "合格": { "zh": "知道 HYDRATE 但说不清处理。", "en": "Knows HYDRATE exists but not the handling." },
+            "不合格": { "zh": "完全不了解水合机制。", "en": "Unaware of hydration." }
+          }
+        },
+        {
+          "name": "方案对比",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": { "zh": "能对比 Zustand / Jotai / Context 并给出场景适配建议。", "en": "Compares Zustand / Jotai / Context with scenario-fit suggestions." },
+            "合格": { "zh": "能列对比项但场景不明。", "en": "Lists comparisons but scenarios are vague." },
+            "不合格": { "zh": "无视其他方案。", "en": "Ignores alternatives." }
+          }
+        }
+      ]
+    }
+  ]
+}
