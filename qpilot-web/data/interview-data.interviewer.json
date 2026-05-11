@@ -1,0 +1,1270 @@
+{
+  "schema_version": "1.0",
+  "mode": "interviewer",
+  "platform_name": "QPilot Web",
+  "role": "全栈",
+  "level": "中级",
+  "question_bank": [
+    {
+      "id": "iq-01",
+      "primary_dimension": "architecture",
+      "scope": "fullstack",
+      "source_tech_point": "tp-001",
+      "question": {
+        "zh": "你们主聊天链路是怎么用 Vercel AI SDK 5 的 ToolLoopAgent 加 createUIMessageStream 重写的？为什么不继续在 OpenAIStream 上加功能？",
+        "en": "How did you rewrite the main chat pipeline using Vercel AI SDK 5's ToolLoopAgent and createUIMessageStream, and why did you stop extending the OpenAIStream-based version?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts",
+        "apps/desktop/src/app/api/chat-main-agent-v2/stop/route.ts"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果业务要在工具执行中插入一个用户审批步骤暂停 loop，你这套架构怎么改？",
+            "en": "If product wants a user-approval step inside tool execution that pauses the loop, how would you adapt this architecture?"
+          },
+          "primary_dimension": "architecture"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-02",
+      "primary_dimension": "security",
+      "scope": "backend",
+      "source_tech_point": "tp-002",
+      "question": {
+        "zh": "Edge Middleware 里 jose.compactDecrypt 在解什么？为什么这一步要放在 Edge 而不是放在 Node 应用层？",
+        "en": "What does jose.compactDecrypt unwrap inside the Edge middleware, and why does this step belong on Edge rather than the Node app layer?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/middleware.ts"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果 TAI 平台开始轮换解密 key，每小时一换，你的代码不发版怎么跟上？",
+            "en": "If TAI starts rotating decryption keys hourly, how do you keep up without redeploying?"
+          },
+          "primary_dimension": "reliability"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-03",
+      "primary_dimension": "reliability",
+      "scope": "backend",
+      "source_tech_point": "tp-003",
+      "question": {
+        "zh": "用户点停止时，整条从前端到工具调用的 SSE 链路是怎么干净切断的？多 Pod 部署下 stop 请求落到不同实例怎么办？",
+        "en": "How does the entire SSE chain from frontend down to tool calls get cleanly cut on user stop, and how do you handle the case where the stop request lands on a different pod in a multi-pod deployment?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts",
+        "apps/desktop/src/app/api/chat-main-agent-v2/stop/route.ts"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "假设工具内部用 fetch 调外部服务，你的 abort 没有透传 signal，会发生什么现象？怎么定位？",
+            "en": "Suppose a tool's internal fetch to an external service does not propagate the abort signal — what symptom shows up and how would you debug it?"
+          },
+          "primary_dimension": "reliability"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-04",
+      "primary_dimension": "performance",
+      "scope": "backend",
+      "source_tech_point": "tp-004",
+      "question": {
+        "zh": "多轮对话很容易把上下文窗口打穿，你们怎么决定何时压缩、压缩什么？为什么不简单按消息数 slice？",
+        "en": "Long chats easily blow out the context window — how do you decide when to compress and what to compress, and why not just slice by message count?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/shared/",
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果某一步工具输出突然涨到几万 token，你的预算计算会怎么响应？",
+            "en": "If a single tool output suddenly balloons to tens of thousands of tokens, how does your budget logic react?"
+          },
+          "primary_dimension": "performance"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-05",
+      "primary_dimension": "observability",
+      "scope": "backend",
+      "source_tech_point": "tp-005",
+      "question": {
+        "zh": "你们 Galileo 监控具体记了哪些 metric？instrumentation.ts 在 Edge 与 Node 双 runtime 下是怎么处理的？",
+        "en": "Which metrics does Galileo capture, and how does instrumentation.ts handle the dual Edge/Node runtime case?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/instrumentation.ts",
+        "apps/desktop/src/shared/utils/galileo-logger.ts"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果某天发现 chat_error_count 突涨但 dashboard 上看不到对应的 trace，你怎么排查？",
+            "en": "Suppose chat_error_count spikes but dashboards show no corresponding trace — how do you investigate?"
+          },
+          "primary_dimension": "observability"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-06",
+      "primary_dimension": "architecture",
+      "scope": "backend",
+      "source_tech_point": "tp-006",
+      "question": {
+        "zh": "对话支持在某条消息重新生成并切分支，你们的数据模型是怎么设计的？为什么不直接覆盖旧回答？",
+        "en": "Your chat supports regenerating from a message and switching branches — how is the data model laid out, and why not just overwrite the old answer?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/prisma/schema.prisma",
+        "apps/desktop/src/components/ai-elements/"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果用户在一个分支里点删除中间某条消息，你的实现会怎么处理？",
+            "en": "If a user tries to delete a middle message in a branch, what does your implementation do?"
+          },
+          "primary_dimension": "reliability"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-07",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "source_tech_point": "tp-007",
+      "question": {
+        "zh": "为什么前端要拆成 21 个 Zustand store 而不是放一个大 store？拆分边界是怎么定的？",
+        "en": "Why split into 21 Zustand stores instead of one big store? On what basis is the split decided?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/stores/"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果新加一个高频写的字段，你怎么决定它该放进哪个已有 store 还是新建一个？",
+            "en": "When adding a new high-frequency write field, how do you decide whether to put it in an existing store or create a new one?"
+          },
+          "primary_dimension": "architecture"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-08",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "source_tech_point": "tp-008",
+      "question": {
+        "zh": "你们怎么用 App Router 的路由组 (app)/(standalone) 和 _components 私有目录约定来组织页面？为什么需要两套机制？",
+        "en": "How do you use App Router's route groups (app)/(standalone) together with the _components private directory convention, and why are two mechanisms needed?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/app/(app)/",
+        "apps/desktop/CODEBUDDY.md"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果一个原本 _components 下的组件突然要被另一路由复用，你的处理流程是什么？",
+            "en": "If a component currently under _components needs to be reused by another route, what is your promotion process?"
+          },
+          "primary_dimension": "architecture"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-09",
+      "primary_dimension": "trade-off",
+      "scope": "backend",
+      "source_tech_point": "tp-009",
+      "question": {
+        "zh": "/api/chat、/api/qpilot-chat、/api/chat-main-agent-v2 三条链路同时存在，你们为什么不一次性下线老的？什么条件才会下线？",
+        "en": "Three endpoints — /api/chat, /api/qpilot-chat, /api/chat-main-agent-v2 — coexist; why not retire the legacy ones at once, and what conditions would trigger retirement?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/app/api/chat/route.ts",
+        "apps/desktop/src/app/api/qpilot-chat/route.ts",
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果产品要求所有插件路径下周必须切到新链路，你会怎么排期与风险评估？",
+            "en": "If product mandates all plugin paths move to the new pipeline next week, how would you plan and risk-assess this?"
+          },
+          "primary_dimension": "trade-off"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-10",
+      "primary_dimension": "feature",
+      "scope": "frontend",
+      "source_tech_point": "tp-010",
+      "question": {
+        "zh": "你们前端是怎么用 React Query 组织数据请求的？services 与 hooks 的边界为什么要这么切？",
+        "en": "How is React Query structured for data fetching, and why split services and hooks the way you did?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/hooks/",
+        "apps/desktop/src/services/"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果某个接口被三个组件用三种不同参数调用，你怎么判定是新建一个 hook 还是复用 service？",
+            "en": "If one endpoint is called from three components with three different parameter shapes, how do you decide between a new hook and reusing a service?"
+          },
+          "primary_dimension": "architecture"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-11",
+      "primary_dimension": "performance",
+      "scope": "frontend",
+      "source_tech_point": "tp-011",
+      "question": {
+        "zh": "DnsOptimization 组件在做什么？为什么 layout 里要在服务端通过 cookie 初始化用户状态？",
+        "en": "What does the DnsOptimization component do, and why does the layout initialize user state from cookies on the server?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/components/DnsOptimization.tsx",
+        "apps/desktop/src/app/layout.tsx"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果 preconnect 上线后 LCP 没有改善，你会怎么定位是配置问题还是别的瓶颈？",
+            "en": "If LCP does not improve after preconnect rollout, how would you isolate config error vs another bottleneck?"
+          },
+          "primary_dimension": "performance"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    },
+    {
+      "id": "iq-12",
+      "primary_dimension": "architecture",
+      "scope": "infra",
+      "source_tech_point": "tp-012",
+      "question": {
+        "zh": "pnpm catalog 加 lerna independent 这套依赖治理是怎么运作的？为什么要双层而不是单一工具？",
+        "en": "How does pnpm catalog plus lerna independent work as a two-layer dependency story, and why two layers instead of one tool?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "pnpm-workspace.yaml",
+        "lerna.json",
+        "package.json"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果某个 package 下游消费方迟迟不升级 SDK 版本，你怎么推动？",
+            "en": "If a downstream consumer keeps lagging on SDK version upgrades, how do you drive adoption?"
+          },
+          "primary_dimension": "trade-off"
+        }
+      ]
+    },
+    {
+      "id": "iq-13",
+      "primary_dimension": "trade-off",
+      "scope": "frontend",
+      "source_tech_point": "tp-013",
+      "question": {
+        "zh": "你们怎么把 web_bak 这一坨老代码逐步迁到新栈？/migrate-component 工作流在做什么？",
+        "en": "How are you migrating the web_bak legacy code to the new stack, and what does the /migrate-component workflow actually do?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "web_bak/src/",
+        ".cursor/"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果发现 antd 的某个 prop 在 shadcn 上没有对应实现，你的迁移策略怎么处理？",
+            "en": "If an antd prop has no shadcn counterpart, how does your migration strategy handle it?"
+          },
+          "primary_dimension": "trade-off"
+        }
+      ],
+      "sub_project": "web_bak"
+    },
+    {
+      "id": "iq-14",
+      "primary_dimension": "feature",
+      "scope": "frontend",
+      "source_tech_point": "tp-014",
+      "question": {
+        "zh": "html-to-figma SDK 是怎么把网页转成 Figma 剪贴板格式的？字形与 SVG 路径分别怎么处理？",
+        "en": "How does the html-to-figma SDK convert a webpage into Figma's clipboard format, and how are glyphs and SVG paths handled separately?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "packages/sdk/html-to-figma/"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果某个网页用了商用字体而 Figma 端没装，你的 fallback 链路是什么？",
+            "en": "If a webpage uses a commercial font that Figma side does not have installed, what is your fallback chain?"
+          },
+          "primary_dimension": "feature"
+        }
+      ],
+      "sub_project": "packages/* 共享层"
+    },
+    {
+      "id": "iq-15",
+      "primary_dimension": "trade-off",
+      "scope": "backend",
+      "source_tech_point": "tp-015",
+      "question": {
+        "zh": "你们 middleware 在 Edge、main-agent 在 Node、instrumentation 也在 Node，runtime 是怎么选的？决策框架是什么？",
+        "en": "Middleware runs on Edge, main-agent on Node, and instrumentation also on Node — how do you decide runtime, and what is your decision framework?"
+      },
+      "depth": "中级",
+      "evidence": [
+        "apps/desktop/src/middleware.ts",
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts",
+        "apps/desktop/src/instrumentation.ts"
+      ],
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果未来要让 main-agent 提速，能不能改回 Edge？为什么不能？",
+            "en": "Could main-agent be moved back to Edge for speed in the future? Why or why not?"
+          },
+          "primary_dimension": "trade-off"
+        }
+      ],
+      "sub_project": "apps/desktop"
+    }
+  ],
+  "rubrics": [
+    {
+      "qa_id": "iq-01",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "主动指出 ToolLoopAgent 负责多步循环、streamText 提供 token 流、createUIMessageStream 包装 part 事件，且能解释 Node runtime 与 maxDuration=300 的原因",
+              "en": "Volunteers that ToolLoopAgent drives the multi-step loop, streamText is the token source, createUIMessageStream wraps part events, and explains why Node runtime with maxDuration=300 is needed"
+            },
+            "合格": {
+              "zh": "在追问下能正确说出三个组件的职责和它们如何拼成一条 SSE 流",
+              "en": "On follow-up, correctly states each component's role and how they compose into a single SSE stream"
+            },
+            "不合格": {
+              "zh": "把 ToolLoopAgent 与 streamText 混为一谈，或说不清 part 类型与前端 useChat 的对应关系",
+              "en": "Conflates ToolLoopAgent with streamText, or cannot explain how part types map to client-side useChat rendering"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能对比自研 OpenAIStream loop 与 SDK ToolLoopAgent 的成本，并指出 Edge runtime 在多步工具上的执行窗口不足",
+              "en": "Contrasts hand-rolled OpenAIStream loop against SDK ToolLoopAgent on cost, and points out Edge runtime's execution window is insufficient for multi-step tools"
+            },
+            "合格": {
+              "zh": "知道为什么改 Node runtime，但说不清楚旧链路保留的具体原因",
+              "en": "Knows why Node runtime is used but cannot articulate why the legacy pipeline was kept"
+            },
+            "不合格": {
+              "zh": "只会回答『新版本更好』『SDK 更新了』之类泛泛说法，没有具体取舍",
+              "en": "Generic answers like 'newer is better' or 'SDK got updated' with no concrete trade-offs"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动提及一个具体踩过的坑（如 abort 信号没透传到子工具、part 类型缺失导致前端渲染异常）并说出修复",
+              "en": "Volunteers a concrete past pitfall such as abort signal not propagating into sub-tools or missing part types breaking client rendering, with the fix"
+            },
+            "合格": {
+              "zh": "在追问下能想起一个迁移过程中的具体问题",
+              "en": "On probing, recalls a specific migration-time issue"
+            },
+            "不合格": {
+              "zh": "声称『没遇到问题』或只能给出『多测试』之类泛泛的总结",
+              "en": "Claims no issues were hit, or only offers generic lessons like 'test more'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-02",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "明确指出解的是 JWE 紧凑序列化身份票据，能说出 StaffId 和 LoginName 字段，能解释 Web Crypto 在 Edge 原生可用而 Node 模块不行",
+              "en": "Explicitly identifies the payload as a JWE compact identity ticket, names StaffId and LoginName fields, and explains Web Crypto is native on Edge while Node modules are not"
+            },
+            "合格": {
+              "zh": "能说出 Edge 离用户近、首屏前可用，但对 jose 的具体 API 模糊",
+              "en": "Knows Edge sits closest to the user and runs before first paint, but is vague on the jose API specifics"
+            },
+            "不合格": {
+              "zh": "把 JWE 与 JWT 混淆，或不知道 Edge runtime 与 Node runtime 在加密能力上的差异",
+              "en": "Confuses JWE with JWT, or is unaware of the crypto-capability gap between Edge and Node runtimes"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动讨论 matcher 的设计如何避免静态资源和 API 路径每次解密的成本，并能权衡放 Node 中间层的方案",
+              "en": "Volunteers how the matcher design avoids decrypting on every static and API request, and weighs against placing it in a Node middle tier"
+            },
+            "合格": {
+              "zh": "知道 matcher 的存在，但说不出排除 _next 与 api 的具体动机",
+              "en": "Knows the matcher exists but cannot motivate why _next and api are excluded"
+            },
+            "不合格": {
+              "zh": "回答『Edge 更快』『更简单』而无任何场景化的依据",
+              "en": "Says 'Edge is faster' or 'simpler' with no scenario-grounded reasoning"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动谈及解密失败的容错策略（落到匿名态而非 5xx），并能解释为何这样选",
+              "en": "Volunteers the failure-tolerance choice (fall through to anonymous instead of 5xx) and explains why"
+            },
+            "合格": {
+              "zh": "追问下能想到 key 与环境隔离的某种处理",
+              "en": "On probing, recalls some handling for key/environment isolation"
+            },
+            "不合格": {
+              "zh": "认为解密失败应该直接 5xx 让站点不可用，没有意识到鉴权异常的影响半径",
+              "en": "Believes decrypt failure should hard-5xx the site, missing the blast-radius implication"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-03",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "主动描述 registerSessionAbort/unregisterSession 的会话级注册表、AbortSignal 透传到 streamText 与每个工具，并强调 finally 清理的必要性",
+              "en": "Volunteers the per-session registerSessionAbort/unregisterSession registry, AbortSignal propagation into streamText and each tool, and emphasizes finally-block cleanup"
+            },
+            "合格": {
+              "zh": "知道有 stop 端点和 AbortController，但说不清 signal 如何在 SDK 内部传递",
+              "en": "Knows about the stop endpoint and AbortController, but cannot explain how the signal travels inside the SDK"
+            },
+            "不合格": {
+              "zh": "认为前端关闭 EventSource 就能停掉服务端，或不知道有专门的 stop 端点",
+              "en": "Believes closing EventSource on the client kills the server, or is unaware of the dedicated stop endpoint"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论 sticky session/网关路由解决跨实例 stop 的方案，并对比『session 信息放共享存储』的成本",
+              "en": "Discusses sticky sessions or gateway routing for cross-instance stop, contrasting with the cost of moving session state to shared storage"
+            },
+            "合格": {
+              "zh": "知道多 Pod 是问题，但只能给出一个含糊方向",
+              "en": "Acknowledges multi-pod is a problem but can only sketch one vague direction"
+            },
+            "不合格": {
+              "zh": "完全没意识到内存级注册表在多实例下的局限",
+              "en": "Unaware that an in-memory registry breaks across multiple instances"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动提到把 abort 计入 chat_error_count 的 reason=user_abort label，避免与真正失败混淆",
+              "en": "Volunteers folding abort into chat_error_count with reason=user_abort label to separate user-stop from real failure"
+            },
+            "合格": {
+              "zh": "在追问下想起 useChat onError 不能弹错误 toast 的细节",
+              "en": "On probing, recalls that useChat onError must not pop an error toast for AbortError"
+            },
+            "不合格": {
+              "zh": "想不起任何具体边界情况，或者把 abort 当成普通错误处理",
+              "en": "Cannot recall any concrete edge case, or treats abort as a generic error"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-04",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "主动拆出 context-budget / context-compressor / context-compress 三层职责，并能说明在 ToolLoopAgent.prepareStep 钩子里触发",
+              "en": "Volunteers the three-layer split of context-budget / context-compressor / context-compress, and identifies the ToolLoopAgent.prepareStep hook as the trigger point"
+            },
+            "合格": {
+              "zh": "知道有 token 预算与多种压缩策略，但说不清三层的边界",
+              "en": "Knows there is a token budget and multiple compression strategies, but cannot delineate the three layers"
+            },
+            "不合格": {
+              "zh": "回答『按消息数截断』或『统一截一半』而不区分模型上下文窗口",
+              "en": "Answers 'truncate by count' or 'cut in half' with no per-model context-window awareness"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能对比保留头尾 + 中间替换、老消息摘要、角色优先级丢弃三种策略的适用场景，并解释为何不全用其中一种",
+              "en": "Contrasts head-tail truncation, old-message summarization, and role-priority dropping by use case, explaining why no single strategy covers all"
+            },
+            "合格": {
+              "zh": "能列出策略名但说不清各自的边界",
+              "en": "Lists strategies but cannot explain each one's boundary"
+            },
+            "不合格": {
+              "zh": "只会说『多压缩』『多截断』，无具体策略层次",
+              "en": "Just says 'compress more' or 'truncate more' with no strategy hierarchy"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动谈到旧版盲目 slice 导致关键上下文丢失的具体案例，并说明如何借此重设计阶梯式压缩",
+              "en": "Volunteers a concrete case where blind slicing lost key context, and explains how that drove the redesign into tiered compression"
+            },
+            "合格": {
+              "zh": "在追问下能复述一次因压缩过度导致回答跑题的经历",
+              "en": "On probing, recalls an instance where over-compression led to off-topic answers"
+            },
+            "不合格": {
+              "zh": "认为压缩没有副作用，或想不起任何上线后调过的阈值",
+              "en": "Believes compression has no side effects or cannot recall any tuned threshold after rollout"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-05",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "主动列出 4 个 metric（api_request_duration / page_render_duration / chat_request_count / chat_error_count）并指明 histogram vs counter，再说出 NEXT_RUNTIME 守门",
+              "en": "Volunteers the four metrics (api_request_duration, page_render_duration, chat_request_count, chat_error_count), classifies histogram vs counter, and states the NEXT_RUNTIME guard"
+            },
+            "合格": {
+              "zh": "能命中两到三个 metric 名字，知道 register 钩子的作用",
+              "en": "Names two or three metrics correctly, understands the register hook's role"
+            },
+            "不合格": {
+              "zh": "对 OTel 与 Galileo 的关系混乱，或不知道 metric 是自定义注册的",
+              "en": "Confuses OTel with Galileo, or is unaware that metrics are custom-registered"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能解释为何选 OTel node-sdk 而非内置 Edge 监控，且说明 Sentry 等替代方案被淘汰的理由",
+              "en": "Explains why OTel node-sdk was chosen over a built-in Edge solution, and why alternatives like Sentry were dropped"
+            },
+            "合格": {
+              "zh": "知道 Edge 上 OTel 不能跑，但说不出 async_hooks 是关键阻塞",
+              "en": "Knows OTel cannot run on Edge but does not identify async_hooks as the blocker"
+            },
+            "不合格": {
+              "zh": "认为只要『加个监控库』就行，没有意识到 runtime 兼容性问题",
+              "en": "Thinks adding any monitoring library would do, missing the runtime-compatibility issue"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动谈到注册顺序——SetupGalileo 必须先于 metric 注册，否则 meter 未就绪——并描述如何发现这个 bug",
+              "en": "Volunteers the registration order — SetupGalileo before metrics, otherwise the meter is not ready — and how this bug was discovered"
+            },
+            "合格": {
+              "zh": "想起来 unhandledRejection 抓 promise 失踪的修补",
+              "en": "Recalls the unhandledRejection fix for lost promises"
+            },
+            "不合格": {
+              "zh": "对监控上线后的踩坑没有任何记忆",
+              "en": "Has no recollection of any post-rollout monitoring pitfall"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-06",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "明确说出 Conversation.currentNodeId 指向当前可见叶子、Message.parentId 自引用，并解释从叶子向上回溯渲染当前会话",
+              "en": "Explicitly states Conversation.currentNodeId points to the visible leaf and Message.parentId is self-referential, with leaf-to-root traversal rendering the current chat"
+            },
+            "合格": {
+              "zh": "知道是树结构，能讲分支切换是切 currentNodeId，但说不清索引设计",
+              "en": "Knows it is a tree and that switching means moving currentNodeId, but cannot explain indexing"
+            },
+            "不合格": {
+              "zh": "把消息当作扁平数组并用 deleted 标志解决重新生成，没有意识到分支需求",
+              "en": "Models messages as a flat array with a deleted flag for regeneration, missing the branching requirement"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论为什么 conversationId 加索引而 parentId 不加，并解释每会话节点规模下递归 CTE 不必要",
+              "en": "Discusses why conversationId is indexed while parentId is not, and explains why recursive CTEs are unnecessary at the per-conversation node scale"
+            },
+            "合格": {
+              "zh": "明白索引存在但说不清取舍",
+              "en": "Understands an index exists but cannot articulate the trade-off"
+            },
+            "不合格": {
+              "zh": "认为所有外键都该加索引，或建议引入图数据库等过度方案",
+              "en": "Thinks every foreign key needs an index or suggests over-engineered options like a graph database"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动提及 currentNodeId 一致性维护的具体坑（事务边界、并发重生）并描述如何修复",
+              "en": "Volunteers a concrete pitfall around currentNodeId consistency (transaction boundary, concurrent regeneration) with the fix"
+            },
+            "合格": {
+              "zh": "在追问下想到删除级联或孤儿节点这一类问题",
+              "en": "On probing, recalls cascade-delete or orphan-node concerns"
+            },
+            "不合格": {
+              "zh": "不了解删除策略导致的潜在数据问题",
+              "en": "Has no awareness of data-integrity issues caused by deletion strategy"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-07",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "主动给出三条拆分准则（更新频率一致、订阅路径一致、persist 策略一致），并解释 selector 在 store 内部触发的机制",
+              "en": "Volunteers three split rules (matching update cadence, shared subscription path, matching persistence policy) and explains how selectors fire inside a store"
+            },
+            "合格": {
+              "zh": "能说出至少一条拆分准则，理解 store 订阅会触发整个 selector",
+              "en": "States at least one split rule and understands a store change re-runs subscribed selectors"
+            },
+            "不合格": {
+              "zh": "认为按字段类型分（user / chat / ui）就够了，没意识到更新频率才是关键",
+              "en": "Thinks splitting by field category (user/chat/ui) is enough, missing that update cadence is the actual driver"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论 21 个 store 带来的认知与维护成本，并说明 barrel import 与 useShallow 在何种条件下使用",
+              "en": "Discusses cognitive and maintenance cost of 21 stores and when barrel imports plus useShallow are warranted"
+            },
+            "合格": {
+              "zh": "明白多 store 的代价但只能给出 barrel 一招",
+              "en": "Aware of the multi-store cost but only mentions the barrel trick"
+            },
+            "不合格": {
+              "zh": "认为拆得越细越好，没有任何成本视角",
+              "en": "Thinks finer-grained is always better with no cost lens"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动讲述 selectedModel 早期放在 useUserStore 导致 user-subscribing 组件在切模型时全部 re-render 的踩坑与拆分修复",
+              "en": "Volunteers the early bug where selectedModel sat in useUserStore and re-rendered every user-subscribing component on model switch, plus how splitting fixed it"
+            },
+            "合格": {
+              "zh": "在追问下想起 persist schema 升级导致老用户字段缺失的问题",
+              "en": "On probing, recalls persist-schema upgrades stripping fields from old users"
+            },
+            "不合格": {
+              "zh": "对真实生产中的踩坑无任何记忆",
+              "en": "Has no recollection of any production pitfall"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-08",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "明确说出路由组（圆括号）只标 layout 边界不进 URL、_components（下划线）不被识别为路由段，且能给出具体目录例子",
+              "en": "Explicitly states route groups (parentheses) mark layout boundaries without affecting URLs and _components (underscore) are not treated as route segments, with concrete folder examples"
+            },
+            "合格": {
+              "zh": "知道两个机制的存在，但说不清楚下划线开头的私有约定细节",
+              "en": "Knows both mechanisms exist but is hazy on the underscore-prefix private convention"
+            },
+            "不合格": {
+              "zh": "将路由组与 _components 混为一谈，或者不知道 App Router 有这些约定",
+              "en": "Conflates route groups with _components, or is unaware these App Router conventions exist"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论组件提到 src/components 的判定（真实跨页面复用而非临时共用），并解释 ESLint 规则如何挡住误用",
+              "en": "Discusses the criterion for promoting to src/components (genuine cross-page reuse, not transient sharing) and how ESLint rules block misuse"
+            },
+            "合格": {
+              "zh": "明白存在分层但讲不清提到顶层的判定",
+              "en": "Understands the layering but cannot articulate the promotion criterion"
+            },
+            "不合格": {
+              "zh": "认为所有组件都该放在 src/components 全局共用",
+              "en": "Believes every component should live in a global src/components"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说一个具体的越界 import 被 ESLint 挡掉的例子或者类似规则建立的动机",
+              "en": "Volunteers a concrete cross-route import caught by ESLint or the motivation that created the rule"
+            },
+            "合格": {
+              "zh": "在追问下能给出一个目录约定误用的场景",
+              "en": "On probing, gives a scenario where the directory convention was misused"
+            },
+            "不合格": {
+              "zh": "想不起任何因目录约定踩过的坑",
+              "en": "Cannot recall any directory-convention pitfall"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-09",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能区分三条链路的具体定位（自研 OpenAIStream / eventsource-parser 代理上游 / SDK 5 ToolLoopAgent），并说出各自的 runtime 与上下游关系",
+              "en": "Distinguishes the three pipelines by role (hand-written OpenAIStream / eventsource-parser proxy to upstream / SDK 5 ToolLoopAgent), each with runtime and up/downstream relationships"
+            },
+            "合格": {
+              "zh": "知道存在三条但说不清其中一条的定位",
+              "en": "Aware of all three but unclear on the role of at least one"
+            },
+            "不合格": {
+              "zh": "把三条链路当作功能重复的冗余而不是阶段性产物",
+              "en": "Treats the three pipelines as functional duplication rather than phased artifacts"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能给出具体下线条件（看板调用量连续一周为零、上游协议是否变化、回归风险评估）",
+              "en": "Provides concrete retirement criteria (zero traffic for one week on dashboards, upstream protocol changes, regression risk assessment)"
+            },
+            "合格": {
+              "zh": "知道下线要等流量降下去，但没有具体阈值或时间窗",
+              "en": "Knows traffic must drop before retirement but offers no concrete threshold or time window"
+            },
+            "不合格": {
+              "zh": "认为应该立即下线老链路，无视回归风险与上游兼容",
+              "en": "Believes legacy pipelines should be retired immediately, ignoring regression risk and upstream compatibility"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动讲述某次差点把老链路下线后引发回归的经历或类似教训",
+              "en": "Volunteers a near-miss where retiring the legacy pipeline almost caused regression, or a similar lesson"
+            },
+            "合格": {
+              "zh": "在追问下能想起一类老链路上的隐藏依赖",
+              "en": "On probing, recalls a class of hidden dependency on the legacy pipeline"
+            },
+            "不合格": {
+              "zh": "想不起来任何遗留链路相关的真实事件",
+              "en": "Cannot recall any legacy-pipeline incident"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-10",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能描述 services 是纯函数 + zod 校验、hooks 是 useQuery/useMutation 包装层，queryKey 用 [resource, id, sub-resource] 三段式",
+              "en": "Describes services as pure functions with zod validation and hooks as useQuery/useMutation wrappers, with queryKey shaped as [resource, id, sub-resource]"
+            },
+            "合格": {
+              "zh": "知道有两层但说不清 queryKey 的设计",
+              "en": "Aware of two layers but unclear on queryKey design"
+            },
+            "不合格": {
+              "zh": "把 services 与 hooks 混合在同一文件，或在组件里直接 fetch",
+              "en": "Mixes services and hooks in one file, or fetches directly in components"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论 staleTime 按数据特征分级（30s / 5min / 0）和 retry 在 mutation 上关闭的原因（非幂等 + payload 大）",
+              "en": "Discusses staleTime tiered by data trait (30s / 5min / 0) and why retry is disabled on mutations (non-idempotent + large payload)"
+            },
+            "合格": {
+              "zh": "知道不同接口配置不同 staleTime 但说不清依据",
+              "en": "Knows different endpoints get different staleTimes but cannot ground the basis"
+            },
+            "不合格": {
+              "zh": "对所有接口用同一组配置，缺乏区分意识",
+              "en": "Applies the same config to all endpoints, no differentiation"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动谈到拆分前同接口被三组件调三次的经历，并能给出量化对比（命中率 / 调用次数）",
+              "en": "Volunteers the pre-split scenario of one endpoint hit thrice by three components, with quantitative contrast (hit rate / call count)"
+            },
+            "合格": {
+              "zh": "在追问下想起某次 invalidateQueries 误失效一整片缓存的经历",
+              "en": "On probing, recalls a case of invalidateQueries wiping more cache than intended"
+            },
+            "不合格": {
+              "zh": "对 React Query 的 cache 行为没有真实生产中的认识",
+              "en": "Has no production-grounded understanding of React Query cache behavior"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-11",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能说出 preconnect 同时跑 DNS+TCP+TLS 而 dns-prefetch 只做 DNS、crossorigin 必填，且 layout 通过 next/headers 的 cookies() 在 server 读 STAFFID 注入 RSC 树",
+              "en": "States preconnect runs DNS+TCP+TLS while dns-prefetch only DNS with mandatory crossorigin, and the layout reads STAFFID via next/headers cookies() on the server to inject into the RSC tree"
+            },
+            "合格": {
+              "zh": "知道 preconnect 用于减少握手，但说不清 crossorigin 的重要性",
+              "en": "Knows preconnect cuts handshake but is unaware crossorigin matters"
+            },
+            "不合格": {
+              "zh": "认为 preconnect 与 dns-prefetch 等价，或不知道 SSR 时用 cookies() 可以避免水合闪烁",
+              "en": "Treats preconnect and dns-prefetch as equivalent, or is unaware SSR cookies() avoids hydration flicker"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论 preconnect 数量过多会消耗连接池，并解释只对关键源域使用",
+              "en": "Discusses how excessive preconnects consume the connection pool, justifying restriction to key origins"
+            },
+            "合格": {
+              "zh": "知道不能给所有域都 preconnect 但说不出资源代价",
+              "en": "Knows you should not preconnect every domain but cannot quantify resource cost"
+            },
+            "不合格": {
+              "zh": "建议给所有 third-party 都 preconnect 一遍",
+              "en": "Suggests preconnecting every third-party domain"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动给出 Aegis 上 TTFB / LCP 上线对比（RTT 减少一次、首帧不再闪匿名）",
+              "en": "Volunteers Aegis TTFB/LCP before-after (one fewer RTT, no anonymous first-frame flash)"
+            },
+            "合格": {
+              "zh": "在追问下想起某次 preconnect 缺 crossorigin 导致字体仍重新解析",
+              "en": "On probing, recalls preconnect missing crossorigin causing fonts to re-resolve"
+            },
+            "不合格": {
+              "zh": "对实际效果没有任何数据感",
+              "en": "Has no data-backed sense of impact"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-12",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能说出 pnpm-workspace.yaml 的 catalog 字段如何把核心库版本统一锁住、子包用 catalog: 引用，lerna independent 模式下每包独立 version 用 lerna publish from-package 发布",
+              "en": "Explains the catalog field in pnpm-workspace.yaml pins shared core library versions, child packages reference via catalog:, and lerna independent gives each package its own version released via lerna publish from-package"
+            },
+            "合格": {
+              "zh": "对 catalog 与 independent 各知道一半，但说不清 preinstall only-allow pnpm 的作用",
+              "en": "Knows catalog or independent partially but cannot explain why preinstall only-allow pnpm exists"
+            },
+            "不合格": {
+              "zh": "认为 lerna 与 pnpm 功能重合所以选一个就够了",
+              "en": "Believes lerna and pnpm overlap and one tool is enough"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能给出『统一核心 + 独立业务』作为分层动机，并说明 lockfile 一致性需要 only-allow pnpm 兜底",
+              "en": "Articulates 'unified core + independent business' as the layering motivation, and explains lockfile consistency needs only-allow pnpm as a guardrail"
+            },
+            "合格": {
+              "zh": "知道两层各有职责但说不清楚交互",
+              "en": "Knows the two layers have separate jobs but cannot explain the interaction"
+            },
+            "不合格": {
+              "zh": "认为只用 pnpm 就够，不理解版本独立发布的需求",
+              "en": "Thinks pnpm alone suffices, missing the independent-versioning need"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动提到 React 子版本漂移导致 useId hook mismatch 的具体踩坑，并能说出 catalog 上线后的修复",
+              "en": "Volunteers the concrete React minor-drift bug that threw useId hook-mismatch and how the catalog rollout fixed it"
+            },
+            "合格": {
+              "zh": "在追问下想起某次 lockfile 双写造成的依赖错乱",
+              "en": "On probing, recalls lockfile double-write breaking dependency resolution"
+            },
+            "不合格": {
+              "zh": "对依赖治理踩过的坑没有任何记忆",
+              "en": "Has no recollection of dependency-management pitfalls"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-13",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能拆出『映射表 + 工具 + 小批次』三步法，并能给出至少两类映射（UI 组件、数据层）",
+              "en": "Lays out the three-step approach of mapping table, tooling, and small batches, with at least two mapping classes (UI components, data layer)"
+            },
+            "合格": {
+              "zh": "知道有 .cursor 下的 skill，但说不清楚 AST 替换与人工 review 的边界",
+              "en": "Aware of the .cursor skill but unclear on the boundary between AST rewrite and human review"
+            },
+            "不合格": {
+              "zh": "建议一次性重写整个 web_bak",
+              "en": "Suggests a big-bang rewrite of web_bak in one go"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论 antd 命令式 API（message.success）与 shadcn hook 风格的不可机翻边界，且说出标 TODO 让人介入的策略",
+              "en": "Discusses the un-machine-translatable boundary between antd's imperative APIs (e.g., message.success) and shadcn's hook style, with the TODO-for-human strategy"
+            },
+            "合格": {
+              "zh": "知道有人工审 case 但说不清是哪些 case",
+              "en": "Aware of human-review cases but cannot enumerate them"
+            },
+            "不合格": {
+              "zh": "认为完全可以全自动迁移，无需人工介入",
+              "en": "Believes migration can be fully automated with zero human input"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动讲映射表第一版漏 antd 私有 prop 的踩坑与之后建立 prop 级规则的经验",
+              "en": "Volunteers the v1-mapping-missing-private-prop pitfall and the subsequent prop-level rule"
+            },
+            "合格": {
+              "zh": "在追问下想起 web_bak 与新栈共存阶段引发的某次回归",
+              "en": "On probing, recalls a regression caused by coexistence of web_bak and the new stack"
+            },
+            "不合格": {
+              "zh": "想不起任何迁移阶段的真实问题",
+              "en": "Cannot recall any real migration-phase issue"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-14",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能拆出 figma-generator / glyph-encoder / vector-network-encoder / image-utils 四个模块，并说出 VectorNetwork 的 vertices+segments+regions 结构",
+              "en": "Decomposes into figma-generator, glyph-encoder, vector-network-encoder, image-utils, and names the VectorNetwork structure of vertices+segments+regions"
+            },
+            "合格": {
+              "zh": "能说出大致流程但讲不清字形为什么要转 path",
+              "en": "Sketches the flow but cannot explain why glyphs are converted to paths"
+            },
+            "不合格": {
+              "zh": "认为直接送原始 SVG path string 就行，不知道 Figma 没有这个能力",
+              "en": "Believes raw SVG path strings can be sent directly, unaware Figma has no such facility"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论字形转 path 后失去文本可编辑性，并说明对正文不转、对装饰文字才转的取舍",
+              "en": "Discusses how glyph-to-path loses text editability, justifying that body text stays as text and only decorative text is converted"
+            },
+            "合格": {
+              "zh": "知道有可编辑性损失但说不清如何分类处理",
+              "en": "Aware of editability loss but cannot articulate the per-class handling"
+            },
+            "不合格": {
+              "zh": "把所有文字都当成 path 处理而不区分场景",
+              "en": "Converts all text as paths without scenario distinction"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动谈到 Bezier C/Q 命令转 VectorNetwork 时控制点对齐的踩坑，或图片跨域代理化的具体修复",
+              "en": "Volunteers a pitfall around Bezier C/Q conversion to VectorNetwork control-point alignment, or the cross-origin image proxy fix"
+            },
+            "合格": {
+              "zh": "在追问下想起 fillRule（evenodd vs nonzero）的处理差异",
+              "en": "On probing, recalls the fillRule handling difference (evenodd vs nonzero)"
+            },
+            "不合格": {
+              "zh": "对路径与字形转换的边界没有任何具体经验",
+              "en": "Has no concrete experience with path/glyph conversion edge cases"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-15",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "能给出『执行时长是否超 Edge 窗口 + 是否有 Node 专属 API 依赖』两条决策标准，并对每个组件说清归属理由",
+              "en": "Articulates two decision rules — execution-window fit and Node-only API dependency — and applies them to each component"
+            },
+            "合格": {
+              "zh": "知道 Edge 与 Node 不同但只能给出一条决策依据",
+              "en": "Knows Edge differs from Node but offers only one decision criterion"
+            },
+            "不合格": {
+              "zh": "认为 Edge 永远更快、应该全部上 Edge",
+              "en": "Believes Edge is always faster and everything should go on Edge"
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能讨论 Edge 冷启动优势 vs Node 长任务能力的取舍，并具体到 maxDuration=300 的设定背景",
+              "en": "Contrasts Edge's cold-start advantage with Node's long-task capability, with the maxDuration=300 setting in context"
+            },
+            "合格": {
+              "zh": "知道 maxDuration 是限制但说不清具体值的来源",
+              "en": "Knows maxDuration is a cap but cannot ground the specific value"
+            },
+            "不合格": {
+              "zh": "对 maxDuration 的概念没有印象，或认为可以无限长",
+              "en": "Has no concept of maxDuration or believes it is unlimited"
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动讲灰区案例（Postgres 在 Edge 需要 HTTP 驱动而 Prisma 不行所以路由锁 Node）",
+              "en": "Volunteers a gray-zone case such as Postgres needing an HTTP driver on Edge while Prisma forces Node pinning"
+            },
+            "合格": {
+              "zh": "在追问下想起某次因 runtime 选错引发的部署问题",
+              "en": "On probing, recalls a deployment issue caused by wrong runtime choice"
+            },
+            "不合格": {
+              "zh": "想不起任何 runtime 相关的真实事故",
+              "en": "Cannot recall any runtime-related incident"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

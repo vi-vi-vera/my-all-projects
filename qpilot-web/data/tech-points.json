@@ -1,0 +1,201 @@
+{
+  "schema_version": "1.0",
+  "role": "全栈",
+  "level": "中级",
+  "points": [
+    {
+      "id": "tp-001",
+      "topic": "ToolLoopAgent + UIMessageStream 主链路重构",
+      "scope": "fullstack",
+      "primary_dimension": "architecture",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts",
+        "apps/desktop/src/app/api/chat-main-agent-v2/stop/route.ts"
+      ],
+      "depth_tags": ["architecture", "ai-sdk-5", "tool-loop", "sse", "abort-controller"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-002",
+      "topic": "Edge Middleware + jose JWE 解 TAI 身份头",
+      "scope": "backend",
+      "primary_dimension": "security",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/middleware.ts"
+      ],
+      "depth_tags": ["security", "edge-runtime", "jwe", "auth", "cookie"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-003",
+      "topic": "会话级 AbortController 注册表与停止链路",
+      "scope": "backend",
+      "primary_dimension": "reliability",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts",
+        "apps/desktop/src/app/api/chat-main-agent-v2/stop/route.ts"
+      ],
+      "depth_tags": ["reliability", "abort", "session", "sse", "graceful-cancel"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-004",
+      "topic": "Token 预算 + 阶梯式上下文压缩",
+      "scope": "backend",
+      "primary_dimension": "performance",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/shared/",
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts"
+      ],
+      "depth_tags": ["performance", "context-window", "compression", "prepareStep", "token-budget"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-005",
+      "topic": "Galileo OpenTelemetry 监控接入与 4 个自定义 metric",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/instrumentation.ts",
+        "apps/desktop/src/shared/utils/galileo-logger.ts"
+      ],
+      "depth_tags": ["observability", "otel", "metrics", "galileo", "unhandled-rejection"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-006",
+      "topic": "Prisma 消息树（parent_id + currentNodeId）与分支切换",
+      "scope": "backend",
+      "primary_dimension": "architecture",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/prisma/schema.prisma",
+        "apps/desktop/src/components/ai-elements/"
+      ],
+      "depth_tags": ["architecture", "prisma", "tree-model", "branching", "cascade-delete"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-007",
+      "topic": "21 个 Zustand Store 的分层治理与按需 persist",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/stores/"
+      ],
+      "depth_tags": ["architecture", "zustand", "state-slicing", "persist", "render-isolation"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-008",
+      "topic": "App Router 路由组 (app)/(standalone) + _components 私有目录约定",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/app/(app)/",
+        "apps/desktop/CODEBUDDY.md"
+      ],
+      "depth_tags": ["architecture", "app-router", "route-group", "rsc", "co-location"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-009",
+      "topic": "Legacy chat / qpilot-chat 双链路与新链路并存",
+      "scope": "backend",
+      "primary_dimension": "trade-off",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/app/api/chat/route.ts",
+        "apps/desktop/src/app/api/qpilot-chat/route.ts",
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts"
+      ],
+      "depth_tags": ["trade-off", "legacy", "migration", "edge-vs-node", "compat"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-010",
+      "topic": "React Query + Services/Hooks 分层与 invalidateQueries 模式",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/hooks/",
+        "apps/desktop/src/services/"
+      ],
+      "depth_tags": ["feature", "react-query", "queryKey", "mutation", "invalidate"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-011",
+      "topic": "DNS 预连接 + Cookie 初始化避免水合闪烁",
+      "scope": "frontend",
+      "primary_dimension": "performance",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/components/DnsOptimization.tsx",
+        "apps/desktop/src/app/layout.tsx"
+      ],
+      "depth_tags": ["performance", "preconnect", "hydration", "ssr-cookie", "ttfb"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-012",
+      "topic": "pnpm catalog + lerna independent 双层依赖治理",
+      "scope": "infra",
+      "primary_dimension": "architecture",
+      "evidence": [
+        "pnpm-workspace.yaml",
+        "lerna.json",
+        "package.json"
+      ],
+      "depth_tags": ["architecture", "monorepo", "pnpm-catalog", "lerna", "only-allow"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-013",
+      "topic": "web_bak → 新栈组件迁移规则与 /migrate-component 工作流",
+      "scope": "frontend",
+      "primary_dimension": "trade-off",
+      "sub_project": "web_bak",
+      "evidence": [
+        "web_bak/src/",
+        ".cursor/"
+      ],
+      "depth_tags": ["trade-off", "migration", "antd-to-shadcn", "pages-to-app-router", "ahooks-to-react-query"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-014",
+      "topic": "html-to-figma SDK：字形与 SVG 路径编码",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "packages/* 共享层",
+      "evidence": [
+        "packages/sdk/html-to-figma/"
+      ],
+      "depth_tags": ["feature", "figma", "opentype", "vector-network", "gradient"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-015",
+      "topic": "Edge Runtime + Node Runtime 双轨与 maxDuration 选型",
+      "scope": "backend",
+      "primary_dimension": "trade-off",
+      "sub_project": "apps/desktop",
+      "evidence": [
+        "apps/desktop/src/middleware.ts",
+        "apps/desktop/src/app/api/chat-main-agent-v2/route.ts",
+        "apps/desktop/src/instrumentation.ts"
+      ],
+      "depth_tags": ["trade-off", "edge-runtime", "node-runtime", "maxDuration", "runtime-selection"],
+      "interview_value": "中"
+    }
+  ]
+}

@@ -1,0 +1,235 @@
+{
+  "schema_version": "1.0.0",
+  "platform_name": "QPilot Web",
+  "one_liner": "面向腾讯内部的一站式 LLMOps 工作台：聚合多模型、可编排智能体、可观测、可分享，桌面/移动双端 Next.js 全栈应用。",
+  "domain": "LLMOps · AI 应用平台 · 多智能体编排",
+  "platform_tech_stack": {
+    "languages": ["TypeScript", "JavaScript", "SQL (Prisma migrations)"],
+    "frameworks": [
+      "Next.js 16 (App Router)",
+      "React 19 (Server Components)",
+      "Tailwind CSS 4",
+      "shadcn/ui",
+      "Vercel AI SDK 5",
+      "AI Elements (Vercel)",
+      "Zustand 5",
+      "TanStack React Query 5",
+      "Framer Motion 11",
+      "Prisma 6",
+      "lerna independent",
+      "pnpm 9 workspace + catalog"
+    ],
+    "infra": [
+      "腾讯智能网关 TAI (jose JWE 身份解密)",
+      "伽利略 Galileo (OpenTelemetry node-sdk)",
+      "Aegis (前端用户行为)",
+      "腾讯 COS (对象存储)",
+      "PostgreSQL/MySQL via Prisma",
+      "Edge Runtime + Node Runtime 双轨",
+      "OCI CI/CD + TKE 部署",
+      "Whistle 本地代理",
+      "shadcn MCP / Chrome DevTools MCP"
+    ]
+  },
+  "sub_projects": [
+    {
+      "name": "apps/desktop",
+      "path": "apps/desktop",
+      "scope": "fullstack",
+      "tech_stack": {
+        "framework": "Next.js 16 App Router (RSC + Route Handlers)",
+        "runtime": "Edge Runtime (middleware / proxy routes) + Node Runtime (main-agent SSE)",
+        "auth": "TAI 智能网关 + jose.compactDecrypt (JWE)",
+        "ai_sdk": "Vercel AI SDK 5 (streamText / ToolLoopAgent / createUIMessageStream)",
+        "state": "Zustand 5 (21 stores) + React Query 5",
+        "db": "Prisma + Postgres/MySQL（消息树 parent_id + currentNodeId 分支结构）",
+        "monitoring": "Galileo node-sdk + 4 个自定义 OTel metric"
+      },
+      "modules": [
+        {
+          "name": "App Router 与路由组",
+          "path": "apps/desktop/src/app/(app)/",
+          "responsibility": "(app) 带侧边栏路由组 + (standalone) 全屏路由组；首页/对话/我的/社区/Agents/工具/设置/工作流；_components 私有组件目录约束。"
+        },
+        {
+          "name": "Auth Middleware",
+          "path": "apps/desktop/src/middleware.ts",
+          "responsibility": "Edge Runtime 拦截所有页面路由（排除 _next/api），用 jose JWE 解密 x-tai-identity，按测试/正式环境切 token，写 STAFFID/STAFFNAME/prompt_username cookies；包含 /home/chat?qpilot_id 旧链 301 重定向。"
+        },
+        {
+          "name": "Main Agent SSE 主链路",
+          "path": "apps/desktop/src/app/api/chat-main-agent-v2/route.ts",
+          "responsibility": "基于 ai 包 ToolLoopAgent + createUIMessageStream 的多步执行管线；maxDuration=300；session 级 AbortController 注册表；工具调用修复模型；阶梯式上下文压缩；含 sandbox / shell / web / mcp 等多类工具。"
+        },
+        {
+          "name": "Main Agent Stop",
+          "path": "apps/desktop/src/app/api/chat-main-agent-v2/stop/route.ts",
+          "responsibility": "按 conversationId 中断进行中的 SSE 会话（abortSession），配合前端停止按钮。"
+        },
+        {
+          "name": "Legacy Chat & QPilot Chat",
+          "path": "apps/desktop/src/app/api/chat/route.ts + apps/desktop/src/app/api/qpilot-chat/route.ts",
+          "responsibility": "兼容旧链路：自研 OpenAIStream / eventsource-parser 透传上游 SSE，独立于 Vercel AI SDK；保留以适配老前端组件。"
+        },
+        {
+          "name": "Zustand Stores",
+          "path": "apps/desktop/src/stores/",
+          "responsibility": "21 个 store 覆盖布局/用户/会话状态/选模/Pending 待发/创建草稿/工具库/Plugins/Git Auth/MainAgent Config/会话恢复等；统一 barrel 导出；按需 persist。"
+        },
+        {
+          "name": "React Query Hooks 层",
+          "path": "apps/desktop/src/hooks/ + apps/desktop/src/services/",
+          "responsibility": "services 写纯 fetch 请求；hooks 用 useQuery/useMutation 包装；按 conversationId / agentId 做 queryKey；mutate 后 invalidateQueries。"
+        },
+        {
+          "name": "Prisma 消息树模型",
+          "path": "apps/desktop/prisma/schema.prisma",
+          "responsibility": "Conversation.currentNodeId + Message.parentId 形成消息树，支持分支切换；级联删除；conversationId 索引；migrations 目录持续演进。"
+        },
+        {
+          "name": "Galileo 监控接入",
+          "path": "apps/desktop/src/instrumentation.ts + apps/desktop/src/shared/utils/galileo-logger.ts",
+          "responsibility": "Server 启动注册 SetupGalileo；自定义 4 个 metric（api_request_duration / page_render_duration / chat_request_count / chat_error_count）；监听 unhandledRejection/uncaughtException 全量上报。"
+        },
+        {
+          "name": "上下文压缩与 Token 预算",
+          "path": "apps/desktop/src/shared/ (context-budget / context-compress / context-compressor)",
+          "responsibility": "main-agent 在 prepareStep 中按真实 token 用量做工具输出压缩；loadModelMessages 引入历史摘要压缩；仅在超阈值时触发，不影响短对话。"
+        },
+        {
+          "name": "AI Elements + 聊天组件",
+          "path": "apps/desktop/src/components/ai-elements/ + apps/desktop/src/app/(app)/chat/_components/Chat.tsx",
+          "responsibility": "Conversation/Message/PromptInput/CodeBlock/Reasoning/Sources 等组件直接绑定 useChat；分支切换在 Message 层完成；StreamMarkdown 处理流式 markdown 分块解析。"
+        },
+        {
+          "name": "Sandbox 代码执行",
+          "path": "apps/desktop/src/shared/ + apps/desktop/src/components/",
+          "responsibility": "支持 md/txt/超长代码块解析；近期修复了沙箱解析超长代码的问题（commit d5931280）。"
+        },
+        {
+          "name": "DNS Optimization & 性能引导",
+          "path": "apps/desktop/src/components/DnsOptimization.tsx + apps/desktop/src/app/layout.tsx",
+          "responsibility": "根布局预连接关键 API/CDN 域名；服务端读取 Cookie 初始化用户状态避免水合闪烁；字体与 CDN 资源预加载。"
+        },
+        {
+          "name": "Cursor AI Toolchain",
+          "path": "qpilot-web-v2/.cursor/",
+          "responsibility": "团队自建 commands（/create-app, /migrate-component 等）+ skills（qpilot-scaffold/qpilot-migration）+ rules（global / react-component / styling 等自动应用）+ MCP 服务（shadcn / Chrome DevTools）。"
+        }
+      ],
+      "active_areas": [
+        "feat/session-history — 历史记录类型筛选与会话恢复链路",
+        "feat/main-agent — ToolLoopAgent 多步执行 + 上下文压缩 + 自助发现 skill",
+        "feat/build-support-image-0410 — 流式 markdown 中支持图片输出模型",
+        "feat/build-llm-proxy-apikey — LLM proxy 切换与 API Key 管理",
+        "hot/form-plugin — QPilot 表单插件加载修复"
+      ]
+    },
+    {
+      "name": "apps/mobile",
+      "path": "apps/mobile",
+      "scope": "mobile",
+      "tech_stack": {
+        "framework": "Next.js 16 App Router（移动端优化）",
+        "shared": "通过 packages/ui-mobile + packages/ui-shared 复用核心组件"
+      },
+      "modules": [
+        {
+          "name": "Mobile App Shell",
+          "path": "apps/mobile/src/",
+          "responsibility": "端口 3001 独立部署；与桌面端共享 utils/types/ui-shared，UI 走 ui-mobile；触屏交互与移动端适配。"
+        }
+      ],
+      "active_areas": [
+        "ui-mobile 组件库适配",
+        "与桌面端的能力对齐（chat / 历史 / 选模）"
+      ]
+    },
+    {
+      "name": "packages/* 共享层",
+      "path": "packages/",
+      "scope": "frontend",
+      "tech_stack": {
+        "workspace": "pnpm catalog + lerna independent 版本",
+        "build": "各包独立 dist，发布前 lerna publish from-package"
+      },
+      "modules": [
+        {
+          "name": "ui-desktop / ui-mobile / ui-shared",
+          "path": "packages/ui-*",
+          "responsibility": "三套 UI 包：桌面、移动、跨端共享（含设备检测、性能优化组件）；apps 通过 catalog 锁版本。"
+        },
+        {
+          "name": "utils & types",
+          "path": "packages/utils + packages/types",
+          "responsibility": "跨端工具函数与共享 TypeScript 类型；任何 apps 都 import @qpilot-web/{utils,types}。"
+        },
+        {
+          "name": "sdk/html-to-figma",
+          "path": "packages/sdk/html-to-figma/",
+          "responsibility": "HTML/CSS → Figma 剪贴板格式 SDK；含 figma-generator / glyph-encoder (opentype.js) / vector-network-encoder（SVG path → VectorNetwork）/ image-utils；支持线性/径向渐变、阴影、Auto Layout。"
+        }
+      ],
+      "active_areas": [
+        "ui 包按端拆分以支撑桌面/移动两端独立演进",
+        "html-to-figma SDK 字形与 SVG 路径编码细节"
+      ]
+    },
+    {
+      "name": "web_bak (legacy reference)",
+      "path": "web_bak",
+      "scope": "frontend",
+      "tech_stack": {
+        "stack": "Ant Design + Pages Router + ahooks（旧栈）"
+      },
+      "modules": [
+        {
+          "name": "web_bak 旧项目",
+          "path": "web_bak/src/",
+          "responsibility": "仅作迁移参考；@qpilot-migration skill + /migrate-component 命令负责按映射表迁到新栈：antd→shadcn/ui、@ant-design/icons→lucide-react、ahooks useRequest→React Query、Pages Router→App Router。"
+        }
+      ],
+      "active_areas": [
+        "QPilotFormV2 表单组件迁移",
+        "组件级 ant→shadcn 转换 (Button/Modal/message 等)"
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "title": "ToolLoopAgent + UIMessageStream 多步主链路",
+      "scope": "fullstack",
+      "summary": "用 Vercel AI SDK 5 的 ToolLoopAgent + streamText + createUIMessageStream 重写主 Agent，把多步执行、子 Agent stream、工具调用修复、会话级 AbortController 统一到一条 SSE 链路；configured maxDuration=300，全链路 abortSignal 透传到每个工具 / 子 Agent。"
+    },
+    {
+      "title": "Token 预算 + 阶梯式上下文压缩",
+      "scope": "fullstack",
+      "summary": "在 prepareStep 中按真实 token 用量裁剪历史与工具输出；按模型上下文窗口做 context-budget；超阈值才走 context-compress 阶梯压缩，替换原先粗暴截断，多轮对话不再炸窗。"
+    },
+    {
+      "title": "TAI 智能网关身份解密（Edge Middleware）",
+      "scope": "backend",
+      "summary": "middleware.ts 跑在 Edge Runtime，用 jose.compactDecrypt 解 x-tai-identity（JWE 压缩格式）拿 StaffId/LoginName，按 MODE=test/production 切 token；统一写 STAFFID/STAFFNAME/prompt_username cookie 给前端复用。"
+    },
+    {
+      "title": "Galileo OpenTelemetry 服务端监控",
+      "scope": "backend",
+      "summary": "instrumentation.ts 启动期 SetupGalileo，挂 unhandledRejection / uncaughtException 全量上报；自建 4 个 OTel 指标 (api_request_duration / page_render_duration / chat_request_count / chat_error_count)；按 MODE 区分测试/正式环境配置。"
+    },
+    {
+      "title": "Prisma 消息树 + 分支切换",
+      "scope": "backend",
+      "summary": "Conversation.currentNodeId + Message.parentId 在 Prisma 里建模消息树；UI 在 AI Elements Message 上做分支切换；级联删除 + 索引保证一致性。"
+    },
+    {
+      "title": "21 个 Zustand Store 的分层治理",
+      "scope": "frontend",
+      "summary": "把布局/用户/选模/草稿/Pending 待发/工具库/Plugins/Git Auth/MainAgent Config 等拆成 21 个独立 store；index.ts 集中 barrel；按需 persist；避免单一巨型 store 引起的无差别重渲染。"
+    },
+    {
+      "title": "lerna independent + pnpm catalog 双层依赖治理",
+      "scope": "infra",
+      "summary": "pnpm catalog 锁住核心 React/Next.js/Tailwind 等共享版本；lerna independent 让 packages 各自独立发版；只允许 pnpm（npx only-allow pnpm preinstall hook）；CI 强制 lint --max-warnings=0。"
+    }
+  ]
+}

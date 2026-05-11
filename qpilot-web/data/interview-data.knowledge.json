@@ -1,0 +1,735 @@
+{
+  "schema_version": "1.0",
+  "mode": "knowledge",
+  "platform_name": "QPilot Web",
+  "role": "全栈",
+  "level": "中级",
+  "knowledge_map": {
+    "topics": [
+      {
+        "name": "Vercel AI SDK 5 stream API",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-01"
+        ],
+        "must_read": [
+          "Vercel AI SDK 5 官方文档 ToolLoopAgent 与 streamText 章节",
+          "Next.js Route Handlers 与 Runtime 选型文档"
+        ],
+        "hands_on": [
+          "用 createUIMessageStream 写一个 30 行的 echo Agent 并跑通 SSE"
+        ]
+      },
+      {
+        "name": "Edge vs Node Runtime",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture",
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-01",
+          "q-09"
+        ],
+        "must_read": [
+          "Vercel AI SDK 5 官方文档 ToolLoopAgent 与 streamText 章节",
+          "Next.js Route Handlers 与 Runtime 选型文档",
+          "Next.js Edge Runtime 与 Node.js Runtime 文档"
+        ],
+        "hands_on": [
+          "用 createUIMessageStream 写一个 30 行的 echo Agent 并跑通 SSE",
+          "在埋点里给一个旧接口加调用计数，输出每天调用量曲线"
+        ]
+      },
+      {
+        "name": "AbortController 链式传递",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-01"
+        ],
+        "must_read": [
+          "Vercel AI SDK 5 官方文档 ToolLoopAgent 与 streamText 章节",
+          "Next.js Route Handlers 与 Runtime 选型文档"
+        ],
+        "hands_on": [
+          "用 createUIMessageStream 写一个 30 行的 echo Agent 并跑通 SSE"
+        ]
+      },
+      {
+        "name": "JWE 与 JWT 的区别",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "RFC 7516 JSON Web Encryption",
+          "Next.js Middleware 与 Edge Runtime 文档",
+          "jose 文档的 compactDecrypt 与 KeyLike 章节"
+        ],
+        "hands_on": [
+          "写一个最小 Express demo，签发 JWE 并在 middleware 里解开"
+        ]
+      },
+      {
+        "name": "Edge Runtime 的 API 限制",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "RFC 7516 JSON Web Encryption",
+          "Next.js Middleware 与 Edge Runtime 文档",
+          "jose 文档的 compactDecrypt 与 KeyLike 章节"
+        ],
+        "hands_on": [
+          "写一个最小 Express demo，签发 JWE 并在 middleware 里解开"
+        ]
+      },
+      {
+        "name": "Cookie SameSite 与 HttpOnly",
+        "level": "加分项",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "RFC 7516 JSON Web Encryption",
+          "Next.js Middleware 与 Edge Runtime 文档",
+          "jose 文档的 compactDecrypt 与 KeyLike 章节"
+        ],
+        "hands_on": [
+          "写一个最小 Express demo，签发 JWE 并在 middleware 里解开"
+        ]
+      },
+      {
+        "name": "AbortController 与 AbortSignal",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "MDN AbortController / AbortSignal",
+          "Vercel AI SDK streamText 的 abortSignal 参数文档"
+        ],
+        "hands_on": [
+          "写一个 Express demo：客户端 fetch SSE，服务端通过另一个端点根据 sessionId 中断流"
+        ]
+      },
+      {
+        "name": "进程内表与多 Pod 一致性",
+        "level": "加分项",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "MDN AbortController / AbortSignal",
+          "Vercel AI SDK streamText 的 abortSignal 参数文档"
+        ],
+        "hands_on": [
+          "写一个 Express demo：客户端 fetch SSE，服务端通过另一个端点根据 sessionId 中断流"
+        ]
+      },
+      {
+        "name": "LLM token 计数与窗口",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "Vercel AI SDK ToolLoopAgent 的 prepareStep 文档",
+          "OpenAI / Claude / Gemini 的 context window 文档"
+        ],
+        "hands_on": [
+          "写一个 100 行的 demo：统计 messages 的 token，超过阈值就把最早 2 条压成摘要"
+        ]
+      },
+      {
+        "name": "ToolLoopAgent prepareStep 钩子",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "Vercel AI SDK ToolLoopAgent 的 prepareStep 文档",
+          "OpenAI / Claude / Gemini 的 context window 文档"
+        ],
+        "hands_on": [
+          "写一个 100 行的 demo：统计 messages 的 token，超过阈值就把最早 2 条压成摘要"
+        ]
+      },
+      {
+        "name": "摘要质量与信息损失评估",
+        "level": "加分项",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "Vercel AI SDK ToolLoopAgent 的 prepareStep 文档",
+          "OpenAI / Claude / Gemini 的 context window 文档"
+        ],
+        "hands_on": [
+          "写一个 100 行的 demo：统计 messages 的 token，超过阈值就把最早 2 条压成摘要"
+        ]
+      },
+      {
+        "name": "Next.js instrumentation.ts 钩子",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "Next.js Instrumentation 文档",
+          "OpenTelemetry JavaScript node-sdk 文档"
+        ],
+        "hands_on": [
+          "在一个 Next.js 项目里跑通 NodeSDK 自动埋点 + 一个自定义 counter"
+        ]
+      },
+      {
+        "name": "OTel histogram vs counter",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "Next.js Instrumentation 文档",
+          "OpenTelemetry JavaScript node-sdk 文档"
+        ],
+        "hands_on": [
+          "在一个 Next.js 项目里跑通 NodeSDK 自动埋点 + 一个自定义 counter"
+        ]
+      },
+      {
+        "name": "unhandledRejection 与 uncaughtException",
+        "level": "加分项",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "Next.js Instrumentation 文档",
+          "OpenTelemetry JavaScript node-sdk 文档"
+        ],
+        "hands_on": [
+          "在一个 Next.js 项目里跑通 NodeSDK 自动埋点 + 一个自定义 counter"
+        ]
+      },
+      {
+        "name": "邻接表与树查询",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "Prisma 关系字段与级联删除文档",
+          "邻接表 / 路径枚举 / 嵌套集 / 闭包表四种树存储对比的经典文章"
+        ],
+        "hands_on": [
+          "在 Prisma 里建一个自引用 parentId 模型，写出树遍历的 raw query"
+        ]
+      },
+      {
+        "name": "Prisma onDelete Cascade",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "Prisma 关系字段与级联删除文档",
+          "邻接表 / 路径枚举 / 嵌套集 / 闭包表四种树存储对比的经典文章"
+        ],
+        "hands_on": [
+          "在 Prisma 里建一个自引用 parentId 模型，写出树遍历的 raw query"
+        ]
+      },
+      {
+        "name": "事务一致性",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "Prisma 关系字段与级联删除文档",
+          "邻接表 / 路径枚举 / 嵌套集 / 闭包表四种树存储对比的经典文章"
+        ],
+        "hands_on": [
+          "在 Prisma 里建一个自引用 parentId 模型，写出树遍历的 raw query"
+        ]
+      },
+      {
+        "name": "Zustand selector 与 useShallow",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "Zustand 官方 docs：selector 与 shallow",
+          "Zustand persist 中间件文档"
+        ],
+        "hands_on": [
+          "把一个 useState 巨型组件拆成两三个 zustand store，比较渲染次数"
+        ]
+      },
+      {
+        "name": "persist 中间件与 partialize",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "Zustand 官方 docs：selector 与 shallow",
+          "Zustand persist 中间件文档"
+        ],
+        "hands_on": [
+          "把一个 useState 巨型组件拆成两三个 zustand store，比较渲染次数"
+        ]
+      },
+      {
+        "name": "store 拆分原则",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "Zustand 官方 docs：selector 与 shallow",
+          "Zustand persist 中间件文档"
+        ],
+        "hands_on": [
+          "把一个 useState 巨型组件拆成两三个 zustand store，比较渲染次数"
+        ]
+      },
+      {
+        "name": "App Router 路由组与私有目录",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "Next.js App Router 官方文档：Route Groups、Private Folders、Layouts",
+          "React Server Components 官方介绍"
+        ],
+        "hands_on": [
+          "搭一个最小 App Router 项目，建两个路由组挂不同 layout，验证 URL 不带组名"
+        ]
+      },
+      {
+        "name": "RSC 与 'use client' 边界",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "Next.js App Router 官方文档：Route Groups、Private Folders、Layouts",
+          "React Server Components 官方介绍"
+        ],
+        "hands_on": [
+          "搭一个最小 App Router 项目，建两个路由组挂不同 layout，验证 URL 不带组名"
+        ]
+      },
+      {
+        "name": "组件就近原则",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "Next.js App Router 官方文档：Route Groups、Private Folders、Layouts",
+          "React Server Components 官方介绍"
+        ],
+        "hands_on": [
+          "搭一个最小 App Router 项目，建两个路由组挂不同 layout，验证 URL 不带组名"
+        ]
+      },
+      {
+        "name": "增量迁移策略",
+        "level": "加分项",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-09"
+        ],
+        "must_read": [
+          "Next.js Edge Runtime 与 Node.js Runtime 文档",
+          "Strangler Fig Pattern（增量替换设计模式）"
+        ],
+        "hands_on": [
+          "在埋点里给一个旧接口加调用计数，输出每天调用量曲线"
+        ]
+      },
+      {
+        "name": "React Query queryKey 设计",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-10"
+        ],
+        "must_read": [
+          "TanStack React Query 5 官方文档 Queries / Mutations / Query Keys",
+          "Kent C. Dodds 的 React Query Patterns 文章"
+        ],
+        "hands_on": [
+          "用 React Query 写一个增删改查 todo 应用，mutation 后用 invalidate 刷新列表"
+        ]
+      },
+      {
+        "name": "staleTime / cacheTime 区别",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-10"
+        ],
+        "must_read": [
+          "TanStack React Query 5 官方文档 Queries / Mutations / Query Keys",
+          "Kent C. Dodds 的 React Query Patterns 文章"
+        ],
+        "hands_on": [
+          "用 React Query 写一个增删改查 todo 应用，mutation 后用 invalidate 刷新列表"
+        ]
+      },
+      {
+        "name": "幂等与 retry 策略",
+        "level": "加分项",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-10"
+        ],
+        "must_read": [
+          "TanStack React Query 5 官方文档 Queries / Mutations / Query Keys",
+          "Kent C. Dodds 的 React Query Patterns 文章"
+        ],
+        "hands_on": [
+          "用 React Query 写一个增删改查 todo 应用，mutation 后用 invalidate 刷新列表"
+        ]
+      },
+      {
+        "name": "preconnect / dns-prefetch 区别",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-11"
+        ],
+        "must_read": [
+          "MDN Resource Hints: preconnect、dns-prefetch、preload",
+          "Next.js next/headers 与 cookies API 文档"
+        ],
+        "hands_on": [
+          "在 Lighthouse 里跑一次基线，加 preconnect 后再跑一次，记录 LCP 变化"
+        ]
+      },
+      {
+        "name": "Next.js cookies() 与 RSC",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-11"
+        ],
+        "must_read": [
+          "MDN Resource Hints: preconnect、dns-prefetch、preload",
+          "Next.js next/headers 与 cookies API 文档"
+        ],
+        "hands_on": [
+          "在 Lighthouse 里跑一次基线，加 preconnect 后再跑一次，记录 LCP 变化"
+        ]
+      },
+      {
+        "name": "TTFB / FCP / LCP 指标",
+        "level": "加分项",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-11"
+        ],
+        "must_read": [
+          "MDN Resource Hints: preconnect、dns-prefetch、preload",
+          "Next.js next/headers 与 cookies API 文档"
+        ],
+        "hands_on": [
+          "在 Lighthouse 里跑一次基线，加 preconnect 后再跑一次，记录 LCP 变化"
+        ]
+      },
+      {
+        "name": "pnpm workspace catalog",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-12"
+        ],
+        "must_read": [
+          "pnpm Catalogs 官方文档",
+          "Lerna v8 文档：independent vs fixed mode"
+        ],
+        "hands_on": [
+          "建一个 2 包的 pnpm monorepo，用 catalog 锁 React 版本并验证子包解析"
+        ]
+      },
+      {
+        "name": "lerna independent vs fixed",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-12"
+        ],
+        "must_read": [
+          "pnpm Catalogs 官方文档",
+          "Lerna v8 文档：independent vs fixed mode"
+        ],
+        "hands_on": [
+          "建一个 2 包的 pnpm monorepo，用 catalog 锁 React 版本并验证子包解析"
+        ]
+      },
+      {
+        "name": "preinstall only-allow",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-12"
+        ],
+        "must_read": [
+          "pnpm Catalogs 官方文档",
+          "Lerna v8 文档：independent vs fixed mode"
+        ],
+        "hands_on": [
+          "建一个 2 包的 pnpm monorepo，用 catalog 锁 React 版本并验证子包解析"
+        ]
+      },
+      {
+        "name": "AST 改写与 jscodeshift",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-13"
+        ],
+        "must_read": [
+          "Strangler Fig Pattern（Martin Fowler）",
+          "shadcn/ui 与 Radix UI 文档"
+        ],
+        "hands_on": [
+          "用 jscodeshift 写一个把 antd Button 转成 shadcn Button 的 codemod 脚本"
+        ]
+      },
+      {
+        "name": "增量迁移 / Strangler Fig",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-13"
+        ],
+        "must_read": [
+          "Strangler Fig Pattern（Martin Fowler）",
+          "shadcn/ui 与 Radix UI 文档"
+        ],
+        "hands_on": [
+          "用 jscodeshift 写一个把 antd Button 转成 shadcn Button 的 codemod 脚本"
+        ]
+      },
+      {
+        "name": "antd 与 shadcn 设计差异",
+        "level": "加分项",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-13"
+        ],
+        "must_read": [
+          "Strangler Fig Pattern（Martin Fowler）",
+          "shadcn/ui 与 Radix UI 文档"
+        ],
+        "hands_on": [
+          "用 jscodeshift 写一个把 antd Button 转成 shadcn Button 的 codemod 脚本"
+        ]
+      },
+      {
+        "name": "SVG path 与 VectorNetwork",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-14"
+        ],
+        "must_read": [
+          "SVG Path 规范（W3C）",
+          "Figma 官方 Plugin API 文档：VectorNetwork 与 Node Schema",
+          "opentype.js 文档"
+        ],
+        "hands_on": [
+          "用 opentype.js 加载一个 ttf 文件，把单个字符的 path 画到 canvas"
+        ]
+      },
+      {
+        "name": "opentype.js cmap 与 glyph",
+        "level": "加分项",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-14"
+        ],
+        "must_read": [
+          "SVG Path 规范（W3C）",
+          "Figma 官方 Plugin API 文档：VectorNetwork 与 Node Schema",
+          "opentype.js 文档"
+        ],
+        "hands_on": [
+          "用 opentype.js 加载一个 ttf 文件，把单个字符的 path 画到 canvas"
+        ]
+      },
+      {
+        "name": "Figma Plugin / Clipboard 格式",
+        "level": "加分项",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-14"
+        ],
+        "must_read": [
+          "SVG Path 规范（W3C）",
+          "Figma 官方 Plugin API 文档：VectorNetwork 与 Node Schema",
+          "opentype.js 文档"
+        ],
+        "hands_on": [
+          "用 opentype.js 加载一个 ttf 文件，把单个字符的 path 画到 canvas"
+        ]
+      },
+      {
+        "name": "Next.js Edge 与 Node Runtime 能力差异",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-15"
+        ],
+        "must_read": [
+          "Next.js Runtime 文档：Edge 与 Node 能力对比",
+          "Vercel 文档：function maxDuration 限制"
+        ],
+        "hands_on": [
+          "在一个 Next.js 项目里同时部署一个 Edge route 与一个 Node route，对比冷启动延迟"
+        ]
+      },
+      {
+        "name": "node:async_hooks 与 OTel context",
+        "level": "加分项",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-15"
+        ],
+        "must_read": [
+          "Next.js Runtime 文档：Edge 与 Node 能力对比",
+          "Vercel 文档：function maxDuration 限制"
+        ],
+        "hands_on": [
+          "在一个 Next.js 项目里同时部署一个 Edge route 与一个 Node route，对比冷启动延迟"
+        ]
+      },
+      {
+        "name": "maxDuration 平台限制",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-15"
+        ],
+        "must_read": [
+          "Next.js Runtime 文档：Edge 与 Node 能力对比",
+          "Vercel 文档：function maxDuration 限制"
+        ],
+        "hands_on": [
+          "在一个 Next.js 项目里同时部署一个 Edge route 与一个 Node route，对比冷启动延迟"
+        ]
+      }
+    ]
+  }
+}
