@@ -18,39 +18,39 @@
 
 ### 一句话（简历版）
 
-一个面向企业的 AI 编程平台：把设计稿和自然语言需求实时转成可预览、可部署的多框架前端代码。
+面向企业的 AI 编程平台，把设计稿和自然语言需求实时转成可预览、可部署的多框架前端代码。
 
 ### 标准（30–60 秒）
 
-QPilot Code Agent 是一个面向企业的 AI 编程平台。后端基于 Express + Claude Agent SDK + MCP 暴露 SSE 流式接口，前端用 React 18 + Zustand + Sandpack 接入。每个 session 一个隔离沙箱（e2b 或自研 OpenSandbox），跨 Pod 状态以 Redis 为权威源、DB 兜底；预览侧用 H5 状态机和子域名 vite base 修正打通从沙箱构建到真实可访问页面的链路。可观测性用 OpenTelemetry + Langfuse 把 LLM 调用的 prompt、tool 用量纳入分布式 trace，整体目标是把 AI 编程的体验和可靠性做到生产级。
+QPilot Code Agent 是一个面向企业的 AI 编程平台。后端用 Express 加 Claude Agent SDK 加 MCP，对外暴露 SSE 流式接口；前端是 React 18 加 Zustand 加 Sandpack。每个 session 一个隔离沙箱，可以走 e2b，也可以走自研的 OpenSandbox。跨 Pod 的状态权威源放在 Redis，DB 做兜底，写入路径同步写 Redis、异步落 DB。预览这条路径，沙箱里 build 出来的产物由 deploy-proxy 挂到子域名，vite base 在 deploy 时按子路径 rewrite。可观测性用 OpenTelemetry 加 Langfuse，把 SSE handler、工具调用、LLM 的 prompt 和 token 用量挂在同一条 trace 上，trace_id 共享。
 
 ### 深挖（2–3 分钟）
 
 <details><summary>展开</summary>
 
-QPilot Code Agent 把 AI 编程从 demo 推到可灰度运营的产品。前端用 fetch-event-source 订阅 SSE，按 tool_use / tool_result 分片渲染，配合 nginx X-Accel-Buffering 让流式首字节稳定；后端基于 Claude Agent SDK + MCP，把 git、沙箱命令、文件 IO、deploy 通过 MCP catalog 注册给 Agent 调度。沙箱抽象了 e2b 和自研 OpenSandbox 双后端，SandboxManager + Coordinator 屏蔽差异，预热池 + 亲和性路由把首次预览从冷启动改为秒级。跨 Pod 状态以 Redis 为权威源、DB 兜底；Git 接口把 7 个端点的多步骤合并成一次沙箱内复合命令，显著减少 RTT，并修复了 untracked 文件触发 pull 假冲突的一致性 bug。预览侧 H5 从轮询重构为状态机，postMessage 严格 origin 校验，HMR 感知刷新；部署 Tab 用白名单 + per-user feature flag 灰度高风险能力（如 Pod 内存配置），双态 UI 防止用户配置错乱。可观测性把 OTel Trace Context 注入 LLM 调用层，Langfuse 把 prompt / tool / token 计入同一条 trace。关键 trade-off：SSE 而非 WebSocket（恢复性 + HTTP 兼容）、Redis 主 + DB 兜底而非单 DB（延迟 vs 一致性）、双沙箱后端而非绑死一家（成本 + 可控性）。
+QPilot Code Agent 把 AI 编程从 demo 推到可灰度运营的产品。前端用 fetch-event-source 订阅 SSE，按 tool_use 和 tool_result 分片渲染；nginx 反代关掉了 proxy_buffering 并设置 X-Accel-Buffering: no，否则首字节会被缓住。后端用 Claude Agent SDK 加 MCP，工具——git、沙箱命令、文件 IO、deploy——通过一个 MCP catalog 注册，每个工具自带名字、输入 schema 和 handler，启动时一次性注册，schema 也直接传给 LLM 做能力发现。沙箱层抽象了两个后端：e2b 用它自己的 SDK，OpenSandbox 走自定义协议，SandboxManager 暴露统一接口（启动、exec、文件 IO、销毁），Coordinator 在上层做 session 路由，包括预热池命中、Pod 亲和保留、跨 Pod 转发，单 session 故障会切到备用后端。性能上有两块：一是 sandbox-warm-pool 维护一组完成通用初始化的 idle 实例，新 session 进来从池里拿，差异化初始化几百毫秒完成，池大小按时段调度，命中失败时同步走完整冷启动并补一个池实例；二是 git 接口把多次 sandbox.exec 合并成一条 set -e 复合命令通过分隔标记切片解析，7 个端点共享同一套合并逻辑，每条 git 调用从多次 RTT 压到一次。SSE 而非 WebSocket：事件几乎都是 server→client，HTTP 兼容、Last-Event-ID 续接简单，nginx 和 k8s ingress 不需要特殊配置；Redis 主加 DB 兜底而非单 DB：sandbox 状态读写极高频，DB 单点撑不住，Redis 命中亚毫秒，DB 在故障或重建时承压，重启后状态可以从 DB 重建。可观测性把 W3C Trace Context 注入 LLM 调用层，prompt 文本和 token 用量这种大字段写 Langfuse，OTel 这边只记 model_name、prompt_tokens、completion_tokens、duration 这类标量，两边共享 trace_id，排查时一条链路串得起来。
 
 </details>
 
 ## ✨ 项目亮点
 
 - **SSE + MCP 的实时 AI Agent 链路（前后端协同）**（architecture · fullstack）
-  AI Agent 体验依赖流式响应。后端基于 Claude Agent SDK + MCP 暴露 SSE，前端用 fetch-event-source 接收并按 tool_use / tool_result 分片渲染；同时调优 nginx 的 proxy_buffering 和 X-Accel-Buffering 防止反向代理把流缓住。最终首字节稳定到亚秒级，工具调用展开和文件 diff 都是边出边渲染，体验从「等一团」变成「逐步揭示」。
+  AI Agent 体验依赖流式响应。后端用 Claude Agent SDK 加 MCP 暴露 SSE，前端用 fetch-event-source 接收，按 tool_use 和 tool_result 分片渲染。nginx 反代默认会 buffer 流，所以关掉 proxy_buffering 并设置 X-Accel-Buffering: no。最终首字节稳定在亚秒级，工具调用展开和文件 diff 都是边出边渲染。
   > 关键词：`SSE` · `MCP` · `Claude Agent SDK` · `fetch-event-source` · `nginx`
 - **用户级沙箱与跨 Pod 状态权威源（Redis + DB 兜底）**（reliability · backend）
-  每个 session 一个隔离沙箱避免互相污染，但 Pod 漂移会让状态丢。状态权威源放 Redis、DB 做兜底，Coordinator 路由保证亲和性；预热池让首次预览不再走完整冷启动。结果是跨 Pod 重连依然能恢复正确的工作区，预览启动稳定到秒级。
+  每个 session 一个隔离沙箱避免互相污染。Pod 漂移会让进程内状态丢失，所以状态权威源放 Redis、DB 做兜底；写入路径同步写 Redis、异步落 DB。Coordinator 按 session 做亲和路由，预热池让首次预览跳过通用初始化阶段。跨 Pod 重连后能恢复正确的工作区，预览启动从十几秒压到秒内。
   > 关键词：`sandbox` · `Redis` · `warm-pool` · `affinity` · `DB fallback`
 - **Git 接口性能优化：合并沙箱命令减少 RTT**（performance · backend）
-  Git 接口要在沙箱内串行跑多个子命令，每步付一次跨网络 RTT。把 7 个接口合并成单条复合命令一次进沙箱完成所有步骤；同时修复了 untracked 文件被识别成 pull 冲突的假阳性。Git 操作的尾延迟显著下降，用户感知是「点了立刻有反应」。
+  原来 git 接口在沙箱内串行跑多个子命令，每步付一次跨网络 RTT。重构后用 set -e 加分隔标记把子命令拼成一条复合命令，一次 sandbox.exec 完成，stdout 按分隔标记切片解析回 service 层。7 个 git 端点（包括 checkpoint）共用同一套合并逻辑。中间修了一个一致性 bug：untracked 文件原来会让 pull 误报冲突。
   > 关键词：`git` · `RTT` · `batch` · `sandbox` · `consistency`
 - **H5 预览生命周期与 console 协议演进**（reliability · frontend）
-  iframe 预览从轮询「能不能访问」演进为完整状态机：启动、就绪、出错、刷新有明确转移。postMessage 严格做 origin 校验防注入，HMR 事件触发感知刷新而不是粗暴 reload，加运行时错误面板把 console 错误回流到主控台。预览的稳定性和可观测性都好了一档。
+  iframe 预览原来是轮询「能不能访问」，逻辑分散在多个 setInterval 和 useEffect 里，刷新时偶尔出现「老 iframe 未销毁、新 iframe 已启动」的并发问题。重写为显式状态机：idle → starting → ready / error → refreshing → ready，所有转移过 store。并发启动用 inflight token 加 AbortController，新启动 abort 老的。postMessage 严格校验 origin 防注入。HMR 失败才升级到 full reload。
   > 关键词：`iframe` · `state-machine` · `postMessage` · `HMR` · `console`
 - **白名单 feature flag 驱动的渐进式发布**（security · fullstack）
-  Pod 内存配置这种高风险能力直接全量开放风险太大。做了 per-user 白名单 + feature flag 双闸门，前端展示双态（已保存值 vs 运行中值）防止用户改完不知道生效没。这套机制成了平台高风险能力的发布范式：先小范围跑通再逐步放量，blast radius 始终可控。
+  Pod 内存这种高风险配置一旦改错会让用户应用起不来。我们做了三层灰度：后端白名单 feature-whitelist.ts 维护允许试用的账号，前端再叠一层 feature flag，权限的最终判定在后端 API。展示上 DeployTabPanel 同时显示「已保存值」（DB 持久化）和「运行中值」（Pod 当前值），deploy 重启前两者会不一致。这套范式后来复用到部署、checkpoint 等高风险场景。
   > 关键词：`feature-flag` · `whitelist` · `gradual-rollout` · `blast-radius`
 - **可观测性：OpenTelemetry + Langfuse 串联 LLM 调用**（observability · backend）
-  排查 LLM 链路一直是黑箱。用 OTel Node SDK 注入 W3C Trace Context，把 SSE handler、工具调用、LLM prompt / token 用量都挂到同一条 trace；Langfuse 负责呈现 prompt 维度的细节。从用户点击到 LLM token 一镜到底，定位问题从靠日志拼凑变成在 trace 上点几下。
+  排查 LLM 链路原来是黑箱。用 OTel Node SDK 在 Express handler、SSE streamManager、MCP 工具调用处都开 span，通过 W3C Trace Context 把 LLM 调用 span 挂到主 trace 上；Langfuse 作为 LLM 维度的后端记录 prompt 文本、token 用量、cost，与 OTel 共享 trace_id。OTel attribute 只记 model_name、prompt_tokens、completion_tokens、duration 等标量，prompt 这类大字段写 Langfuse 避免 exporter 流量过载。
   > 关键词：`OpenTelemetry` · `Langfuse` · `Trace Context` · `LLM trace`
 
 
@@ -70,15 +70,15 @@ QPilot Code Agent 把 AI 编程从 demo 推到可灰度运营的产品。前端�
 
 #### 三档回答
 
-**🟢 一句话**：后端缓存最近事件并按 ID 分片，前端带 Last-Event-ID 重连，从断点续推。
+**🟢 一句话**：前端用 Last-Event-ID header 带上最后一次收到的 ID 重连，后端从那之后续推。
 
 **🔵 标准**（默认）：
 
-LLM 流可能跑几十秒，网络抖一下就断。后端 streamManager 按 session 维持流，resumableStreamService 给每条事件分配单调递增 ID 并缓存最近窗口；前端 useAgent 用 fetch-event-source 监听，断了就带 Last-Event-ID 重连，后端从该 ID 之后续推。用户层面感知不到一次抖动。tool_use / tool_result 的次序一致性靠 ID 在生产侧分配，不在消费侧。
+LLM 流通常跑几十秒，中间网络抖一下连接就断了，所以需要做断点续传。后端有两个服务：streamManager 按 session 维护活跃流，resumableStreamService 给每条事件分配单调递增的 ID 并缓存最近一段窗口。前端用 fetch-event-source 监听，断开后用最后收到的 ID 放在 Last-Event-ID header 里重连，服务端从那之后续推。tool_use 和 tool_result 的次序由 ID 在生产侧分配保证；前端不用原生 EventSource 是因为它带不了自定义 header，鉴权过不去。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-整条链路的关键是把可恢复性塞进 SSE 协议本身，而不是在 SSE 上再造一层应用协议。streamManager 维护 session→当前活跃流；resumableStreamService 给事件打单调递增 ID，并保留 ring buffer。前端用 fetch-event-source 而不是浏览器原生 EventSource，因为它支持自定义 header（带鉴权）、Last-Event-ID 续接、原生 abort。重连时前端把上次最后 ID 放 Last-Event-ID header，服务端从该 ID 之后开始续推，已渲染的不会重发。trade-off：SSE 是单向的，但天然 HTTP 兼容，走 nginx / k8s ingress 不需要特殊配置；恢复模型也比 WebSocket 简单，不用自己写心跳和重连协议。我们没用 WebSocket 是因为大多数事件是 server→client，引入 WebSocket 反而要自己处理 backpressure 和重连，性价比低。这套机制让长链路（>30s）的中断恢复从「几乎全失败」做到 90%+ 可用，没有为此引入新的状态存储——重启时 ring buffer 失效，最坏情况退化为重新发起整段流，业务能接受。
+核心思路是把可恢复性放进 SSE 协议本身，不在 SSE 上再叠一层应用协议。streamManager 按 session 维护当前活跃流，resumableStreamService 给事件打单调递增 ID，并保留一个 ring buffer 作为重传窗口，窗口大小按一次会话最差网络抖动场景能覆盖来定，覆盖不到的就退化成重发整段。前端没用浏览器原生 EventSource——它带不了自定义 header，鉴权过不去；fetch-event-source 支持自定义 header、Last-Event-ID 续接和 abort。重连时前端把最后一个 ID 放在 Last-Event-ID header 里，服务端从那之后续推，已经渲染过的事件不会重发；服务端找不到这个 ID 时回一个明确的事件让前端清空状态重发起。SSE 而不是 WebSocket：事件几乎都是 server→client，SSE 单向、HTTP 兼容，走 nginx 和 k8s ingress 不需要特殊配置；恢复模型也比 WebSocket 简单，不用自己写心跳和重连协议。WebSocket 还要业务层处理 backpressure。代价：服务重启后 ring buffer 会失效，最坏情况退化成重新发起整段流，业务层能接受这个语义，前端会拿到新的 trace 重新走完一遍。前端配合 abort：组件 unmount 或重连前先 abort 老的 fetch-event-source 实例，避免事件落到旧 handler 上；同一个 session 上同时只允许一个活跃流，新流启动会顺手 abort 老的。整体上这套机制没有引入新的状态存储；ring buffer 只在内存里，重连状态完全由前端持有的 Last-Event-ID 决定，扩容缩容也不用改协议。
 
 </details>
 
@@ -128,15 +128,15 @@ LLM 流可能跑几十秒，网络抖一下就断。后端 streamManager 按 ses
 
 #### 三档回答
 
-**🟢 一句话**：SandboxManager 暴露统一接口，e2b 和 OpenSandbox 是两个适配实现，业务层零感知切换。
+**🟢 一句话**：SandboxManager 定义统一接口（启动、exec、文件 IO、销毁），每个后端写一个适配；Coordinator 在上层做 session 路由，业务层只面向接口。
 
 **🔵 标准**（默认）：
 
-沙箱有两个动机：隔离用户工作区、解耦底层供应商。SandboxManager 定义统一接口（启动/exec/文件 IO/销毁），e2b 实现走它的 SDK，自研 OpenSandbox 走自定义协议。Coordinator 在上层做 session→实例的路由，业务层（git、deploy、tool handler）只面向接口。切换后端只改配置和注入实现，业务零改动。这层抽象上线后能根据成本和能力把不同 session 路由到不同后端，灰度切换非常顺。
+做沙箱抽象有两个动机：一是隔离用户工作区，二是不被任何一家供应商绑死。SandboxManager 定义了统一接口（启动、exec、文件 IO、销毁），e2b 走它自己的 SDK，自研的 OpenSandbox 走自定义协议，两边各自实现适配。Coordinator 在上层做 session 到具体实例的路由，业务层——git、deploy、tool handler——只面向 SandboxManager 接口写代码。切换后端只改配置和注入的实现，业务层一行不动。我们也利用这层抽象做混合调度：按成本和能力把不同 session 路由到不同后端，灰度切换比较顺。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-沙箱抽象的设计核心是接口要尽量薄但够用。最初想把所有能力都抽象（比如 e2b 的 filesystem watcher），结果发现 OpenSandbox 没法对齐被迫退化。最终接口锁死在四件事：start（返回 session_id）、exec（跑 shell 并流式返回 stdout/stderr/exit）、files（read/write/list）、destroy。所有更花哨的能力（端口转发、长驻进程）由具体实现暴露 typed extension API，业务用类型守卫挑选支持的后端。Coordinator 做 session→后端路由，输入是后端健康度和用户 feature flag（比如内部账号优先 OpenSandbox 测试新能力）。切换后端的成本几乎只在协议封装代码里，业务层从未因为换后端报过 bug。trade-off：保留两套后端要长期维护两份适配，但好处是不被任何一家供应商绑死，并且 OpenSandbox 可以做 e2b 做不了的本地预热和自定义网络策略。这种抽象的可贵之处不在「现在用得到」，而是真有一天 e2b 涨价或停服时能在一周内切走。
+这层抽象的关键是把「沙箱供应商的差异」收在一个最小接口里。SandboxManager 暴露的方法只有四类：启动、exec、文件 IO、销毁。e2b 这边封装它们的 SDK，把 e2b 的 session 概念映射到我们的 session id；OpenSandbox 这边走自定义 HTTP 协议，把启动请求、命令执行、文件读写各自对接到我们的内部 endpoint，错误码也要按照统一的形式翻译过来，免得业务层要 switch 两套错误。Coordinator 在上层做两件事：一是 session 到实例的路由（包括预热池命中、亲和保留、跨 Pod 转发），二是异常时的降级（实例失联或者请求超时切到备用后端，切换日志带上原因）。业务层——git-sandbox.service、sandbox-deploy.service、tool handler——拿到的只是一个 SandboxManager 实例，不知道底下是 e2b 还是 OpenSandbox。具体的好处：第一，新增后端只写一个适配类；第二，A/B 实验可以按 session 维度切流量，监控也按后端维度分别看；第三，同一份业务代码两边都跑，bug 修一次到位。代价：抽象层越薄，能力暴露越受限——比如 e2b 有一些独特的 fs snapshot 能力，我们没暴露，需要的时候只能绕开抽象走；接口的演进也要小心，加一个新方法两个后端都得实现，所以新方法上线一般会先在主用后端走一段时间，再在备用后端补齐。Docker 不能直接当沙箱，因为它是单机概念，不带跨机调度、热池、亲和路由这些能力，e2b 和 OpenSandbox 都自带这些。
 
 </details>
 
@@ -185,15 +185,15 @@ LLM 流可能跑几十秒，网络抖一下就断。后端 streamManager 按 ses
 
 #### 三档回答
 
-**🟢 一句话**：useAgent 管 SSE 订阅与消息流，useFileSync 管文件状态与编辑器同步，按数据生命周期划分。
+**🟢 一句话**：useAgent 管 SSE 订阅和消息流，useFileSync 管文件状态和编辑器同步——按数据生命周期拆。
 
 **🔵 标准**（默认）：
 
-拆分的依据是数据生命周期不同。useAgent 负责一次会话的 SSE 订阅、消息累积、tool_use / tool_result 分发，是「事件流」语义；useFileSync 负责把 tool 修改的文件同步到本地编辑器、做差异对比、协调多个文件的并发更新，是「持久状态」语义。两者通过 store 解耦：useAgent 把文件相关事件写入 store，useFileSync 订阅 store 变化做后续编辑器操作。这样 useAgent 跟编辑器实现无关，useFileSync 跟 SSE 协议无关，单测都能各自跑。
+拆开的依据是数据生命周期不一样。useAgent 负责一次会话里的 SSE 订阅、消息累积、tool_use / tool_result 分发，是「事件流」语义；useFileSync 负责把 tool 改的文件同步到本地编辑器、做差异对比、协调多个文件的并发更新，是「持久状态」语义。两者通过 store 解耦——useAgent 把文件相关事件写进 store，useFileSync 订阅 store 变化做后续编辑器操作。这样 useAgent 跟编辑器实现没关系，useFileSync 跟 SSE 协议没关系，单测都能各自跑，迭代时改一边不会拖另一边。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-拆 hook 的关键标准是「依赖方向是否单向」。useAgent 依赖 SSE 协议和事件解析，useFileSync 依赖编辑器 API 和文件比较，两者直接合并会出现「修一个 hook 必须懂另一边」的耦合。我们把共享数据放 Zustand store（messages、files、active session），两个 hook 各自只读自己关心的 slice。一个具体好处：当后端把 SSE 事件协议升级时（比如 tool_result 字段调整），只改 useAgent 的解析逻辑，useFileSync 完全不用动；反过来切编辑器从 CodeMirror 5 升 6 时，只 useFileSync 受影响。trade-off：拆开后 store schema 变成隐式契约，得有 TypeScript 类型守住；优势是单测、调试、并行修改都方便。一个失败教训是早期 useAgent 直接调编辑器 API，结果切 codemirror 版本时一个 hook 改了几百行；之后加这层 store 隔离才稳。整体思路是「按变化频率和依赖方向拆 hook」而不是「按代码长度拆」，前者能省真实的维护成本。
+拆 hook 的关键标准是「依赖方向是不是单向」。useAgent 依赖 SSE 协议和事件解析，useFileSync 依赖编辑器 API 和文件比较，两个直接合并就会出现「修一个 hook 必须懂另一边」的耦合。所以共享数据放 Zustand store——messages、files、active session——两个 hook 各自只读自己关心的 slice，写的时候也只写自己负责的字段。具体好处：后端把 SSE 事件协议升级（比如 tool_result 字段调整），只改 useAgent 的解析逻辑，useFileSync 完全不用动；反过来，编辑器从 CodeMirror 5 升 6 时，只 useFileSync 受影响，store schema 也不用改。代价是——拆开后 store schema 就变成了隐式契约，得有 TypeScript 类型守住，schema 演进时两边都要按类型改，删字段要走 deprecated 周期不能直接删。好处是单测、调试、并行修改都方便：useAgent 的单测可以直接 mock SSE 事件，useFileSync 的单测可以直接 mock store。早期 useAgent 直接调编辑器 API，结果切 codemirror 版本时一个 hook 改了几百行，所以加了这层 store 隔离。整体思路是「按变化频率和依赖方向拆 hook」，不是「按代码长度拆」——前者能省下真实的维护成本，后者只是看着整齐。划分完之后两个 hook 各自的 commit 历史也能反映这个分工——useAgent 的改动主要发生在协议升级窗口，useFileSync 的改动集中在编辑器升级和并发文件场景，几乎不重叠。还有一个隐性好处是新人上手——只要分清自己改的是哪个 hook，就能把另一边当作稳定的 API 看。
 
 </details>
 
@@ -239,15 +239,15 @@ LLM 流可能跑几十秒，网络抖一下就断。后端 streamManager 按 ses
 
 #### 三档回答
 
-**🟢 一句话**：MCP catalog 注册工具 schema，Claude Agent SDK 调度，前端按 tool_use / tool_result 流式渲染。
+**🟢 一句话**：工具——git、沙箱命令、文件 IO、deploy——通过 MCP catalog 注册给 Agent，Agent 输出 tool_use，框架转给 catalog 执行，结果以 tool_result 回流。
 
 **🔵 标准**（默认）：
 
-用 Claude Agent SDK 拿到 LLM 调度能力，所有工具（git、沙箱命令、文件操作、deploy）通过 MCP catalog 注册，每个工具暴露 name / 输入 schema / handler。Agent 决定调用时输出 tool_use，框架转给 catalog 执行 handler，结果以 tool_result 回流。前端 useAgent 监听 SSE，按 tool_use / tool_result 分片渲染：工具名、参数 diff、结果都能边出边显示。这层抽象让工具能力和 Agent 解耦，新增能力只在 catalog 注册即可。
+我们用 Claude Agent SDK 拿到 LLM 的调度能力，工具——git、沙箱命令、文件操作、deploy——通过 mcp-catalog.service 注册，每个工具暴露名字、JSON Schema 形式的输入参数和 handler。Agent 决定调谁时输出一个 tool_use 消息，框架按名字路由到 catalog 的 handler 执行，结果以 tool_result 消息回流。前端的 useAgent 监听 SSE，按 tool_use 和 tool_result 分片渲染，工具名、参数 diff、结果都能边出边显示。这层抽象的好处是工具能力跟 Agent 解耦：加新工具只需要在 catalog 注册，不用改 Agent 主流程。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-把 Agent 拆成「会议长（LLM 决策）」和「办事员（工具）」是这套架构的核心思路。MCP 在中间是通用工具协议：每个工具自描述输入 schema，Agent 看到 schema 才知道能调什么。落地上 mcp-catalog.service 持有所有工具的注册表，工具实现从 git-sandbox.service、build-preview 等模块挑出方法包装一层；handler 接受标准化参数、返回标准化结果，外面统一加错误归一化和密钥脱敏，避免泄露到 LLM 上下文里。前端 useAgent 收到的 SSE 事件被分发器路由到 ToolDetail 组件，input/output 都做 diff 渲染。trade-off：MCP 比直接用 Anthropic tool-use API 多一层抽象，但好处是切换 LLM 厂商或 Agent 实现时工具层零改动；同一套 catalog 已经验证过能挂在不同 Agent runner 上跑。一个失败教训是早期把工具异常直接抛回 LLM，结果 LLM 把内部错误信息搬运到回答里，后来加了一层错误归一化（区分用户可见和内部 trace）才稳定。整体上一个工具一周能从想法到上线。
+MCP 在这个链路里相当于工具与 Agent 之间的统一注册总线。mcp-catalog.service 在启动时把所有工具注册进去，每个工具的 schema 直接暴露给 LLM，LLM 看到的是「我能调哪些工具、每个工具要什么参数」的清单，新增工具不用改 prompt，也不用改 Agent 的提示模板。Agent SDK 负责协议握手、消息序列化、tool_use 的路由。我们做的工作主要在两端：catalog 这边把每个工具的 handler 包装成符合 MCP 协议的 callable，输入按 JSON Schema 校验后再进 handler，校验失败直接拒绝并把错误结构化返回，不会污染 Agent 上下文；输出按统一格式回包成 tool_result。schema 演进有版本控制，向后兼容的字段加 optional，破坏性变更走显式版本号。前端的 useAgent 监听 SSE，把 tool_use 和 tool_result 分到独立的渲染分支——tool_use 显示工具名加参数 diff，tool_result 显示结构化结果，两个事件用同一个 tool_call_id 关联，乱序到达也能拼回去。为什么用 MCP 而不是直接函数调用：第一，工具列表对 LLM 可见，新增工具不用改 prompt；第二，schema 校验失败可以直接拒绝，不会污染 Agent 上下文；第三，同一个 catalog 可以服务多个 LLM 后端，未来切换不会动业务层。代价：每次工具调用要付一次序列化成本，对极高频工具会被注意到，但我们的工具调用频率受 LLM 思考速度限制，序列化代价可以忽略。
 
 </details>
 
@@ -291,15 +291,15 @@ LLM 流可能跑几十秒，网络抖一下就断。后端 streamManager 按 ses
 
 #### 三档回答
 
-**🟢 一句话**：沙箱内 build → deploy-proxy 把产物挂到子域名 → 修正 vite base 让相对路径正确。
+**🟢 一句话**：沙箱里 build 出 dist，deploy-proxy 把 dist 挂到一个由 user-id 加 project hash 拼成的子域名，反代对外暴露；deploy 时按子路径重写 vite base。
 
 **🔵 标准**（默认）：
 
-用户点 deploy 后 sandbox-deploy 在沙箱里跑 build，产物 dist 留在沙箱内；deploy-proxy 把 dist 挂载到一个唯一子域名（user-id + project hash），通过反向代理对外暴露。坑点是 vite 默认 base 是 `/`，子域名场景下相对路径基本能 work，但根路径资源（`/assets/...`）会因为代理路径不一致出问题，所以 deploy 时强制把 vite base 改成 `/`（或对应子路径）并做 HTML 注入修正。前端 DeployTabPanel 显示 deploy 状态、错误面板，并暴露子域名链接给用户。
+用户点 deploy 后，sandbox-deploy 在沙箱里跑构建，dist 留在沙箱里。deploy-proxy 把 dist 挂到一个由 user-id 加 project hash 拼成的子域名，反代对外暴露。这里有个坑：vite 默认 base 是 '/'，在子域名场景下大部分能跑，但根相对资源（比如 /assets/...）一旦反代路径不匹配就会 404。所以 deploy 时强制把 vite base 设成 '/' 或正确的子路径，并相应改写 HTML。前端 DeployTabPanel 负责显示 deploy 状态、错误面板，把最终的子域名链接给用户。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这条链路的难点不在每一步技术，而在「跨边界的状态统一」。沙箱、deploy-proxy、前端 UI 三处都要对「这次 deploy 是否成功、产物在哪、用户的 URL 是什么」这一组事实保持一致。我们把 deploy 拆成几个状态：building、built、proxied、served、failed，每个状态在 sandbox-state 里有 record，前端订阅 SSE 实时拿到状态变更。Vite base 修正这一步是必须的：沙箱里 build 时不知道未来要挂到哪个子域名，所以产物必须是路径无关的，要么用相对路径要么后处理 HTML。最初想全用相对路径，但 vite 生成的 chunk 引用是 `/assets/...` 形式，相对化代价高且容易出错；最终选了「构建时绝对路径占位 → deploy 时按子路径 rewrite HTML 入口」。trade-off：rewrite 需要对 dist 做后处理（多了几百毫秒），但保证任何子域名都能正确加载资源。一个真实失败教训是早期没做错误面板，deploy 失败用户只看到「转圈」，定位很难；后来 DeployTabPanel 直接展示 build 阶段 stderr 末尾几行 + runtime 错误面板（iframe 里的 console.error 通过 postMessage 回传），定位成本骤降。
+这条链路上比较麻烦的是跨边界的状态对齐——沙箱、deploy-proxy、前端 UI 三处要对同一组事实达成一致：这次 deploy 成没成、产物在哪、用户的 URL 是啥。我们把 deploy 拆成几个状态——building、built、proxied、served、failed——每个状态在 sandbox-state 里都有 record，前端订阅 SSE 实时拿状态变更。Vite base 修正这一步绕不开：build 的时候沙箱不知道未来要挂到哪个子域名，所以产物必须是路径无关的，要么用相对路径，要么后处理 HTML。一开始我们想全用相对路径，但 vite 生成的 chunk 引用都是 /assets/... 这种绝对形式，全相对化代价大、还容易出错；最后选了「构建时用绝对路径占位 → deploy 的时候按子路径重写 HTML 入口」。代价很清楚——重写要对 dist 做后处理，每次多花几百毫秒，但能保证任何子域名都能正确加载资源。错误展示上，早期没做错误面板，deploy 失败用户看到的就是一直转圈，定位很慢。后来 DeployTabPanel 直接展示 build 阶段 stderr 末尾几行，加一个 runtime 错误面板（iframe 里的 console.error 通过 postMessage 回传，origin 严格校验），定位成本就降下来了。子域名命名上 user-id 加 project hash 的好处是相同项目重复 deploy 命中同一个子域名，CDN 和浏览器缓存友好；不用纯随机子域名也是为了避免占用过多反代路由表项。安全上 postMessage 这条回传通道我们要求 origin 严格匹配子域名，避免 iframe 内的恶意脚本伪造错误信息影响主站。
 
 </details>
 
@@ -344,15 +344,15 @@ LLM 流可能跑几十秒，网络抖一下就断。后端 streamManager 按 ses
 
 #### 三档回答
 
-**🟢 一句话**：REST 给会话/沙箱/git/部署，SSE 给 Agent 流式响应；SSE 端点要禁缓冲、设 keepalive、注入 trace context。
+**🟢 一句话**：REST 给会话、沙箱、git、部署用，SSE 给 Agent 流式响应；SSE 端点要禁缓冲、设 keepalive、注入 trace context。
 
 **🔵 标准**（默认）：
 
-routes.ts 里大致分两类。第一类是普通 REST：会话 CRUD、沙箱启停、git 操作、deploy 触发，标准 JSON 请求响应。第二类是 SSE：Agent 主消息流、预览启动状态推送，要求长连接和分片输出。SSE 端点里专门做了几件事：设置 Content-Type: text/event-stream + Cache-Control: no-cache、X-Accel-Buffering: no（防 nginx buffer）、定期发送 keepalive 注释行（防中间代理超时断连），并在 handler 入口手动 open OTel span 注入 trace context 给下游 streamManager。错误处理上 SSE 不能像 REST 那样直接 res.status(500)，得先发一条 error 事件再 close，前端能区分。
+routes.ts 大致分两类。第一类是普通 REST：会话 CRUD、沙箱启停、git 操作、deploy 触发，标准的 JSON 请求和响应。第二类是 SSE：Agent 主消息流、预览启动状态推送，要长连接和分片输出。SSE 端点这边专门做了几件事：设 Content-Type: text/event-stream 和 Cache-Control: no-cache，再加 X-Accel-Buffering: no（防 nginx 缓住），定期发 keepalive 注释行（防中间代理超时断连），handler 入口处手动 open 一个 OTel span 把 trace context 传给下游 streamManager。错误处理上 SSE 不能像 REST 那样直接 res.status(500)，得先发一条 error 事件再 close，前端才能区分「真错」和「网络断」。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header 设置：Content-Type: text/event-stream、Cache-Control: no-cache、X-Accel-Buffering: no（针对 nginx）、Connection: keep-alive，缺一不可；早期我们漏过 X-Accel-Buffering，结果生产 nginx 把整条流缓住，前端要等十几秒才看到第一条事件。第二是 keepalive：每 15 秒左右发一条 `:` 注释行，防止中间代理（k8s ingress、nginx、客户端 proxy）按空闲超时切断连接。第三是 trace 注入：Express 中间件提取 traceparent header 进 OTel context，但 streamManager 是异步的，必须在 handler 同步阶段 open 一个 long-running span 并把 context 显式传下去，否则 LLM 调用拿不到正确 trace_id。第四是错误协议：SSE 的 statusCode 在第一字节发出后就锁死了，不能再 res.status(500)，错误必须按事件协议发一条 `event: error\ndata: {...}` 再 close，前端 useAgent 看到这种事件就能分清是「真错」还是「网络断」。trade-off：把 SSE 处理逻辑抽成中间件比较干净但会侵入响应对象 API，所以选择了「routes.ts 里每个 SSE handler 显式开头几行处理 header + keepalive 启动」这种重复但可读的写法；后期如果 SSE 端点超过十个再考虑抽中间件。整体上 SSE 端点是这套平台的协议核心，路由层把这些细节做对，下游业务才能心无旁骛地写流式逻辑。
+SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header：Content-Type: text/event-stream、Cache-Control: no-cache、X-Accel-Buffering: no（专门给 nginx）、Connection: keep-alive，一个都不能少。早期我们漏过 X-Accel-Buffering，生产 nginx 把整条流缓住了，前端要等十几秒才看到第一条事件，从那以后这个 header 我们写在 SSE handler 的初始化片段里固定下来。第二是 keepalive：每 15 秒左右发一条 `:` 注释行，不然 k8s ingress、nginx、客户端 proxy 这些中间层就会按空闲超时切断连接；keepalive 频率比所有中间层的 idle timeout 短一档。第三是 trace 注入：Express 中间件把 traceparent header 提进 OTel context，但 streamManager 是异步的，必须在 handler 同步阶段开一个 long-running span 把 context 显式传下去，不然 LLM 调用拿不到正确的 trace_id。第四是错误协议：SSE 的 statusCode 在第一字节发出后就锁死了，再 res.status(500) 也没用，错误必须按事件协议发一条 `event: error\ndata: {...}` 再 close，前端 useAgent 看到这种事件就能分清「真错」和「网络断」。trade-off 在哪：把 SSE 处理逻辑抽成中间件比较干净但会侵入响应对象 API，所以我们选了「routes.ts 里每个 SSE handler 显式开头几行处理 header 加 keepalive」这种重复但好读的写法；后期 SSE 端点超过十个再考虑抽中间件。SSE 端点是这套平台的协议核心，路由层把这些细节做对，下游业务才能专注流式逻辑。SSE 的写入也走 Express 自带的 res.write，所以背压由 Node 的 stream 模块处理；业务侧只要按事件协议拼字符串就行，不用自己写流控。
 
 </details>
 
@@ -397,15 +397,15 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 三档回答
 
-**🟢 一句话**：维护一组提前启动好的沙箱实例，新 session 进来直接复用，把冷启动转成秒级。
+**🟢 一句话**：sandbox-warm-pool 维护一组完成通用初始化的 idle 实例，新 session 进来直接拿一个，差异化初始化几百毫秒完成，池大小按时段调度。
 
 **🔵 标准**（默认）：
 
-冷启动里启动镜像、装依赖、起服务通常要十几秒。sandbox-warm-pool 维护一组固定数量的 idle 实例，启动后跑完通用初始化（拉镜像、起常用进程）就 park 住。新 session 进来 sandbox-proxy 优先从池里拿一个绑定，剩下的差异化初始化（用户文件、特定配置）几百毫秒搞定。池大小按时段调度——白天高峰拉高、夜里缩小，配合监控避免空转烧钱。整体效果是首次预览从「转好几秒」到秒内出来。
+冷启动里耗时最长的是启动镜像、装依赖、起服务，加起来通常十几秒。我们用 sandbox-warm-pool 维护一组固定数量的 idle 实例，启动后跑完通用初始化（拉镜像、起常用进程）就 park 在池里。新 session 进来 sandbox-proxy 优先从池里拿一个绑定，剩下的差异化初始化（用户文件、特定配置）几百毫秒就能搞完。池大小按时段调度——白天高峰拉高、夜里缩小，配合监控避免空转烧钱。命中失败的 session 走完整冷启动并补一个池实例，前端显示明确的等待状态。结果是首次预览从十几秒压到秒内出来。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-预热池的核心问题是平衡「启动够快」和「不浪费钱」。我们做了三个 lever。第一是分层初始化：镜像层、通用依赖层、用户层；前两层在 warm-pool 阶段做完，进 session 只跑用户层，这是最大头的提速来源。第二是池规模动态化：基于过去 N 分钟 session 创建速率预测下个窗口需求，预留 headroom，过了高峰自动缩。第三是亲和性回收：sandbox-proxy 看到同一用户短时间再来，优先把刚释放的实例还给他（缓存还热），减少重新初始化。trade-off 上选择细粒度池而不是大共享池，因为大池里万一有「污染」实例（用户没清理干净）会扩散，细粒度池配合定期销毁能控制污染域。一个真实失败教训：早期池里实例长时间不销毁导致 inode 等系统资源积累，后期变慢；后来加了「实例使用 N 次后强制销毁重建」才稳。整体首次预览启动稳定亚秒级，池利用率工作时间维持 70%+。
+预热池的设计核心是「把可预先做的初始化提前到 session 到达之前」。把启动流程拆成两段：通用初始化（镜像拉取、运行时安装、常驻进程启动）和差异化初始化（用户工作区文件、项目配置、入口命令）。通用初始化几乎所有 session 都要做，提前到池实例启动时一次性完成；差异化初始化只能在 session 到达后才知道做什么，所以保留在请求路径上。sandbox-warm-pool 的状态机：实例创建 → 通用初始化 → idle（在池中）→ 被拿走 → 进入业务 session → 销毁。池大小不是固定的，按一个简单的时段调度：白天工作时间维持较大池，夜里缩到最小值，避免空转。命中失败时同步走完整冷启动并立刻补一个池实例，前端显示明确等待状态而不是假装已就绪；同时记录 miss 事件作为容量调整信号。还有一个细节是 idle 实例的健康检查：池里的实例不能无声死掉，所以定期发心跳，连续两次失败就替换，避免拿到一个看起来 idle 实际已经坏了的实例。trade-off：池保有 N 个实例就是 N 份固定成本，所以只对高频起 session 的时段开池；低频时段直接走冷启动更划算。这是「多花点钱换体验」的典型决策，前期我们用了一周的真实数据来标定 N。
 
 </details>
 
@@ -454,15 +454,15 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 三档回答
 
-**🟢 一句话**：把多个 git 子命令拼成一条 shell 复合命令在沙箱内一次执行，结果分段解析。
+**🟢 一句话**：用 set -e 加分隔标记把多个 git 子命令拼成一条复合命令一次执行，stdout 按标记切片解析。
 
 **🔵 标准**（默认）：
 
-原来每个 git 接口都是 service 层调多次 sandbox.exec：一次 status、一次 add、一次 commit……每次付一个跨网络 RTT。重构后 git-sandbox.service 把这些子命令拼成一条 shell 复合命令（用 set -e + 明确分隔标记），通过一次 exec 在沙箱内顺序执行，stdout 用分隔标记切片解析回来。同样逻辑应用在 7 个 git 接口（包括 checkpoint），尾延迟显著下降，用户感知是「点了立刻有反应」。中间还顺手修了 untracked 文件让 pull 误报冲突的一致性 bug。
+原来每个 git 端点要在沙箱里串行跑 status、add、commit 这些子命令，每步付一次跨网络 RTT。重构后用 set -e 加 ASCII 分隔标记把子命令拼成一条复合命令，一次 sandbox.exec 完成，service 层按分隔标记把 stdout 切片，每段对应一个子命令的输出，错误分段也能精确定位是哪一步挂的。7 个 git 端点（包括 checkpoint）共用同一套合并逻辑。中间修了一个一致性 bug：untracked 文件原来会让 pull 误报冲突，改成 pull 前 stash -u、pull 后 stash pop，用户的临时文件不丢。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这个优化的本质是把 N 次跨网络 RTT 收敛成 1 次。落地有几个细节。第一，shell 复合的可靠性：用 set -e 让任意子命令失败立刻中止，避免「前几步成功了但 commit 失败导致仓库半死不活」。第二，输出可解析性：每一步之间打入 ASCII 分隔符（不可能在 git 输出里出现的字符），service 层按分隔符切片，每段对应一个子命令的输出，错误分段也能精确定位是哪一步挂的。第三，幂等性：合并前把每步都梳理过，确认重跑不会污染（commit 用允许空提交模式时显式 --allow-empty 还是直接报错），合并命令具备良好可重试性。trade-off：合并后调试链路变长，没法在某一步 dry-run 看中间状态——所以配套加了「展开模式」，开发态可以拆回逐步执行。失败教训是 untracked 文件触发 pull 假冲突：原来 pull 前 git status 看脏，但 untracked 也算脏被误判；修复是先 stash -u（包含 untracked），pull 完再 stash pop。最终 git 操作 P95 显著改善，分段解析做得严错误定位反而比合并前更精确。
+这个优化要做的就是把 N 次跨网络 RTT 收敛成 1 次。落地有几个细节。第一，shell 复合的可靠性——用 set -e 让任何子命令失败立刻中止，避免「前几步成功了但 commit 失败导致仓库半死不活」的状态。第二，输出可解析性——每一步之间打入 ASCII 分隔符（不可能在 git 输出里出现的字符），service 层按分隔符切片，每段对应一个子命令的输出，错误分段也能精确定位是哪一步挂的。第三，幂等性——合并命令前我们把每个步骤都梳理过一遍，确认重跑不会污染（比如允许空提交时要显式给 --allow-empty 还是直接报错）。代价方面，合并之后调试链路变长，没法在某一步 dry-run 看中间状态。所以我们配套加了「展开模式」，开发态可以拆回逐步执行。中间踩到一个一致性问题——untracked 文件触发 pull 假冲突。原来逻辑是 pull 前 git status 看脏，但 untracked 也算脏，所以被误判成冲突。修复是先 stash -u（包含 untracked），pull 完再 stash pop，确保用户的临时文件不丢。为什么不用 libgit2 在主进程内跑 git，省掉沙箱往返：因为沙箱里的工作区是用户的——文件、配置、凭据都在沙箱命名空间内，libgit2 跑在主进程会破坏隔离边界，而且没法用沙箱内的 git 凭据。这套优化让 git 操作的 P95 显著改善，分段解析做得严，错误定位反而比合并前更精确了。
 
 </details>
 
@@ -487,7 +487,7 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 #### 追问（面试官深挖向）
 
 - ⚖️ **为什么不用 libgit2 直接在进程内跑 git，省掉沙箱往返？**（trade-off）
-  > 沙箱里的工作区是用户的，文件、配置、凭据都在沙箱命名空间内；libgit2 跑在主进程会破坏隔离边界且无法用沙箱内的 git 凭据，得不偿失。
+  > 沙箱里的工作区是用户的，文件、配置、凭据都在沙箱命名空间内；libgit2 跑在主进程会破坏隔离边界，且没法用沙箱内的 git 凭据，整体代价比省下的那次往返更高。
 
 
 #### Evidence
@@ -514,15 +514,15 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 三档回答
 
-**🟢 一句话**：读写优先 Redis，失败降级读 DB；写入异步双写，启动时从 DB 重建 Redis。
+**🟢 一句话**：读写优先 Redis，失败就降级读 DB；写入异步双写到两边，重启时直接从 DB 重建 Redis。
 
 **🔵 标准**（默认）：
 
-状态模型本身是「热路径在 Redis、冷路径/真相在 DB」。sandbox-state.repository 暴露统一的 get/set，内部先查 Redis，miss 或 Redis 不可用就回退查 DB，命中则补回 Redis。写入路径同步写 Redis、异步落 DB（带重试），保证 Redis 永远最新。Coordinator 路由也消费这层 repository，所以 Redis 故障时降级路径自动，不需要业务感知。重启 Pod 时不依赖 Redis 缓存，从 DB 即可重建。
+状态模型是「热路径在 Redis、真相在 DB」。sandbox-state.repository 暴露统一的 get/set，内部先查 Redis，miss 或者 Redis 不可用就回退查 DB，命中了就把数据补回 Redis。写入路径同步写 Redis、异步落 DB（带重试），所以 Redis 永远是最新的。Coordinator 路由也走这层 repository，Redis 故障的时候降级路径自动触发，业务层不用感知，监控按降级标记单独看一条线。重启 Pod 不依赖 Redis 缓存——从 DB 直接重建，所以重启不是高风险操作。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-「Redis 主」不是字面意义的「DB 没用」，而是「Redis 是热路径权威源」。一致性模型是：写入双写，Redis 同步、DB 异步带重试 + 队列；读取先 Redis 再 DB，缓存失效用 TTL + 主动失效双保险。Redis 故障触发两个反应：repository 内部把读路径切到 DB（带降级标记），告警同时触发；写路径仍然双写但 Redis 写返回错误时不阻塞业务，DB 异步落地保证最终一致。最棘手的是「Redis 数据被错改 / 缓存污染」，给关键 key 做了 schema 校验和版本号，发现 corrupt 直接 evict，回退查 DB 重建。trade-off：选 Redis 主而不是 DB 主的原因是 sandbox 状态读写极高频（每次 SSE 事件都更新心跳/进度），DB 单点扛不住；代价是要面对 Redis 故障的退化场景，DB 必须真兜底。一次真实事件：Redis 主从切换出现脑裂少量 session 状态错乱；事后在 Coordinator 层加了「读时校验」（比对 sandbox 实际状态和 Redis 记录），不一致就以实际状态为准重写。整体让我们既享受 Redis 的延迟，又在故障时不丢业务连续性。
+「Redis 主」不是字面意义的「DB 没用」，意思是 Redis 是热路径上的权威源。一致性模型上，写入路径双写——Redis 同步、DB 异步带重试加队列；读取路径先 Redis 再 DB；缓存失效用 TTL 加主动失效双保险。Redis 一旦挂了会触发两个反应：repository 内部把读路径切到 DB 并打降级标记，告警同时触发；写路径仍然双写，但 Redis 写返回错误时不阻塞业务，DB 异步落地保证最终一致。最棘手的是 Redis 数据被错改这种场景——关键 key 我们带 schema 校验和版本号，发现 corrupt 直接 evict，回退查 DB 重建。选 Redis 主而不是 DB 主的原因很直接：sandbox 状态读写极高频，每个活跃 session 每秒都有心跳和进度更新，DB 单点扛不住这个延迟；Redis 主能命中亚毫秒读，DB 兜底只在故障或重建时承压，整体延迟和可靠性更划算。代价是要面对 Redis 故障的退化场景，所以 DB 必须真兜底，不能只是 cache 的备份；DB schema 设计上也对热字段做了索引，让重建路径不至于跑得太慢。Redis 主从切换出过一次脑裂，少量 session 状态错乱，事后我们在 Coordinator 层加了「读时校验」——比对 sandbox 实际状态和 Redis 记录，不一致就以实际状态为准重写。这套设计让我们既享受了 Redis 的延迟，又在故障时不丢业务连续性。
 
 </details>
 
@@ -571,15 +571,15 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 三档回答
 
-**🟢 一句话**：把启动、就绪、出错、刷新、销毁拆成显式状态，并发启动有保护，postMessage 严格 origin 校验。
+**🟢 一句话**：把启动、就绪、出错、刷新、销毁拆成显式状态；并发启动有保护；postMessage 严格校验 origin。
 
 **🔵 标准**（默认）：
 
-原来 iframe 预览就是「轮询能不能访问」，状态隐式分散在多个 setInterval 和 useEffect 里，刷新时偶尔会出现「老 iframe 还没销毁、新 iframe 已经起来」的并发问题。重构后 usePreviewStore 维护显式状态机：idle → starting → ready / error → refreshing → ready，所有转移都过 store；并发启动靠 inflight token 保护，新启动覆盖老 promise。postMessage 监听加 origin 严格校验防注入。HMR 用 useH5PreviewRefresh 监听文件变化感知刷新而不是粗暴 reload。整体预览稳定性显著好转。
+原来的 iframe 预览基本上就是「轮询能不能访问」，状态散在多个 setInterval 和 useEffect 里，刷新时偶尔会撞上「老 iframe 还没销毁、新 iframe 已经起来」的并发问题。重构之后 usePreviewStore 维护一个显式状态机：idle → starting → ready 或 error → refreshing → ready，所有转移都过 store。并发启动靠 inflight token 加 AbortController，新启动直接 abort 老的。postMessage 监听加了严格的 origin 校验防注入。HMR 这块 useH5PreviewRefresh 监听文件变化，能局部更新就不全量刷新；HMR 失败才升级到 full reload。改完之后预览启动的几类竞态基本不再出现。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-状态机的价值在于把「隐式时序」变成「显式转移」。具体边界情况有几类。第一是并发启动：用户连续点两次刷新或者代码快速变化触发多次启动，老的 starting promise 还没 resolve 新的就来了——usePreviewStore 用 inflight token + AbortController，新启动直接 abort 老的，避免 ready 事件错位。第二是 origin 校验：iframe 加载的预览 URL 在用户子域名下，postMessage 来源必须严格匹配该子域名而不是简单的 `*` 或 `parent.origin`，防止恶意页面伪造预览事件。第三是 HMR 感知：后端 h5-preview.service 推送文件变更，前端 useH5PreviewRefresh 把变更映射到 iframe 的 HMR 通道，能局部更新就不全量刷新；只有当 HMR 失败（比如修改了入口文件结构）才升级到 full reload。第四是错误回流：iframe 内运行时错误通过 postMessage 回传到主控台，但要带 frame id 和 origin，避免不同 session 的错误串台。trade-off：状态机让代码量增加，但调试成本骤降——有问题时能直接看 store 当前状态，不用从一堆 setInterval 反推。一个失败教训是早期没做 inflight 保护，用户连续两次点「重新启动」会出现「显示 ready 但其实是老 iframe」的幽灵状态，事后才意识到所有异步交互都得有「最近一次 win」的语义。
+状态机的价值是把「隐式时序」变成「显式转移」。具体边界情况几类。第一是并发启动：用户连点两次刷新，或者代码快速变化触发多次启动，老的 starting promise 还没 resolve 新的就来了——usePreviewStore 用 inflight token 加 AbortController，新启动直接 abort 老的，避免 ready 事件错位。第二是 origin 校验：iframe 加载的预览 URL 在用户的子域名下，postMessage 的来源必须严格匹配那个子域名，不能用 `*` 也不能用 `parent.origin` 这种宽松配置，不然恶意页面就能伪造预览事件。第三是 HMR 感知：后端 h5-preview.service 推送文件变更，前端 useH5PreviewRefresh 把变更映射到 iframe 的 HMR 通道，能局部更新就不全量刷新；HMR 失败（比如改了入口文件结构）才升级到 full reload。第四是错误回流：iframe 内的 runtime 错误通过 postMessage 回主控台，要带 frame id 和 origin，避免不同 session 的错误串台。代价方面，状态机让代码量增加，但调试成本下降，有问题直接看 store 当前状态，不用从一堆 setInterval 反推。早期没做 inflight 保护时，用户连点两次「重新启动」会出现「显示 ready 但其实是老 iframe」的不一致状态，所以现在所有异步交互都按「最近一次 win」的语义统一处理。状态机也让单测变直观——按状态转移列举测试用例，覆盖率比原来散在 useEffect 里的逻辑容易做。每条转移的入口和出口都加了一行 console.debug，需要排查时直接 grep 时序，不用再插临时日志。
 
 </details>
 
@@ -604,7 +604,7 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 #### 追问（面试官深挖向）
 
 - ⚖️ **为什么不用 XState 这类状态机库，而是自己在 store 里实现？**（trade-off）
-  > 状态数量有限（5 个）、转移规则简单，引 XState 反而增加 bundle 和心智负担；但如果状态超过十个或有平行状态，会再考虑。
+  > 状态就 5 个、转移也简单，上 XState 反而多一份 bundle 和心智负担；真要是状态超过十个、或者开始需要平行状态，我们再回头考虑。
 
 
 #### Evidence
@@ -632,15 +632,15 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 三档回答
 
-**🟢 一句话**：OTel 注入 W3C Trace Context 把 LLM 调用挂到主 trace，Langfuse 接住 prompt / token 维度的细节。
+**🟢 一句话**：OTel 用 W3C Trace Context 把 LLM 调用挂到主 trace 上，Langfuse 接住 prompt 和 token 这些 LLM 特有的细节。
 
 **🔵 标准**（默认）：
 
-传统 trace 系统对 LLM 调用没原生概念，prompt、token、tool 调用都是黑箱。我们用 OTel Node SDK 在 Express handler、SSE streamManager、MCP 工具调用处都开 span，并通过 W3C Trace Context 把 LLM 调用 span 也挂上去；Langfuse 作为 LLM 维度的专属后端，记录 prompt 文本、token 用量、cost，同样用 trace_id 关联到 OTel 那条 trace 上。结果是一次用户请求从点击到 LLM token，能在 OTel UI 看完整时序，需要 prompt 细节就跳到 Langfuse 看同一 trace_id。
+通用 trace 系统对 LLM 调用没有原生概念，prompt、token、tool 调用在它眼里都是黑盒。我们用 OTel Node SDK 在 Express handler、SSE streamManager、MCP 工具调用这几处都开 span，再通过 W3C Trace Context 把 LLM 调用 span 挂上去；Langfuse 单独作为 LLM 维度的后端，记录 prompt 文本、token 用量、cost，同样用 trace_id 跟 OTel 那条 trace 关联。这样一次用户请求从点击到 LLM token，能在 OTel UI 看到完整时序；要 prompt 细节就直接跳到 Langfuse 用同一个 trace_id 找。两边的 trace_id 共享是排查链路能串起来的关键。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-把 LLM 纳入分布式 trace 的难点是「LLM 调用属于哪条 span」和「prompt / token 这些非标准字段放哪」。我们的做法：第一，所有入口（Express handler、SSE 长连接、tool handler）都开 OTel span，进入 LLM 调用前从当前 context 取 trace_id 透传到 Langfuse 客户端，让两边的 trace_id 一致。第二，prompt 文本、token 用量、cost 这些 LLM 特有维度不塞 OTel attribute（attribute 长度有限且不适合大段文本），而是写到 Langfuse；OTel 这边只记关键标量（model_name、prompt_tokens、completion_tokens、duration），方便聚合告警。第三，密钥脱敏在写 Langfuse 之前做，避免 prompt 里 leak 出 API key。trade-off：双后端意味着维护两套 SDK 和成本，但好处是 OTel 解决「全链路定位」、Langfuse 解决「LLM 特有可观测」，强行塞一个系统会两边都凑合。一个失败教训是早期 OTel attribute 里塞了完整 prompt，导致后端导出超大、采样率被迫拉低；之后才把大文本剥离到 Langfuse，OTel 只留标量。整体上从用户点击 → SSE → LLM token，排障路径变成「先看 OTel 哪步慢/出错、再到 Langfuse 看 prompt 细节」，定位时间从分钟级到秒级。
+把 LLM 纳入分布式 trace 难在两件事：一是 LLM 调用属于哪条 span，二是 prompt、token 这些非标准字段放哪。我们的做法分四步。第一，所有入口——Express handler、SSE 长连接、tool handler——都开 OTel span，进 LLM 调用前从当前 context 取 trace_id 透传给 Langfuse 客户端，让两边的 trace_id 一致。第二，prompt 文本、token 用量、cost 这些 LLM 特有维度不塞 OTel attribute（attribute 长度有限，也不适合大段文本），而是写到 Langfuse；OTel 这边只记关键标量——model_name、prompt_tokens、completion_tokens、duration——方便聚合告警。第三，密钥脱敏放在写 Langfuse 之前做，免得 prompt 里把 API key 漏出去；脱敏规则用一份正则表，匹配到的 token 直接替换成占位符，规则随系统增加新的密钥源持续更新。第四，OTel collector 临时不可达时 SDK 自己有内存缓冲和重试，Langfuse 客户端也有本地队列，避免数据点直接丢。代价方面，双后端意味着维护两套 SDK、两份成本，但好处是 OTel 解决「全链路定位」，Langfuse 解决「LLM 特有可观测」，让一个系统兼顾两边都得凑合。早期 OTel attribute 里塞了完整 prompt，导致后端导出超大、采样率被迫拉低；后来把大文本剥离到 Langfuse、OTel 只留标量，导出量回到健康水平。现在排障路径是「先看 OTel 哪步慢或出错，再到 Langfuse 看 prompt 细节」。代价是两边的告警规则要分别维护，OTel 那边告慢、告错率，Langfuse 那边告 token 暴涨、cost 异常，做一致的服务概念视图需要在仪表盘层做关联。
 
 </details>
 
@@ -665,7 +665,7 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 #### 追问（面试官深挖向）
 
 - ⚖️ **为什么不直接把 Langfuse 当 trace 后端，省掉 OTel？**（trade-off）
-  > Langfuse 专门为 LLM 设计，对非 LLM span（DB / Redis / 沙箱）支持薄；OTel 是行业标准能接所有现有基础设施，两者各司其职更划算。
+  > Langfuse 是专门给 LLM 设计的，对非 LLM 的 span（DB、Redis、沙箱）支持很薄；OTel 是行业标准，能接所有现有基础设施——两边各管一摊更划算。
 
 
 #### Evidence
@@ -691,15 +691,15 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 三档回答
 
-**🟢 一句话**：白名单 + per-user feature flag 双闸门控制可见性，前端双态显示已保存值和运行中值。
+**🟢 一句话**：三层：后端白名单 feature-whitelist.ts、前端 feature flag、UI 双态展示「已保存值」和「运行中值」。
 
 **🔵 标准**（默认）：
 
-高风险配置（比如 Pod 内存）一旦改错会让用户业务起不来。后端用 feature-whitelist.ts 维护一份允许使用的用户名单，前端再叠一层 feature flag，只有同时满足才能看到这个配置入口。展示上 DeployTabPanel 同时显示「已保存值」和「运行中值」：保存了但还没重启时两者会不一致，用户能直观看到「我的改动还没生效」，避免之前那种「改了不知道是不是真的生效」的困惑。这套机制成了平台高风险能力的发布范式。
+灰度的核心是缩小影响面。我们做了三层。第一层是后端白名单 feature-whitelist.ts，上线初期硬写一组内部账号；这层是「你到底能不能看到」的最终决定权，前端再花哨也绕不开，权限的最终判定在后端 API。第二层是前端 feature flag，按 flag 决定要不要渲染入口，运营想按用户群拨开关、不发版就上线，靠的就是这层。第三层是双态 UI：DeployTabPanel 同时显示「已保存（DB 持久化）」和「运行中（Pod 上真正跑的）」，deploy 重启之前两值会不一样。这套范式被复用到部署、checkpoint 等高风险场景，复制成本基本是拷一份白名单 key。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-灰度的核心是把 blast radius 缩到可控。我们做了三层。第一层后端白名单（feature-whitelist.ts），上线初期写死一组内部账号，这层是「能不能看到」的最终决定权，前端绕不开。第二层 feature flag，前端按 flag 决定是否渲染入口，运营可以按用户群拨开关而不发版。第三层双态 UI：DeployTabPanel 同时显示「已保存（DB 持久化）」和「运行中（实际生效在 Pod 上）」，deploy 重启前两值会不一致，肉眼可见。trade-off：双态比单态实现成本高（前端要拉两个值、UI 要解释清楚），但相比「改完不知道生不生效，反复试」的体验，这层成本完全值得。一个真实问题：早期没做白名单光靠前端 feature flag，结果有用户用浏览器开发者工具改 flag 看到了入口，差点改坏配置；之后把权限的最终判断完全压到后端 API，前端只是隐藏入口。现在这套范式被复用到部署、checkpoint 等多个高风险场景，成本几乎是零（拷贝一份白名单 key），收益是稳定性兜底。
+灰度的目的是缩小影响面。我们做了三层。第一层是后端白名单 feature-whitelist.ts，上线初期硬写一组内部账号——这层是「你到底能不能看到」的最终决定权，前端再花哨也绕不开。第二层是前端 feature flag，前端按 flag 决定要不要渲染入口，运营想按用户群拨开关、不发版就上线，靠的就是这层。第三层是双态 UI：DeployTabPanel 同时显示「已保存（DB 持久化）」和「运行中（Pod 上真正跑的）」，deploy 重启之前两值会不一样。代价方面，双态比单态多花点功夫，前端要拉两个值、UI 要解释清楚，但跟「改完不知道生没生效、用户反复试」比，这点成本完全值。早期一段时间我们只做了前端 feature flag，没做后端白名单，有用户在浏览器开发者工具里改了 flag 就把入口看到了，权限不在后端就有越权的可能。之后我们把权限的最终判断完全压到后端 API 上，前端只负责隐藏入口；feature flag 仅作为渲染开关，不再承担安全语义。展示上 DeployTabPanel 把「已保存值」标灰、「运行中值」高亮，用户能明确看出来「我改了但还没 deploy」这种中间态。这套范式后来被复用到部署、checkpoint 等一堆高风险场景，复制成本几乎是拷一份白名单 key。一致的范式让用户对高风险按钮的预期是稳定的——保存不等于生效，需要显式触发重启。
 
 </details>
 
@@ -724,7 +724,7 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 #### 追问（面试官深挖向）
 
 - ⚖️ **为什么需要双态 UI 而不是改完直接显示新值？**（trade-off）
-  > Pod 内存这类配置只有 deploy 重启后才真正生效，单态会让用户误以为已经生效；双态明确显示「已保存 vs 运行中」避免静默 drift。
+  > Pod 内存这种配置只有 deploy 重启之后才真的生效，单态会让用户以为「我改了就好了」；双态明确显示「已保存 vs 运行中」，避免改了没生效但用户不知道的情况。
 
 
 #### Evidence
