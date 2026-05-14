@@ -1,0 +1,13 @@
+{
+  "name": "01-sse-demo",
+  "version": "1.0.0",
+  "description": "簇 1 Demo 1: 最小可运行的 SSE 服务端",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
