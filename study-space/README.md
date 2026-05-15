@@ -25,7 +25,7 @@
 | # | 簇 | 关键词 | 目录 | 完成 | 一句话心得 |
 |---|---|---|---|---|---|
 | 1 | q-01 SSE 流式推送 | SSE / EventSource / fetch-event-source | [`01-sse/`](./01-sse/) | ✅ | 报文 `\n\n` 结尾 + EventSource 自动重连 + Last-Event-ID 续传，详见 [`01-sse/NOTES.md`](./01-sse/NOTES.md) |
-| 2 | q-12 Express 中间件 | middleware / keepalive / SSE error | [`02-express-mw/`](./02-express-mw/) | ☐ |  |
+| 2 | q-12 Express 中间件 | middleware / keepalive / SSE error | [`02-express-mw/`](./02-express-mw/) | ✅ | 洋葱模型 + 4参错误中间件 + SSE event:error 协议，详见 [`02-express-mw/NOTES.md`](./02-express-mw/NOTES.md) |
 | 3 | q-06 git + shell 严格模式 | plumbing / set -euo pipefail / stash -u | [`03-git-shell/`](./03-git-shell/) | ☐ |  |
 | 4 | q-10 React Hooks + Zustand | 单一职责 / selector / slice | [`04-hooks-zustand/`](./04-hooks-zustand/) | ☐ |  |
 | 5 | q-09 postMessage + 状态机 | origin 校验 / FSM / AbortController | [`05-postmsg-fsm/`](./05-postmsg-fsm/) | ☐ |  |

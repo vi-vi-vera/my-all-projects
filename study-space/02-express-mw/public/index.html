@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>簇 2 — Express 中间件 + SSE 错误协议</title>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", sans-serif; max-width: 820px; margin: 30px auto; padding: 0 20px; }
+    h1   { font-size: 20px; margin-bottom: 4px; }
+    .hint{ color:#888; font-size: 13px; margin-bottom: 16px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 12px; }
+    button { padding: 6px 12px; border:1px solid #ccc; border-radius: 6px; background:#fff; cursor:pointer; }
+    button:hover { background:#f5f5f5; }
+    .box { border: 1px solid #ddd; border-radius: 8px; padding: 12px; min-height: 220px; background: #fafafa; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+    .ok    { color: #178a3f; }
+    .err   { color: #c0392b; }
+    .meta  { color: #888; }
+    .clear { margin-left: auto; }
+  </style>
+</head>
+<body>
+  <h1>簇 2 — 中间件链路 + SSE 错误协议</h1>
+  <div class="hint">点不同按钮触发不同 token，观察 onmessage / addEventListener('error') 分别接到什么</div>
+
+  <div class="row">
+    <button onclick="connect('token-alice')">✅ Alice 正常</button>
+    <button onclick="connect('token-bob')">✅ Bob 正常</button>
+    <button onclick="connect('')">❌ 无 token</button>
+    <button onclick="connect('token-wrong')">❌ 错误 token</button>
+    <button onclick="burst('token-alice', 5)">🔥 限流测试（连发 5 次 Alice）</button>
+    <button class="clear" onclick="closeAll()">关闭所有连接</button>
+  </div>
+
+  <div class="box" id="box"></div>
+
+  <script>
+    const box = document.getElementById('box');
+    const openings = [];
+
+    function log(html, cls = '') {
+      const div = document.createElement('div');
+      div.className = cls;
+      div.innerHTML = `<span class="meta">[${new Date().toLocaleTimeString()}]</span> ${html}`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function connect(token) {
+      const url = token ? `/events?token=${encodeURIComponent(token)}` : '/events';
+      log(`→ 发起连接 ${url}`, 'meta');
+      const es = new EventSource(url);
+      openings.push(es);
+
+      es.onopen   = () => log(`✓ 已建立 ${url}`, 'ok');
+
+      // 默认 message 事件（服务端 data: 没带 event 字段时触发）
+      es.onmessage = (e) => log(`← message: ${e.data}`, 'ok');
+
+      // ★关键：自定义 error 事件（服务端 event: error）
+      // 注意：这跟 es.onerror（网络层错误）不是一回事！
+      es.addEventListener('error', (e) => {
+        // 自定义 event:error 时 e.data 有内容；网络断开时 e.data 是 undefined
+        if (e.data) {
+          log(`✗ 业务错误: ${e.data}`, 'err');
+          es.close(); // 业务错误已是终态，主动关，避免无意义重连
+        } else {
+          log(`⚠ 网络错误，EventSource 将自动重连`, 'err');
+        }
+      });
+    }
+
+    function burst(token, times) {
+      log(`→ 一次性发起 ${times} 个并发连接（用 ${token}）`, 'meta');
+      for (let i = 0; i < times; i++) {
+        setTimeout(() => connect(token), i * 50);
+      }
+    }
+
+    function closeAll() {
+      openings.forEach(es => es.close());
+      openings.length = 0;
+      log(`已关闭所有连接`, 'meta');
+    }
+  </script>
+</body>
+</html>
