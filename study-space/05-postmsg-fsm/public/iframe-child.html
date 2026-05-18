@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>簇 5 — iframe 子页面（被 postMessage 通信的那一方）</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; margin: 0; padding: 16px; background: #fffbe6; }
+    h3 { margin: 0 0 8px; font-size: 14px; }
+    #content { padding: 12px; background: #fff; border-radius: 6px; border: 1px solid #e8d98a; min-height: 60px; }
+    .log { font-size: 12px; color: #888; margin-top: 12px; }
+    .log div { margin: 2px 0; }
+    .warn { color: #c0392b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h3>🖼️ iframe 子页面（origin: 同源）</h3>
+  <div id="content">等待父页面发来消息...</div>
+  <div class="log" id="log"></div>
+
+  <script>
+    const contentEl = document.getElementById('content');
+    const logEl = document.getElementById('log');
+
+    function log(text, isWarn = false) {
+      const div = document.createElement('div');
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+      if (isWarn) div.className = 'warn';
+      logEl.appendChild(div);
+    }
+
+    // ★ 关键：接收方必须校验 event.origin
+    window.addEventListener('message', (event) => {
+      // 安全检查 1：origin 校验
+      // 在真实项目里，这里应该写死允许的 origin 列表
+      // demo 里我们允许同源（Vite dev server 的 origin）
+      const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://127.0.0.1:5173',
+        window.location.origin,  // 同源兜底
+      ];
+
+      if (!allowedOrigins.includes(event.origin)) {
+        log(`⚠️ 拒绝来自 ${event.origin} 的消息！不在白名单`, true);
+        return;
+      }
+
+      log(`✅ 收到消息 from ${event.origin}: ${JSON.stringify(event.data)}`);
+
+      // 处理消息
+      if (event.data && event.data.type === 'UPDATE_CONTENT') {
+        contentEl.textContent = event.data.payload;
+        contentEl.style.background = '#e8f5e9';
+
+        // ★ 回复确认（双向通信）
+        // 注意 event.source 就是发送方的 window 引用
+        event.source.postMessage(
+          { type: 'ACK', id: event.data.id, status: 'rendered' },
+          event.origin  // ★ 回复时也指定 targetOrigin，不用 '*'
+        );
+      }
+    });
+
+    log('iframe 已就绪，等待父页面 postMessage...');
+  </script>
+</body>
+</html>

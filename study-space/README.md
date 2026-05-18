@@ -28,7 +28,7 @@
 | 2 | q-12 Express 中间件 | middleware / keepalive / SSE error | [`02-express-mw/`](./02-express-mw/) | ✅ | 洋葱模型 + 4参错误中间件 + SSE event:error 协议，详见 [`02-express-mw/NOTES.md`](./02-express-mw/NOTES.md) |
 | 3 | q-06 git + shell 严格模式 | plumbing / set -euo pipefail / stash -u | [`03-git-shell/`](./03-git-shell/) | ✅ | 四件套防御 + git 三层对象模型 + stash -u，详见 [`03-git-shell/NOTES.md`](./03-git-shell/NOTES.md) |
 | 4 | q-10 React Hooks + Zustand | 单一职责 / selector / slice | [`04-hooks-zustand/`](./04-hooks-zustand/) | ✅ | Hook 3 信号拆分 + Zustand selector 浅比较，详见 [`04-hooks-zustand/NOTES.md`](./04-hooks-zustand/NOTES.md) |
-| 5 | q-09 postMessage + 状态机 | origin 校验 / FSM / AbortController | [`05-postmsg-fsm/`](./05-postmsg-fsm/) | ☐ |  |
+| 5 | q-09 postMessage + 状态机 | origin 校验 / FSM / AbortController | [`05-postmsg-fsm/`](./05-postmsg-fsm/) | ✅ | 双向 origin 校验 + useReducer 状态机 + abort 双保险，详见 [`05-postmsg-fsm/NOTES.md`](./05-postmsg-fsm/NOTES.md) |
 | 6 | q-08 Vite base + nginx | base / proxy_pass / 子路径部署 | [`06-vite-nginx/`](./06-vite-nginx/) | ☐ |  |
 | 7 | q-05 Redis 缓存与降级 | cache-aside / 雪崩 / 双写 | [`07-redis/`](./07-redis/) | ☐ |  |
 | 8 | q-03 Linux 沙箱 + 适配器 | namespace / cgroups / Adapter | [`08-sandbox/`](./08-sandbox/) | ☐ |  |
