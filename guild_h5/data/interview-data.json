@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0",
+  "mode": "candidate",
+  "platform_name": "QQ频道H5静态页面仓库 (guild_h5)",
+  "role": "前端",
+  "level": "中级",
+  "project_pitch": {
+    "elevator": {
+      "zh": "QQ 频道所有 H5 页面的统一仓库，基于 Vite MPA 多页面架构管理 63 个独立业务页面，运行在 QQ 客户端 WebView 环境，通过 mqq bridge 深度适配原生交互，支持完整暗黑模式和四通道监控体系。",
+      "en": "A unified repository for all QQ Guild H5 pages, managing 63 independent business pages via Vite MPA architecture, running in QQ client WebView with deep native integration through mqq bridge, supporting full dark mode and four-channel monitoring."
+    },
+    "standard": {
+      "zh": "guild_h5 是 QQ 频道的 H5 静态页面统一仓库，使用 Vue 3 + TypeScript + Vite 2.7 构建，采用 MPA 多页面架构管理 63 个独立业务页面（频道创建、排行榜、运营活动等）。项目深度适配 QQ 客户端 WebView——通过 mqq bridge 控制导航栏、分享和设备交互，支持 iOS/Android/Mac/Win 四端。样式方案采用 TailwindCSS + Less 混合，实现了完整的暗黑模式和 QQ 增值主题。监控覆盖四通道：Oceanus 链路追踪 + Aegis 性能 + 大同数据上报 + Atta 行为上报。部署采用 OrangeCI + Docker + STKE(K8s)，支持 dev/test/pre/prod 四环境自动化。",
+      "en": "guild_h5 is the unified H5 static pages repository for QQ Guild, built with Vue 3 + TypeScript + Vite 2.7 using MPA multi-page architecture managing 63 independent business pages (guild creation, rankings, operations, etc.). The project deeply integrates with QQ client WebView via mqq bridge for navigation, sharing, and device interaction across iOS/Android/Mac/Win. Styling uses TailwindCSS + Less hybrid with full dark mode and QQ premium themes. Monitoring covers four channels: Oceanus tracing + Aegis performance + Universal Report data + Atta behavior. Deployment uses OrangeCI + Docker + STKE(K8s) with dev/test/pre/prod four-environment automation."
+    },
+    "deep_dive": {
+      "zh": "guild_h5 是 QQ 频道业务线的核心 H5 页面仓库，承载了频道从创建到运营的全部移动端页面需求。项目包含 63 个独立业务页面，通过 vite-plugin-mpa 实现多页面应用架构，每个页面拥有独立的入口、路由、状态和组件，按需构建部署。\n\n技术架构上有几个核心设计：\n\n1. **MPA 多页面架构**：不同于 SPA，每个业务功能是完全独立的页面，独立部署互不影响。通过 Vite 的 rollupOptions.input 配置多入口，manualChunks 将 Vue/Pinia/axios 等公共依赖提取为共享 chunk。\n\n2. **Hybrid H5 深度适配**：运行在 QQ 客户端 WebView 内，大量使用 mqq bridge API——控制原生导航栏（颜色/标题/按钮/透明度动画）、调用原生分享（ARK 卡片/好友/群/空间）、获取设备信息和用户身份。封装了 useNavBar、useHideTitle 等 hooks 简化开发。\n\n3. **暗黑模式方案**：useDarkMode hook 监听系统主题变化，useGuildThemeToken 支持 QQ 增值自定义主题（RGB Token），所有组件通过 CSS 变量实现日夜间切换。\n\n4. **请求预取优化**：preRequest 模块在页面 HTML 加载时就发起数据请求（利用 inline script），Vue 应用挂载后直接消费缓存数据，将白屏时间减少 200-500ms。\n\n5. **四通道监控**：Oceanus 负责 CGI 链路追踪（请求/响应/错误全链路）；Aegis 负责性能指标（Web Vitals）；大同负责业务数据上报（DAU/功能使用率）；Atta 负责用户行为埋点（曝光/点击）。\n\n6. **CI/CD 全自动化**：四个分支对应四个环境——master(tag)->正式、test->测试（自动部署）、bugfix/*->预发布（自动部署）、release/*->分支环境。CDN 上传使用 cdn-go，Docker 镜像基于 Nginx 部署到 STKE Kubernetes 集群。",
+      "en": "guild_h5 is the core H5 pages repository for QQ Guild business, hosting all mobile page requirements from guild creation to operations. It contains 63 independent business pages using vite-plugin-mpa for multi-page architecture, where each page has independent entry, routing, state, and components with on-demand build and deployment.\n\nCore architectural designs:\n\n1. **MPA Architecture**: Unlike SPA, each business function is a completely independent page, deployed independently. Vite's rollupOptions.input configures multiple entries, manualChunks extracts Vue/Pinia/axios into shared chunks.\n\n2. **Hybrid H5 Deep Integration**: Running in QQ client WebView, extensively using mqq bridge API for native navigation control (color/title/buttons/opacity animation), native sharing (ARK cards/friends/groups), device info and user identity. Encapsulated in hooks like useNavBar, useHideTitle.\n\n3. **Dark Mode**: useDarkMode hook monitors system theme changes, useGuildThemeToken supports QQ premium custom themes (RGB Token), all components use CSS variables for day/night switching.\n\n4. **Request Prefetch**: preRequest module initiates data requests during HTML loading (via inline script), Vue app consumes cached data on mount, reducing white-screen time by 200-500ms.\n\n5. **Four-Channel Monitoring**: Oceanus for CGI tracing; Aegis for performance (Web Vitals); Universal Report for business data (DAU/feature usage); Atta for user behavior (exposure/click).\n\n6. **Full CI/CD Automation**: Four branches map to four environments — master(tag)->prod, test->test(auto-deploy), bugfix/*->pre(auto-deploy), release/*->branch env. CDN via cdn-go, Docker(Nginx) deployed to STKE Kubernetes."
+    }
+  },
+  "highlights": [
+    { "title": "Vite MPA 多页面架构管理 63 个业务页面", "scope": "frontend", "primary_dimension": "architecture", "story": { "zh": "vite-plugin-mpa 多入口 + manualChunks 公共依赖提取 + 独立页面按需构建部署", "en": "vite-plugin-mpa multi-entry + manualChunks shared dependency extraction + independent page on-demand builds" }, "tech_keywords": ["Vite MPA", "多入口", "代码分割", "按需构建"] },
+    { "title": "QQ 客户端 Hybrid H5 深度适配", "scope": "frontend", "primary_dimension": "architecture", "story": { "zh": "mqq bridge 控制原生导航栏/分享/设备交互，支持 iOS/Android/Mac/Win 四端，hooks 封装简化开发", "en": "mqq bridge controls native navigation/sharing/device interaction, supporting iOS/Android/Mac/Win, hooks encapsulation simplifying development" }, "tech_keywords": ["Hybrid", "mqq", "JSBridge", "多平台"] },
+    { "title": "暗黑模式 + QQ 增值自定义主题", "scope": "frontend", "primary_dimension": "feature", "story": { "zh": "useDarkMode 监听系统主题 + useGuildThemeToken 支持 RGB Token + CSS 变量全局切换", "en": "useDarkMode monitors system theme + useGuildThemeToken supports RGB Token + CSS variables global switching" }, "tech_keywords": ["暗黑模式", "CSS变量", "主题Token"] },
+    { "title": "请求预取减少白屏 200-500ms", "scope": "frontend", "primary_dimension": "performance", "story": { "zh": "preRequest 在 HTML 加载阶段发起数据请求，Vue 挂载后直接消费缓存", "en": "preRequest initiates data requests during HTML loading, Vue app consumes cached data on mount" }, "tech_keywords": ["预请求", "白屏优化", "缓存"] },
+    { "title": "四通道监控全覆盖", "scope": "frontend", "primary_dimension": "observability", "story": { "zh": "Oceanus 链路追踪 + Aegis 性能 + 大同业务数据 + Atta 行为埋点", "en": "Oceanus tracing + Aegis performance + Universal Report business data + Atta behavior tracking" }, "tech_keywords": ["Oceanus", "Aegis", "大同", "Atta"] }
+  ],
+  "questions": [
+    {
+      "id": "q-01",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "MPA 页面集合",
+      "source_tech_point": "tp-001",
+      "question": { "zh": "为什么选择 MPA 多页面架构而不是 SPA？63 个页面是如何组织和构建的？", "en": "Why MPA over SPA? How are 63 pages organized and built?" },
+      "answer": {
+        "elevator": { "zh": "业务页面独立性强、互不影响，MPA 天然隔离，Vite MPA 插件实现多入口按需构建。", "en": "Business pages are highly independent, MPA provides natural isolation, Vite MPA plugin enables multi-entry on-demand builds." },
+        "standard": { "zh": "选择 MPA 而非 SPA 的核心原因：(1) 63 个页面分属不同业务线，互不关联，SPA 会导致不必要的代码耦合和巨大 bundle；(2) H5 页面从 QQ 客户端不同入口打开，天然是独立页面场景；(3) 独立部署互不影响，单个页面出问题不影响其他。通过 vite-plugin-mpa 扫描 src/pages 下所有 index.html 作为入口，Vite 的 rollupOptions.input 配置多入口构建。公共依赖通过 manualChunks 提取为 vendor chunk（vue/vue-router/pinia 一组，axios/dayjs/qlib 一组），页面间共享缓存。每个页面拥有独立的 main.ts、App.vue、router/、store/、views/、apis/ 目录结构。", "en": "Core reasons for MPA over SPA: (1) 63 pages belong to different business lines, unrelated — SPA would cause unnecessary coupling and massive bundles; (2) H5 pages open from different QQ client entries, naturally independent page scenarios; (3) Independent deployment — one page's issue doesn't affect others. vite-plugin-mpa scans all index.html under src/pages as entries, Vite's rollupOptions.input configures multi-entry builds. Shared deps extracted via manualChunks as vendor chunks (vue/router/pinia as one, axios/dayjs/qlib as another), cached across pages. Each page has independent main.ts, App.vue, router/, store/, views/, apis/ structure." },
+        "deep_dive": { "zh": "MPA 架构的完整设计考量：\n\n**为什么不用 SPA**：\n- 63 个页面分属频道创建、排行榜、运营活动等不同业务域，用户每次只访问一个\n- QQ 客户端通过 URL scheme 打开指定页面，不存在页面间导航\n- SPA bundle 过大导致首屏加载慢（移动端网络环境差）\n- 独立页面便于 A/B 测试和灰度发布\n\n**构建策略**：\n```javascript\n// manualChunks 代码分割\nmanualChunks: {\n  vendor: ['vue', 'vue-router', 'pinia'],\n  vendor1: ['camelcase-keys', 'axios', 'less', 'dayjs', '@tencent/qlib'],\n}\n```\n浏览器对同域下的 chunk 文件有缓存，用户访问不同页面时 vendor chunk 直接命中缓存。\n\n**页面标准目录结构**：\n```\nsrc/pages/<page-name>/\n├── index.html      # 入口 HTML（可自定义 meta/预请求脚本）\n├── main.ts         # createApp + pinia + router + monitor\n├── App.vue         # 根组件\n├── router/         # 页面级路由（页面内可能有多视图）\n├── store/          # 页面级 Pinia store\n├── views/          # 页面视图组件\n├── apis/           # 页面接口定义\n└── components/     # 页面级组件\n```\n\n**按需构建**：开发时通过 URL 路径自动定位到对应页面，只编译当前开发的页面，启动速度秒级。生产构建时全量构建所有页面。\n\n**CDN 部署**：构建产物上传到 cdn-go，index.html 由 Nginx 服务，静态资源（JS/CSS/图片）走 CDN 加速。", "en": "Complete MPA architecture design considerations:\n\n**Why not SPA**: 63 pages across different domains (creation, rankings, operations), users access one at a time; QQ client opens via URL scheme with no inter-page navigation; SPA bundle too large for mobile networks; independent pages enable A/B testing.\n\n**Build strategy**: manualChunks splits vendor (vue/router/pinia) and vendor1 (axios/dayjs/qlib), browser caches chunks across page visits.\n\n**Standard page structure**: Each page under src/pages/<name>/ has index.html, main.ts, App.vue, router/, store/, views/, apis/, components/.\n\n**On-demand dev**: Development compiles only current page (fast startup). Production builds all pages.\n\n**CDN deployment**: Build artifacts uploaded to cdn-go, index.html served by Nginx, static assets (JS/CSS/images) via CDN." }
+      },
+      "knowledge_points": ["Vite MPA", "vite-plugin-mpa", "rollupOptions.input", "manualChunks", "代码分割"],
+      "learning_plan": { "must_read": ["Vite 多页面应用配置", "Rollup 代码分割"], "hands_on": ["配置 Vite MPA 3 页面项目"], "common_pitfalls": ["MPA 间公共模块重复打包", "HTML 入口路径配置错误"], "mock_questions": ["MPA 和 SPA 各适合什么场景？"], "time_estimate": "2-3 天" },
+      "follow_ups": ["如果页面增长到 200+，构建时间如何优化？", "MPA 页面间如何共享登录状态？"]
+    },
+    {
+      "id": "q-02",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "工具层",
+      "source_tech_point": "tp-002",
+      "question": { "zh": "Hybrid H5 如何与 QQ 客户端原生能力交互？遇到过什么兼容性问题？", "en": "How does Hybrid H5 interact with QQ native capabilities? What compatibility issues have you encountered?" },
+      "answer": {
+        "elevator": { "zh": "通过 mqq bridge（JSBridge）调用原生 API，控制导航栏、分享、设备信息等，封装为 hooks 统一管理。", "en": "Through mqq bridge (JSBridge) calling native APIs for navigation, sharing, device info, encapsulated as hooks." },
+        "standard": { "zh": "QQ 客户端通过注入 mqq 全局对象提供 JSBridge 能力。主要使用场景：(1) 导航栏控制——通过 mqq.ui.setTitlebar 设置标题/颜色/按钮，支持滚动时透明度渐变动画；(2) 分享——调用 mqq.app.share 实现 ARK 卡片分享到好友/群/空间/小世界/微博；(3) 设备信息——获取 UIN、平台类型、主题模式；(4) WebView 控制——页面跳转、关闭、全屏。封装了 useNavBar、useHideTitle、useDarkMode 等 hooks 简化调用。兼容性问题：iOS 和 Android 的 bridge 回调时序不一致，低版本 QQ 不支持部分 API 需要降级处理。", "en": "QQ client injects mqq global object providing JSBridge capabilities. Main usage: (1) Navigation — mqq.ui.setTitlebar for title/color/buttons with scroll opacity animation; (2) Sharing — mqq.app.share for ARK card sharing to friends/groups/Qzone; (3) Device info — UIN, platform, theme mode; (4) WebView control — navigation, close, fullscreen. Encapsulated in useNavBar, useHideTitle, useDarkMode hooks. Compatibility: iOS/Android bridge callback timing differences, older QQ versions lacking APIs requiring graceful degradation." },
+        "deep_dive": { "zh": "Hybrid 交互的完整方案：\n\n**JSBridge 机制**：QQ 客户端在 WebView 中注入 window.mqq 对象，H5 通过调用 mqq.invoke(apiName, params, callback) 与原生通信。底层通过 URL Scheme 拦截（iOS）或 JavascriptInterface（Android）实现。\n\n**导航栏深度控制**：\n```typescript\n// navbar.ts 核心实现\nexport function setNavBarColor(color: string, animate?: boolean) {\n  mqq.ui.setTitlebar({ color, animated: animate });\n}\nexport function hideNavBar() {\n  mqq.ui.setTitlebar({ visible: false });\n}\n// 滚动透明度渐变\nwindow.addEventListener('scroll', () => {\n  const opacity = Math.min(scrollTop / threshold, 1);\n  setNavBarColor(`rgba(255,255,255,${opacity})`);\n});\n```\n\n**分享能力封装**：\n- ARK 消息：结构化卡片，包含标题/描述/图片/跳转链接\n- 支持渠道：好友、群、QQ 空间、小世界、微博、复制链接\n- 降级策略：不支持 ARK 的版本退化为普通链接分享\n\n**多平台兼容策略**：\n- UA 检测：通过 user-agent 判断 iOS/Android/Mac/Win/小程序\n- API 可用性检测：mqq.support(apiName) 判断是否支持\n- 版本对比：QQ 版本号 < 某版本时使用旧 API\n- 样式适配：iOS 安全区（env(safe-area-inset-bottom)）、Android 键盘顶起\n\n**常见兼容性问题**：\n1. iOS WKWebView 滚动回弹导致 fixed 定位异常\n2. Android 键盘弹起推动页面布局\n3. 部分机型 viewport 高度计算不准\n4. bridge 调用在页面 ready 前无响应", "en": "Complete Hybrid interaction approach covering JSBridge mechanism, deep navigation control with scroll opacity animation, sharing capability encapsulation (ARK messages with graceful degradation), multi-platform compatibility (UA detection, API availability checks, version comparison), and common issues (iOS scroll bounce, Android keyboard push, viewport calculation)." }
+      },
+      "knowledge_points": ["JSBridge", "mqq API", "导航栏控制", "ARK 分享", "多平台兼容"],
+      "learning_plan": { "must_read": ["JSBridge 原理", "Hybrid 通信机制"], "hands_on": ["实现一个简单的 JSBridge"], "common_pitfalls": ["bridge ready 时序", "iOS/Android 差异"], "mock_questions": ["JSBridge 的底层通信原理？"], "time_estimate": "3-5 天" },
+      "follow_ups": ["JSBridge 通信的安全性如何保障？", "如何测试 Hybrid 页面？"]
+    },
+    {
+      "id": "q-03",
+      "primary_dimension": "performance",
+      "scope": "frontend",
+      "sub_project": "工具层",
+      "source_tech_point": "tp-005",
+      "question": { "zh": "请求预取是怎么实现的？白屏时间优化了多少？", "en": "How is request prefetch implemented? How much white-screen time was reduced?" },
+      "answer": {
+        "elevator": { "zh": "在 HTML inline script 中发起数据请求，Vue 挂载后消费缓存，减少 200-500ms 白屏。", "en": "Initiate data requests in HTML inline script, Vue consumes cache on mount, reducing 200-500ms white-screen." },
+        "standard": { "zh": "preRequest 方案原理：传统流程是 HTML 加载 → JS 下载 → Vue 初始化 → 发起请求 → 渲染，请求在 Vue 初始化之后才发起。优化后：在 index.html 中插入 inline script，页面加载时就通过 fetch 发起核心数据请求，结果缓存在全局变量中。Vue 应用 mount 后，API 层先检查缓存是否有数据——有则直接使用（命中率 90%+），无则正常发起请求。这样数据请求与 JS 下载/解析/Vue 初始化并行执行，减少 200-500ms 白屏时间（移动端 3G/4G 网络下更明显）。", "en": "preRequest mechanism: Traditional flow is HTML→JS download→Vue init→request→render. Optimized: index.html inline script initiates fetch for core data during page load, caching results globally. After Vue mounts, API layer checks cache first (90%+ hit rate), falls back to normal request. Data fetching parallels JS download/parse/Vue initialization, reducing 200-500ms white-screen (more significant on mobile 3G/4G)." },
+        "deep_dive": { "zh": "请求预取的完整实现：\n\n**实现原理**：\n```html\n<!-- index.html -->\n<script>\n  // 页面加载立即执行，不等待 Vue\n  window.__PRE_DATA__ = {};\n  fetch('/api/core-data')\n    .then(r => r.json())\n    .then(data => { window.__PRE_DATA__.coreData = data; });\n</script>\n```\n\n```typescript\n// preRequest.ts\nexport function getPreData<T>(key: string): T | null {\n  return window.__PRE_DATA__?.[key] ?? null;\n}\n\nexport async function requestWithPreFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {\n  const cached = getPreData<T>(key);\n  if (cached) return cached;\n  return fetcher();\n}\n```\n\n**时序对比**：\n```\n传统：HTML(200ms) → JS(300ms) → Vue(100ms) → Request(400ms) → Render\n优化：HTML(200ms) → JS(300ms) → Vue(100ms) → 直接渲染\n         └── Request(400ms) ──────────┘ (并行)\n```\n白屏时间从 ~1000ms 降到 ~600ms。\n\n**适用场景**：\n- 页面首屏核心数据（用户信息、配置信息）\n- 不依赖 Vue 实例的纯数据请求\n\n**限制**：\n- inline script 中无法使用 axios 拦截器（用原生 fetch）\n- 需要处理 CSRF Token（从 cookie 中取）\n- 缓存数据可能过期（设置 TTL）", "en": "Complete prefetch implementation with HTML inline script caching, preRequest.ts consuming cache, timing comparison showing ~400ms reduction, applicable scenarios, and limitations (no axios interceptors, CSRF handling, cache TTL)." }
+      },
+      "knowledge_points": ["请求预取", "白屏优化", "并行加载", "缓存策略", "fetch API"],
+      "learning_plan": { "must_read": ["浏览器渲染流水线", "预加载与预取"], "hands_on": ["在 Vite 项目中实现请求预取"], "common_pitfalls": ["预请求与正式请求的竞态条件"], "mock_questions": ["还有什么方法可以优化白屏时间？"], "time_estimate": "1-2 天" },
+      "follow_ups": ["预取请求失败如何降级？", "SSR 和预取的优劣对比？"]
+    },
+    {
+      "id": "q-04",
+      "primary_dimension": "observability",
+      "scope": "frontend",
+      "sub_project": "工具层",
+      "source_tech_point": "tp-004",
+      "question": { "zh": "四通道监控体系各自的职责是什么？如何做到不遗漏也不重复？", "en": "What are the responsibilities of the four monitoring channels? How to avoid gaps and overlaps?" },
+      "answer": {
+        "elevator": { "zh": "Oceanus 管链路追踪、Aegis 管性能、大同管业务数据、Atta 管行为埋点，各司其职。", "en": "Oceanus for tracing, Aegis for performance, Universal Report for business data, Atta for behavior tracking." },
+        "standard": { "zh": "四通道分工：(1) Oceanus（天机阁）——CGI 链路追踪，记录每个请求的发起/响应/耗时/错误，用于后端协助排查接口问题；(2) Aegis——前端性能监控，采集 Web Vitals（FCP/LCP/CLS）、JS 错误、资源加载；(3) 大同（Universal Report）——业务数据上报，DAU/功能使用率/转化率等运营指标；(4) Atta——用户行为埋点，页面曝光/模块曝光/按钮点击等细粒度行为。不重复的关键：按「技术问题用 Oceanus+Aegis，业务问题用大同+Atta」划分，Oceanus 关注单次请求链路，Aegis 关注整体性能分布。", "en": "Four channels: (1) Oceanus — CGI tracing, request/response/latency/error per call for backend debugging; (2) Aegis — frontend performance, Web Vitals/JS errors/resources; (3) Universal Report — business metrics, DAU/feature usage/conversion; (4) Atta — behavior tracking, page/module exposure, button clicks. No overlap key: technical issues via Oceanus+Aegis, business via Universal Report+Atta." },
+        "deep_dive": { "zh": "四通道监控的设计理念与实现：\n\n**Oceanus（链路追踪）**：\n- 每个 CGI 请求自动注入 traceId\n- 记录请求 URL、参数、响应码、耗时\n- 与后端链路打通，可追踪完整调用链\n- Vue 组件错误通过 catchComponentError 上报\n\n**Aegis（性能监控）**：\n- 自动采集 FCP/LCP/CLS/FID\n- JS 异常捕获 + Source Map 还原\n- 静态资源加载失败监控\n- 自定义测速（关键路径耗时）\n\n**大同（业务数据）**：\n- 页面 PV/UV\n- 功能使用率（创建频道成功率/分享转化率）\n- 自定义业务指标\n- 用于运营看板和决策\n\n**Atta（行为埋点）**：\n- 页面曝光：用户看到了哪些页面\n- 模块曝光：用户看到了页面中的哪些区块\n- 元素点击：用户点了什么按钮\n- 用于产品分析和漏斗转化\n\n**不重复不遗漏的原则**：\n- 同一个事件只在一个通道上报\n- CGI 级别的问题 → Oceanus\n- 页面级别的性能 → Aegis\n- 业务指标（需要汇总统计）→ 大同\n- 用户行为（需要细粒度分析）→ Atta", "en": "Four-channel monitoring design: Oceanus traces each CGI with traceId for end-to-end debugging; Aegis auto-collects Web Vitals and JS errors with Source Map; Universal Report tracks PV/UV and business KPIs for dashboards; Atta records fine-grained behavior (exposure/clicks) for product analysis. Non-overlap principle: CGI issues→Oceanus, page performance→Aegis, business aggregates→Universal Report, user behavior→Atta." }
+      },
+      "knowledge_points": ["Oceanus", "Aegis", "大同", "Atta", "链路追踪", "埋点"],
+      "learning_plan": { "must_read": ["前端监控体系设计", "OpenTelemetry 概念"], "hands_on": ["接入 Sentry 并配置 Source Map"], "common_pitfalls": ["上报数据量过大影响性能"], "mock_questions": ["如何设计一个完整的前端监控体系？"], "time_estimate": "3-5 天" },
+      "follow_ups": ["监控数据量大时如何采样？", "如何用监控数据驱动性能优化？"]
+    },
+    {
+      "id": "q-05",
+      "primary_dimension": "feature",
+      "scope": "frontend",
+      "sub_project": "公共组件",
+      "source_tech_point": "tp-003",
+      "question": { "zh": "暗黑模式方案是怎么设计的？如何支持 QQ 增值自定义主题？", "en": "How is dark mode designed? How does it support QQ premium custom themes?" },
+      "answer": {
+        "elevator": { "zh": "useDarkMode 监听系统主题，useGuildThemeToken 支持 RGB Token 动态主题，CSS 变量全局切换。", "en": "useDarkMode monitors system theme, useGuildThemeToken supports RGB Token dynamic themes, CSS variables for global switching." },
+        "standard": { "zh": "暗黑模式分三层：(1) 系统级——useDarkMode hook 通过 prefers-color-scheme 媒体查询监听系统暗黑模式变化，同时支持 QQ 客户端通过 bridge 通知主题切换；(2) 组件级——所有颜色值使用 CSS 变量（--color-bg-primary, --color-text-primary 等），日间/夜间定义不同变量值；(3) 增值主题——QQ 超级会员可设置自定义主题色，useGuildThemeToken hook 接收客户端传入的 RGB Token，动态设置 CSS 变量覆盖默认色值。TailwindCSS 的 dark: 前缀配合 class 策略切换。", "en": "Dark mode has three layers: (1) System — useDarkMode hook monitors prefers-color-scheme and QQ bridge theme notifications; (2) Component — all colors use CSS variables (--color-bg-primary, --color-text-primary), day/night define different values; (3) Premium theme — QQ VIP custom theme colors via useGuildThemeToken hook receiving RGB Token from client, dynamically overriding CSS variables. TailwindCSS dark: prefix with class strategy." },
+        "deep_dive": { "zh": "暗黑模式完整方案：\n\n**系统暗黑模式**：\n```typescript\n// useDarkMode.ts\nconst isDark = ref(false);\nconst mql = window.matchMedia('(prefers-color-scheme: dark)');\nmql.addEventListener('change', (e) => { isDark.value = e.matches; });\n// QQ 客户端通知\nmqq.on('themeChanged', (theme) => { isDark.value = theme === 'dark'; });\n```\n\n**CSS 变量方案**：\n```css\n:root {\n  --color-bg-primary: #ffffff;\n  --color-text-primary: #333333;\n}\n.dark {\n  --color-bg-primary: #1a1a1a;\n  --color-text-primary: #e0e0e0;\n}\n```\n\n**QQ 增值主题（RGB Token）**：\n```typescript\n// useGuildThemeToken.ts\nconst themeToken = getQueryParam('theme_token'); // 客户端通过 URL 传入\nif (themeToken) {\n  const { r, g, b } = parseToken(themeToken);\n  document.documentElement.style.setProperty('--color-brand', `rgb(${r},${g},${b})`);\n}\n```\n\n**TailwindCSS 配合**：\n```js\n// tailwind.config.js\nmodule.exports = {\n  darkMode: 'class', // 通过 class 切换\n  theme: {\n    extend: {\n      colors: {\n        primary: 'var(--color-brand)',\n        'bg-primary': 'var(--color-bg-primary)',\n      }\n    }\n  }\n}\n```", "en": "Complete dark mode implementation with system detection (prefers-color-scheme + QQ bridge), CSS variables day/night scheme, QQ premium RGB Token dynamic theming, and TailwindCSS class-based dark mode integration." }
+      },
+      "knowledge_points": ["暗黑模式", "CSS 变量", "prefers-color-scheme", "TailwindCSS dark", "主题 Token"],
+      "learning_plan": { "must_read": ["CSS 变量主题方案", "prefers-color-scheme"], "hands_on": ["实现日夜间切换方案"], "common_pitfalls": ["主题切换闪烁", "第三方组件不跟随主题"], "mock_questions": ["CSS 变量和 Less 变量的区别？"], "time_estimate": "2-3 天" },
+      "follow_ups": ["主题切换时如何避免 FOUC（闪烁）？", "第三方组件库如何适配暗黑模式？"]
+    },
+    {
+      "id": "q-06",
+      "primary_dimension": "reliability",
+      "scope": "infra",
+      "sub_project": "root",
+      "source_tech_point": "tp-006",
+      "question": { "zh": "CI/CD 流程是怎样的？四个环境是如何管理的？", "en": "What's the CI/CD flow? How are four environments managed?" },
+      "answer": {
+        "elevator": { "zh": "OrangeCI 通过分支名映射环境：master→正式、test→测试、bugfix→预发布、release→分支环境。", "en": "OrangeCI maps branches to environments: master→prod, test→test, bugfix→pre, release→branch env." },
+        "standard": { "zh": "四分支四环境策略：(1) master（tag push 触发）→ 正式环境，CDN URL 含 commitId 版本化，手动部署；(2) test（merge 触发）→ 测试环境，CDN 用 latest 路径覆盖式更新，**自动部署**；(3) bugfix/*（push 触发）→ 预发布环境，用于上线前验证，**自动部署**；(4) release/*（push 触发）→ 分支环境，用于并行开发。每个环境有独立的 Vite 配置（CDN base 不同、VConsole 开关不同）。Docker 镜像推送到 csighub 仓库，通过 STKE（K8s）部署到对应集群。", "en": "Four-branch four-environment strategy: (1) master(tag)→prod with versioned CDN URL, manual deploy; (2) test(merge)→test with latest CDN overwrite, auto-deploy; (3) bugfix/*(push)→pre for pre-launch verification, auto-deploy; (4) release/*(push)→branch env for parallel development. Each env has separate Vite config (different CDN base, VConsole toggle). Docker images pushed to csighub, deployed via STKE(K8s)." },
+        "deep_dive": { "zh": "CI/CD 的完整设计和安全机制省略（同前面环境策略），包含 CDN 版本管理（commitId vs latest）、Docker 构建、STKE StatefulSetPlus 部署、Git Hooks 防误操作（post-merge 检测 test 分支误合并、pre-rebase 防止基于 test 变基）。", "en": "Complete CI/CD design including CDN versioning, Docker builds, STKE deployment, and Git Hooks safety (post-merge test branch protection, pre-rebase guards)." }
+      },
+      "knowledge_points": ["OrangeCI", "多环境管理", "Docker", "STKE", "分支策略", "CDN 版本化"],
+      "learning_plan": { "must_read": ["Docker 基础", "Kubernetes 入门", "Git 分支模型"], "hands_on": ["配置多环境 Vite 构建"], "common_pitfalls": ["CDN 缓存导致更新不生效"], "mock_questions": ["如何设计前端的多环境部署方案？"], "time_estimate": "3-5 天" },
+      "follow_ups": ["CDN 缓存如何做版本控制？", "如何实现前端灰度发布？"]
+    },
+    {
+      "id": "q-07",
+      "primary_dimension": "trade-off",
+      "scope": "frontend",
+      "sub_project": "root",
+      "source_tech_point": "tp-015",
+      "question": { "zh": "TailwindCSS 和 Less 混用的原因？如何避免样式冲突？", "en": "Why mix TailwindCSS and Less? How to avoid style conflicts?" },
+      "answer": {
+        "elevator": { "zh": "TailwindCSS 用于快速布局，Less 用于复杂组件样式和主题变量，通过规范约定避免冲突。", "en": "TailwindCSS for rapid layout, Less for complex component styles and theme variables, conventions prevent conflicts." },
+        "standard": { "zh": "混用原因：(1) TailwindCSS 原子化 class 开发效率高，适合页面布局和间距调整；(2) 复杂组件样式（动画、伪元素、嵌套选择器）用 Less 更灵活；(3) 项目历史遗留大量 Less 代码，全量迁移成本高。避免冲突：Tailwind utilities 优先级默认较低（无 !important），不会覆盖 Less 中的具体选择器；组件 Less 使用 scoped 或 BEM 命名避免全局污染；PostCSS 统一处理两者的产物。", "en": "Mixed usage reasons: (1) TailwindCSS atomic classes efficient for layout; (2) Complex styles (animations, pseudo-elements) more flexible with Less; (3) Legacy Less code too costly to fully migrate. Conflict avoidance: Tailwind utilities have low specificity, scoped/BEM naming for Less components, PostCSS unifies both outputs." },
+        "deep_dive": { "zh": "样式方案的 trade-off 分析，包括 TailwindCSS 的 purge 配置减小产物体积、Less 变量与 CSS 变量的配合使用、移动端 rem 适配策略等。", "en": "Style trade-off analysis including TailwindCSS purge for reduced bundle, Less variables with CSS variables integration, mobile rem adaptation." }
+      },
+      "knowledge_points": ["TailwindCSS", "Less", "原子化 CSS", "CSS 优先级", "PostCSS"],
+      "learning_plan": { "must_read": ["TailwindCSS 文档", "CSS 优先级规则"], "hands_on": ["搭建 TailwindCSS + Less 混合项目"], "common_pitfalls": ["Tailwind purge 误删有效 class"], "mock_questions": ["原子化 CSS 的优缺点？"], "time_estimate": "1-2 天" },
+      "follow_ups": ["如果从零开始选型，你会选 TailwindCSS 还是 CSS-in-JS？"]
+    },
+    {
+      "id": "q-08",
+      "primary_dimension": "security",
+      "scope": "frontend",
+      "sub_project": "工具层",
+      "source_tech_point": "tp-010",
+      "question": { "zh": "请求层做了哪些安全防护？CSRF Token 是怎么实现的？", "en": "What security measures exist in the request layer? How is CSRF Token implemented?" },
+      "answer": {
+        "elevator": { "zh": "Axios 拦截器自动注入 CSRF Token（从 cookie skey 计算 hash），配合重试和全局错误处理。", "en": "Axios interceptor auto-injects CSRF Token (hash computed from cookie skey), with retry and global error handling." },
+        "standard": { "zh": "安全防护措施：(1) CSRF Token——从用户 cookie 中的 skey 字段通过 hash 算法计算 bkn 值，每个请求自动携带，后端校验一致性；(2) 重试机制——请求失败自动重试 2 次（网络抖动场景）；(3) 全局错误拦截——响应码非 200 或业务 retcode 非 0 时统一 Toast 提示；(4) 请求 loading 管理——防止重复提交。getACSRFToken 实现：遍历 skey 字符串每个字符，累加 charCodeAt 并左移 5 位取余，生成 token。", "en": "Security measures: (1) CSRF Token — computed bkn hash from cookie skey, auto-injected per request; (2) Retry — auto-retry 2 times on failure; (3) Global error interception — non-200 or non-0 retcode shows Toast; (4) Loading management — prevents duplicate submissions. getACSRFToken: iterates skey chars, accumulates charCodeAt with left-shift-5 modulo to generate token." },
+        "deep_dive": { "zh": "请求安全的完整方案，包括 CSRF Token 计算算法实现、axios 拦截器机制、请求去重、敏感参数加密等。", "en": "Complete request security including CSRF Token algorithm, axios interceptor mechanism, request deduplication, sensitive parameter encryption." }
+      },
+      "knowledge_points": ["CSRF Token", "Axios 拦截器", "请求重试", "错误处理", "Cookie 安全"],
+      "learning_plan": { "must_read": ["CSRF 攻击原理", "Axios 拦截器文档"], "hands_on": ["实现 CSRF Token 生成和校验"], "common_pitfalls": ["Token 计算与后端不一致"], "mock_questions": ["CSRF 和 XSS 的区别？"], "time_estimate": "1-2 天" },
+      "follow_ups": ["如果 cookie 被窃取，CSRF Token 还有效吗？", "还有哪些前端安全防护手段？"]
+    }
+  ],
+  "dimension_coverage": { "architecture": 2, "performance": 1, "reliability": 1, "security": 1, "observability": 1, "trade-off": 1, "feature": 1 }
+}

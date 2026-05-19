@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "platform_name": "QQ频道H5静态页面仓库 (guild_h5)",
+  "one_liner": "QQ 频道所有 H5 静态页面的统一仓库，Vite MPA 多页面架构，63 个独立业务页面，运行在 QQ 客户端 WebView 环境",
+  "domain": "移动端 Hybrid H5 / QQ 频道运营",
+  "platform_tech_stack": {
+    "languages": ["TypeScript", "Vue 3 SFC", "Less", "TailwindCSS"],
+    "frameworks": ["Vue 3", "Vue Router 4", "Pinia", "Ant Design Vue 3", "@tencent/q-ui"],
+    "infra": ["Vite 2.7 (MPA)", "Docker (Nginx)", "STKE (Kubernetes)", "OrangeCI", "cdn-go"]
+  },
+  "sub_projects": [
+    {
+      "name": "MPA 页面集合",
+      "path": "src/pages",
+      "scope": "frontend",
+      "tech_stack": {
+        "languages": ["TypeScript", "Vue 3 SFC", "Less"],
+        "frameworks": ["Vue 3", "Vue Router 4", "Pinia"],
+        "infra": ["vite-plugin-mpa"]
+      },
+      "modules": [
+        { "name": "频道创建", "path": "src/pages/guild-create*", "responsibility": "频道创建流程（多版本迭代）" },
+        { "name": "频道排行", "path": "src/pages/guild-*-rank", "responsibility": "多维度排行榜功能" },
+        { "name": "频道运营", "path": "src/pages/guild-level,guild-medal,guild-head-frame", "responsibility": "等级/勋章/头像框等运营功能" },
+        { "name": "Feed管理", "path": "src/pages/feed-*,guild-feeds-manage", "responsibility": "内容管理与审核" },
+        { "name": "游戏相关", "path": "src/pages/game-*", "responsibility": "游戏绑定/排行/分享" },
+        { "name": "AI表情", "path": "src/pages/ai-emoji-store*", "responsibility": "AI 表情商店" }
+      ],
+      "active_areas": ["MPA 多页面架构", "QQ WebView 适配", "暗黑模式"]
+    },
+    {
+      "name": "公共组件",
+      "path": "src/components",
+      "scope": "frontend",
+      "tech_stack": { "languages": ["TypeScript", "Vue 3 SFC"], "frameworks": ["Vue 3"], "infra": [] },
+      "modules": [
+        { "name": "导航栏组件", "path": "src/components/navigator-bar", "responsibility": "适配 QQ WebView 的虚拟导航栏" },
+        { "name": "半屏弹窗", "path": "src/components/half-screen", "responsibility": "移动端底部弹出组件" },
+        { "name": "Page容器", "path": "src/components/Page", "responsibility": "页面根容器，集成暗黑模式和主题" }
+      ],
+      "active_areas": ["移动端适配", "暗黑模式", "QQ 客户端交互"]
+    },
+    {
+      "name": "工具层",
+      "path": "src/utils",
+      "scope": "frontend",
+      "tech_stack": { "languages": ["TypeScript"], "frameworks": [], "infra": ["axios", "cloud-sea", "@tencent/oceanus-web"] },
+      "modules": [
+        { "name": "请求封装", "path": "src/utils/request", "responsibility": "axios 封装 + 重试 + CSRF + 预请求" },
+        { "name": "监控模块", "path": "src/utils/monitor", "responsibility": "Oceanus 链路追踪 + 错误捕获" },
+        { "name": "上报模块", "path": "src/utils/report", "responsibility": "大同 + Atta + Aegis 多通道数据上报" },
+        { "name": "分享模块", "path": "src/utils/share.ts", "responsibility": "QQ 内 ARK 分享 + 多渠道分享" },
+        { "name": "导航栏控制", "path": "src/utils/navbar.ts", "responsibility": "mqq API 控制 WebView 导航栏" }
+      ],
+      "active_areas": ["请求预取优化", "多通道监控", "Hybrid 桥接"]
+    }
+  ],
+  "highlights": [
+    {
+      "title": "Vite MPA 多页面架构管理 63 个独立业务页面",
+      "scope": "frontend",
+      "summary": "使用 vite-plugin-mpa 实现多页面应用，每个页面独立入口、独立路由、独立状态，按需构建部署"
+    },
+    {
+      "title": "QQ 客户端 Hybrid H5 深度适配",
+      "scope": "frontend",
+      "summary": "通过 mqq bridge 控制 WebView 导航栏、分享、设备信息，支持 iOS/Android/Mac/Win 多平台，完整暗黑模式和自定义主题"
+    },
+    {
+      "title": "多通道监控与上报体系",
+      "scope": "frontend",
+      "summary": "Oceanus 链路追踪 + Aegis 性能监控 + 大同数据上报 + Atta 行为上报，覆盖错误/性能/业务三维度"
+    },
+    {
+      "title": "请求预取与缓存优化",
+      "scope": "frontend",
+      "summary": "preRequest 模块支持纯函数缓存和 fetch prefetch，减少用户等待时间"
+    },
+    {
+      "title": "OrangeCI + Docker + STKE 全自动化部署",
+      "scope": "infra",
+      "summary": "多分支多环境（dev/test/pre/prod）自动化 CI/CD，CDN 上传 + Docker 构建 + Kubernetes 部署"
+    }
+  ]
+}

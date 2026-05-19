@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "mode": "knowledge",
+  "platform_name": "QQ频道H5静态页面仓库 (guild_h5)",
+  "knowledge_map": {
+    "topics": [
+      { "name": "Vite MPA 多页面架构", "level": "必须掌握", "related_dimensions": ["architecture"], "questions_using": ["q-01"], "must_read": ["Vite 多页面配置文档", "vite-plugin-mpa 源码", "Rollup input 配置"], "hands_on": ["配置 Vite MPA 3 页面项目", "实现 manualChunks 公共依赖提取"] },
+      { "name": "Hybrid H5 与 JSBridge", "level": "必须掌握", "related_dimensions": ["architecture"], "questions_using": ["q-02"], "must_read": ["JSBridge 通信原理", "iOS WKWebView 注入", "Android JavascriptInterface"], "hands_on": ["实现简易 JSBridge", "封装 bridge 调用为 Promise"] },
+      { "name": "请求预取与白屏优化", "level": "必须掌握", "related_dimensions": ["performance"], "questions_using": ["q-03"], "must_read": ["浏览器渲染流水线", "Resource Hints (preload/prefetch)", "关键渲染路径优化"], "hands_on": ["实现 HTML inline 预请求方案", "对比有无预取的白屏时间"] },
+      { "name": "前端监控体系设计", "level": "必须掌握", "related_dimensions": ["observability"], "questions_using": ["q-04"], "must_read": ["OpenTelemetry 概念", "Web Vitals 指标", "前端埋点方案对比"], "hands_on": ["接入 Sentry 错误监控", "实现自定义行为埋点 SDK"] },
+      { "name": "暗黑模式与主题方案", "level": "必须掌握", "related_dimensions": ["feature"], "questions_using": ["q-05"], "must_read": ["CSS 变量方案", "prefers-color-scheme", "Design Token 概念"], "hands_on": ["实现 CSS 变量日夜间切换", "实现动态主题色方案"] },
+      { "name": "多环境 CI/CD 设计", "level": "必须掌握", "related_dimensions": ["reliability"], "questions_using": ["q-06"], "must_read": ["Docker 入门", "Nginx 静态部署", "Git 分支模型"], "hands_on": ["配置多环境 Vite 构建", "编写 Dockerfile 部署前端"] },
+      { "name": "TailwindCSS 原子化 CSS", "level": "加分项", "related_dimensions": ["trade-off"], "questions_using": ["q-07"], "must_read": ["TailwindCSS 官方文档", "原子化 CSS 理念", "PostCSS 工作原理"], "hands_on": ["搭建 TailwindCSS 项目", "配置 purge 优化产物"] },
+      { "name": "CSRF 防护与请求安全", "level": "加分项", "related_dimensions": ["security"], "questions_using": ["q-08"], "must_read": ["CSRF 攻击原理与防御", "Cookie SameSite 属性", "Axios 拦截器"], "hands_on": ["实现 CSRF Token 计算", "配置 Axios 请求/响应拦截器"] },
+      { "name": "Vite 插件开发", "level": "加分项", "related_dimensions": ["feature"], "questions_using": ["q-01"], "must_read": ["Vite Plugin API", "Rollup Plugin Hooks", "transformIndexHtml 钩子"], "hands_on": ["编写 VConsole 注入插件", "编写 HTML 内容转换插件"] },
+      { "name": "移动端适配", "level": "加分项", "related_dimensions": ["reliability"], "questions_using": ["q-02"], "must_read": ["Viewport 与 rem 适配", "iOS 安全区 (safe-area)", "移动端兼容性清单"], "hands_on": ["实现 rem 自适应方案", "处理 iOS 键盘和安全区"] }
+    ]
+  }
+}

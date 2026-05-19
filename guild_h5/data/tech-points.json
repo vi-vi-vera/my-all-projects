@@ -1,0 +1,157 @@
+{
+  "schema_version": "1.0",
+  "role": "前端",
+  "level": "中级",
+  "points": [
+    {
+      "id": "tp-001",
+      "topic": "Vite MPA 多页面架构设计：63 个独立页面的构建与组织",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "MPA 页面集合",
+      "evidence": ["vite.config.dist.ts", "src/pages/"],
+      "depth_tags": ["Vite MPA", "vite-plugin-mpa", "多入口", "代码分割"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-002",
+      "topic": "QQ 客户端 Hybrid H5 深度适配：mqq bridge + WebView 控制",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "工具层",
+      "evidence": ["src/utils/navbar.ts", "src/utils/share.ts", "src/hooks/useNavBar.ts"],
+      "depth_tags": ["Hybrid", "JSBridge", "mqq", "WebView", "多平台适配"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-003",
+      "topic": "完整暗黑模式方案：日夜间 + QQ 增值自定义主题",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "公共组件",
+      "evidence": ["src/hooks/useDarkMode.ts", "src/hooks/useGuildThemeToken.ts"],
+      "depth_tags": ["暗黑模式", "CSS变量", "主题Token", "动态主题"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-004",
+      "topic": "多通道监控体系：Oceanus + Aegis + 大同 + Atta 四通道覆盖",
+      "scope": "frontend",
+      "primary_dimension": "observability",
+      "sub_project": "工具层",
+      "evidence": ["src/utils/monitor/", "src/utils/report/"],
+      "depth_tags": ["链路追踪", "错误监控", "数据上报", "性能监控"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-005",
+      "topic": "请求预取与缓存优化：preRequest 减少白屏时间",
+      "scope": "frontend",
+      "primary_dimension": "performance",
+      "sub_project": "工具层",
+      "evidence": ["src/utils/request/preRequest.ts", "src/utils/request/index.ts"],
+      "depth_tags": ["预请求", "缓存", "白屏优化", "fetch prefetch"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-006",
+      "topic": "OrangeCI 多分支多环境自动化部署：dev/test/pre/prod 四环境",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "sub_project": "root",
+      "evidence": [".orange-ci.yml", "Dockerfile", "stke.yml"],
+      "depth_tags": ["CI/CD", "Docker", "STKE", "CDN", "多环境"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-007",
+      "topic": "移动端多平台兼容：iOS/Android/Mac/Win + QQ小程序/微信小程序",
+      "scope": "frontend",
+      "primary_dimension": "reliability",
+      "sub_project": "工具层",
+      "evidence": ["src/utils/isDevice.ts", "src/utils/user-agent.ts"],
+      "depth_tags": ["多平台", "UA检测", "兼容性", "Polyfill"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-008",
+      "topic": "Vite 多环境构建配置：dev/test/pre/dist 四套配置差异化管理",
+      "scope": "infra",
+      "primary_dimension": "architecture",
+      "sub_project": "root",
+      "evidence": ["vite.config.dev.ts", "vite.config.test.ts", "vite.config.pre.ts", "vite.config.dist.ts"],
+      "depth_tags": ["Vite", "多环境", "CDN base", "legacy兼容"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-009",
+      "topic": "自定义 Vite 插件开发：VConsole 注入 + 文件缓存",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "root",
+      "evidence": ["vite-plugin-vconsole.ts", "vite-plugin-file-cache.ts"],
+      "depth_tags": ["Vite插件", "VConsole", "缓存", "transformIndexHtml"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-010",
+      "topic": "Axios 请求封装：重试机制 + CSRF Token + 全局错误处理",
+      "scope": "frontend",
+      "primary_dimension": "reliability",
+      "sub_project": "工具层",
+      "evidence": ["src/utils/request/index.ts", "src/utils/request/getACSRFToken.ts"],
+      "depth_tags": ["axios", "重试", "CSRF", "拦截器"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-011",
+      "topic": "ARK 分享能力：QQ 内多渠道卡片分享",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "工具层",
+      "evidence": ["src/utils/share.ts"],
+      "depth_tags": ["ARK消息", "分享", "mqq", "多渠道"],
+      "interview_value": "低"
+    },
+    {
+      "id": "tp-012",
+      "topic": "Docker + Nginx 容器化部署方案",
+      "scope": "infra",
+      "primary_dimension": "architecture",
+      "sub_project": "root",
+      "evidence": ["Dockerfile", "conf/guild_h5.conf"],
+      "depth_tags": ["Docker", "Nginx", "alias", "静态资源"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-013",
+      "topic": "@vitejs/plugin-legacy 低版本浏览器兼容",
+      "scope": "frontend",
+      "primary_dimension": "reliability",
+      "sub_project": "root",
+      "evidence": ["vite.config.dist.ts"],
+      "depth_tags": ["legacy", "polyfill", "browserslist", "SystemJS"],
+      "interview_value": "低"
+    },
+    {
+      "id": "tp-014",
+      "topic": "Git Hooks 安全防护：防误合并 + 防误变基",
+      "scope": "infra",
+      "primary_dimension": "security",
+      "sub_project": "root",
+      "evidence": [".husky/pre-commit", ".husky/post-merge", ".husky/pre-rebase"],
+      "depth_tags": ["Husky", "分支保护", "lint-staged"],
+      "interview_value": "低"
+    },
+    {
+      "id": "tp-015",
+      "topic": "TailwindCSS + Less 混合样式方案与移动端适配",
+      "scope": "frontend",
+      "primary_dimension": "trade-off",
+      "sub_project": "root",
+      "evidence": ["tailwind.config.js", "postcss.config.js"],
+      "depth_tags": ["TailwindCSS", "Less", "PostCSS", "原子化CSS"],
+      "interview_value": "中"
+    }
+  ]
+}
