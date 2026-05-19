@@ -1,0 +1,501 @@
+{
+  "schema_version": "1.0",
+  "mode": "interviewer",
+  "platform_name": "宇恒运营管理系统 (yuheng-monorepo)",
+  "role": "前端",
+  "level": "中级",
+  "question_bank": [
+    {
+      "id": "iq-01",
+      "primary_dimension": "architecture",
+      "scope": "infra",
+      "sub_project": "root",
+      "source_tech_point": "tp-001",
+      "depth": "中级",
+      "evidence": ["pnpm-workspace.yaml", "package.json"],
+      "question": {
+        "zh": "请介绍一下你们项目的 Monorepo 架构设计，为什么选择 pnpm workspace 而不是其他方案？",
+        "en": "Please describe your project's Monorepo architecture design. Why did you choose pnpm workspace over alternatives?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "trade-off",
+          "question": { "zh": "pnpm 的非扁平 node_modules 有没有带来过兼容性问题？你们是怎么处理的？", "en": "Has pnpm's non-flat node_modules caused compatibility issues? How did you handle them?" }
+        },
+        {
+          "primary_dimension": "performance",
+          "question": { "zh": "如果包数量增长到 50+，pnpm workspace 还能满足需求吗？你会考虑什么方案？", "en": "If packages grow to 50+, can pnpm workspace still meet requirements? What alternatives would you consider?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-02",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "base-framework",
+      "source_tech_point": "tp-002",
+      "depth": "中级",
+      "evidence": ["nginx.conf", "Dockerfile", "scripts/cp-dist.js"],
+      "question": {
+        "zh": "你们的微前端架构是怎么实现的？基座和子应用之间如何通信？",
+        "en": "How is your micro-frontend architecture implemented? How do the shell and sub-apps communicate?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "security",
+          "question": { "zh": "子应用之间有 JS 沙箱隔离吗？如果一个子应用的全局变量污染了另一个怎么办？", "en": "Is there JS sandbox isolation between sub-apps? What if one sub-app's globals pollute another?" }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": { "zh": "对比 qiankun 或 Module Federation，你认为你们当前方案的瓶颈在哪里？", "en": "Compared to qiankun or Module Federation, where are the bottlenecks of your current approach?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-03",
+      "primary_dimension": "trade-off",
+      "scope": "frontend",
+      "sub_project": "root",
+      "source_tech_point": "tp-003",
+      "depth": "中级",
+      "evidence": [".eslintrc.js"],
+      "question": {
+        "zh": "Vue 3 和 React 为什么会在同一个 Monorepo 中共存？这带来了哪些管理挑战？",
+        "en": "Why do Vue 3 and React coexist in the same Monorepo? What management challenges does this create?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "trade-off",
+          "question": { "zh": "公共组件层如何做到跨框架复用？Web Components 在你们场景下可行吗？", "en": "How can the shared component layer achieve cross-framework reuse? Are Web Components viable in your scenario?" }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": { "zh": "如果现在要把所有 Vue 子应用迁移到 React，你会怎么规划？预估工作量多大？", "en": "If you need to migrate all Vue sub-apps to React now, how would you plan? What's the estimated effort?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-04",
+      "primary_dimension": "performance",
+      "scope": "infra",
+      "sub_project": "ci",
+      "source_tech_point": "tp-004",
+      "depth": "中级",
+      "evidence": ["ci/.orange-ci.yml", "cache.dockerfile"],
+      "question": {
+        "zh": "CI 流水线中的增量构建是怎么实现的？构建加速有哪些手段？",
+        "en": "How is incremental building implemented in the CI pipeline? What build acceleration techniques are used?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": { "zh": "如果 ifModify 误判导致应该构建的子应用没有触发构建，线上会怎样？你们有什么保底机制？", "en": "If ifModify misjudges and a sub-app that should build doesn't trigger, what happens in production? What fallback mechanisms exist?" }
+        },
+        {
+          "primary_dimension": "performance",
+          "question": { "zh": "cache.dockerfile 的缓存什么时候会失效？如何控制缓存镜像的大小？", "en": "When does cache.dockerfile's cache invalidate? How do you control cache image size?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-05",
+      "primary_dimension": "reliability",
+      "scope": "infra",
+      "sub_project": "root",
+      "source_tech_point": "tp-007",
+      "depth": "中级",
+      "evidence": [".eslintrc.js", "commitlint.config.js", ".husky/"],
+      "question": {
+        "zh": "你们的代码规范体系包含哪些工具？如何确保团队成员都遵守？",
+        "en": "What tools comprise your code standards system? How do you ensure team compliance?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "reliability",
+          "question": { "zh": "如果有人用 --no-verify 绕过 Husky 提交了不合规代码，怎么办？", "en": "What if someone bypasses Husky with --no-verify and commits non-compliant code?" }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": { "zh": "ESLint 规则太严格影响开发效率怎么办？你们是怎么平衡严格性和开发体验的？", "en": "What if ESLint rules are too strict and affect development efficiency? How do you balance strictness and DX?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-06",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "packages/shared",
+      "source_tech_point": "tp-006",
+      "depth": "中级",
+      "evidence": ["packages/shared/package.json"],
+      "question": {
+        "zh": "公共包是怎么设计的？tsup 打包有什么优势？子路径导出是怎么实现的？",
+        "en": "How are shared packages designed? What are tsup's advantages? How are subpath exports implemented?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "performance",
+          "question": { "zh": "如果一个子应用只用了 @infras/shared 中的一个工具函数，打包后会包含整个包吗？Tree Shaking 是怎么保证的？", "en": "If a sub-app uses only one util from @infras/shared, will the entire package be bundled? How is Tree Shaking guaranteed?" }
+        },
+        {
+          "primary_dimension": "reliability",
+          "question": { "zh": "修改公共包后忘记 build:pkg 会导致什么问题？你们有什么机制防止这种情况？", "en": "What issues arise if build:pkg is forgotten after modifying shared packages? What mechanisms prevent this?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-07",
+      "primary_dimension": "observability",
+      "scope": "frontend",
+      "sub_project": "root",
+      "source_tech_point": "tp-008",
+      "depth": "中级",
+      "evidence": ["package.json"],
+      "question": {
+        "zh": "前端监控是怎么做的？微前端场景下有什么特殊处理？",
+        "en": "How is frontend monitoring implemented? Any special handling in the micro-frontend scenario?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "observability",
+          "question": { "zh": "如果线上出现一个 JS 错误，你如何快速定位是哪个子应用的问题？", "en": "If a JS error occurs in production, how do you quickly identify which sub-app caused it?" }
+        },
+        {
+          "primary_dimension": "performance",
+          "question": { "zh": "监控 SDK 本身会影响页面性能吗？如何控制上报频率和数据量？", "en": "Does the monitoring SDK itself affect page performance? How do you control reporting frequency and data volume?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-08",
+      "primary_dimension": "performance",
+      "scope": "infra",
+      "sub_project": "root",
+      "source_tech_point": "tp-011",
+      "depth": "中级",
+      "evidence": ["nginx.conf"],
+      "question": {
+        "zh": "Nginx 是怎么配置来支持 SPA 路由和多子应用部署的？做了哪些性能优化？",
+        "en": "How is Nginx configured to support SPA routing and multi-app deployment? What performance optimizations are applied?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "performance",
+          "question": { "zh": "如果静态资源需要长缓存，但代码频繁更新，你怎么设计缓存策略？", "en": "If static resources need long-term caching but code updates frequently, how would you design the caching strategy?" }
+        },
+        {
+          "primary_dimension": "security",
+          "question": { "zh": "当前 Nginx 配置有哪些安全隐患？你会怎么加固？", "en": "What security concerns exist in the current Nginx config? How would you harden it?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-09",
+      "primary_dimension": "security",
+      "scope": "frontend",
+      "sub_project": "root",
+      "source_tech_point": "tp-015",
+      "depth": "中级",
+      "evidence": ["packages/theme-chalk/"],
+      "question": {
+        "zh": "微前端环境下的样式隔离方案是怎样的？遇到过什么实际问题？",
+        "en": "What's the style isolation approach in the micro-frontend environment? What real issues have you encountered?"
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "architecture",
+          "question": { "zh": "如果引入 Shadow DOM 做样式隔离，TDesign 组件库还能正常工作吗？", "en": "If Shadow DOM is introduced for style isolation, would TDesign components still work correctly?" }
+        },
+        {
+          "primary_dimension": "trade-off",
+          "question": { "zh": "CSS Modules 的 hash 命名在调试时是否带来不便？你们有什么解决方案？", "en": "Do CSS Modules' hashed class names cause debugging difficulties? What's your solution?" }
+        }
+      ]
+    },
+    {
+      "id": "iq-10",
+      "primary_dimension": "trade-off",
+      "scope": "fullstack",
+      "sub_project": "root",
+      "source_tech_point": "tp-002",
+      "depth": "高级",
+      "evidence": [],
+      "question": {
+        "zh": "如果让你重新设计这个项目的架构，你会做什么改变？请说明理由和优先级。",
+        "en": "If you could redesign this project's architecture, what would you change? Explain your reasoning and priorities."
+      },
+      "stress_probes": [
+        {
+          "primary_dimension": "trade-off",
+          "question": { "zh": "你提到的这些改进，哪些是投入产出比最高的？如何说服团队和老板投入资源？", "en": "Which of your proposed improvements have the best ROI? How would you convince the team and management to invest?" }
+        },
+        {
+          "primary_dimension": "architecture",
+          "question": { "zh": "Module Federation 的版本兼容性问题你打算怎么解决？有没有评估过风险？", "en": "How would you solve Module Federation's version compatibility issues? Have you assessed the risks?" }
+        }
+      ]
+    }
+  ],
+  "rubrics": [
+    {
+      "question_id": "iq-01",
+      "criteria": [
+        {
+          "name": "架构理解",
+          "weight": 0.40,
+          "excellent": { "zh": "能清晰描述三层架构（apps/packages/ci），解释 workspace 协议原理和非扁平 node_modules 的安全性意义", "en": "Clearly describes three-layer architecture, explains workspace protocol and non-flat node_modules security significance" },
+          "pass": { "zh": "能说出 pnpm workspace 的基本用法和选择 pnpm 的主要原因", "en": "Can state pnpm workspace basics and main reasons for choosing pnpm" },
+          "fail": { "zh": "无法解释 Monorepo 的结构或 pnpm 与 npm/yarn 的区别", "en": "Cannot explain Monorepo structure or pnpm vs npm/yarn differences" }
+        },
+        {
+          "name": "技术深度",
+          "weight": 0.35,
+          "excellent": { "zh": "能从 content-addressable store、hard link、phantom dependency 等底层原理解释选型", "en": "Can explain selection from principles like content-addressable store, hard links, phantom dependencies" },
+          "pass": { "zh": "知道 pnpm 安装快、省空间、隔离好，但不清楚底层原理", "en": "Knows pnpm is fast, space-efficient, well-isolated but unclear on underlying principles" },
+          "fail": { "zh": "对 pnpm 特性只能做表面描述", "en": "Can only give surface-level description of pnpm features" }
+        },
+        {
+          "name": "方案对比",
+          "weight": 0.25,
+          "excellent": { "zh": "能基于项目规模和团队情况对比 Lerna/Yarn/Turborepo/Nx 的适用场景", "en": "Can compare Lerna/Yarn/Turborepo/Nx applicability based on project scale and team context" },
+          "pass": { "zh": "能提到一两个备选方案及其差异", "en": "Can mention one or two alternatives and their differences" },
+          "fail": { "zh": "不了解其他 Monorepo 方案", "en": "Unaware of other Monorepo solutions" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-02",
+      "criteria": [
+        {
+          "name": "架构设计",
+          "weight": 0.40,
+          "excellent": { "zh": "能画出完整的请求链路（用户→Nginx→基座/子应用），解释选型理由和部署流程", "en": "Can draw complete request chain (user→Nginx→shell/sub-app), explain selection rationale and deployment flow" },
+          "pass": { "zh": "能描述基座和子应用的职责分工及基本通信方式", "en": "Can describe shell and sub-app responsibilities and basic communication" },
+          "fail": { "zh": "无法说清微前端的核心设计", "en": "Cannot articulate core micro-frontend design" }
+        },
+        {
+          "name": "Nginx 理解",
+          "weight": 0.30,
+          "excellent": { "zh": "能解释 try_files 的匹配逻辑、location 优先级、以及 SPA fallback 原理", "en": "Can explain try_files matching logic, location priority, and SPA fallback principle" },
+          "pass": { "zh": "知道 try_files 是做 SPA 路由支持的", "en": "Knows try_files is for SPA routing support" },
+          "fail": { "zh": "不了解 Nginx 在微前端中的作用", "en": "Doesn't understand Nginx's role in micro-frontend" }
+        },
+        {
+          "name": "局限性认知",
+          "weight": 0.30,
+          "excellent": { "zh": "能主动提出无沙箱隔离、无运行时共享等局限，并提出改进方案", "en": "Proactively identifies limitations (no sandbox, no runtime sharing) and proposes improvements" },
+          "pass": { "zh": "在追问下能承认一些不足", "en": "Acknowledges limitations when probed" },
+          "fail": { "zh": "认为方案没有问题或无法给出改进方向", "en": "Believes approach has no issues or can't suggest improvements" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-03",
+      "criteria": [
+        {
+          "name": "历史背景",
+          "weight": 0.25,
+          "excellent": { "zh": "能清楚说明双框架产生的历史原因和当前状态", "en": "Clearly explains historical reasons and current status of dual frameworks" },
+          "pass": { "zh": "知道是历史原因但细节模糊", "en": "Knows it's historical but details are vague" },
+          "fail": { "zh": "不清楚为什么会有两个框架", "en": "Doesn't know why two frameworks exist" }
+        },
+        {
+          "name": "管理方案",
+          "weight": 0.40,
+          "excellent": { "zh": "能从 ESLint/共享层/构建配置/设计系统四个维度系统性地描述管理策略", "en": "Systematically describes management from ESLint/shared layer/build config/design system dimensions" },
+          "pass": { "zh": "能提到 ESLint overrides 和公共包的处理方式", "en": "Can mention ESLint overrides and shared package handling" },
+          "fail": { "zh": "不知道如何管理多框架共存", "en": "Doesn't know how to manage multi-framework coexistence" }
+        },
+        {
+          "name": "Trade-off 分析",
+          "weight": 0.35,
+          "excellent": { "zh": "能客观分析利弊，并给出如果重来的决策建议", "en": "Objectively analyzes pros/cons and gives retrospective decision advice" },
+          "pass": { "zh": "承认有缺点但没有深入分析", "en": "Acknowledges drawbacks without deep analysis" },
+          "fail": { "zh": "只说优点不提缺点", "en": "Only mentions advantages without drawbacks" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-04",
+      "criteria": [
+        {
+          "name": "CI 流程理解",
+          "weight": 0.35,
+          "excellent": { "zh": "能描述完整的 CI 阶段（install→lint→build→docker→deploy）和各阶段产物", "en": "Can describe complete CI stages and their artifacts" },
+          "pass": { "zh": "知道有 CI 但对流程细节不清楚", "en": "Knows CI exists but unclear on flow details" },
+          "fail": { "zh": "无法描述 CI 流程", "en": "Cannot describe CI flow" }
+        },
+        {
+          "name": "增量构建原理",
+          "weight": 0.40,
+          "excellent": { "zh": "能解释 ifModify 的工作原理（diff 对比 + 路径匹配）和 packages 全量构建的原因", "en": "Can explain ifModify mechanism (diff comparison + path matching) and why packages trigger full builds" },
+          "pass": { "zh": "知道是按文件变更范围触发但不清楚实现细节", "en": "Knows it's triggered by file change scope but unclear on implementation" },
+          "fail": { "zh": "不了解增量构建概念", "en": "Doesn't understand incremental build concept" }
+        },
+        {
+          "name": "优化手段",
+          "weight": 0.25,
+          "excellent": { "zh": "能说出 Docker 缓存、pnpm store 复用、并行构建等多种优化手段", "en": "Can name Docker caching, pnpm store reuse, parallel builds and other optimizations" },
+          "pass": { "zh": "知道用了缓存加速", "en": "Knows caching is used for acceleration" },
+          "fail": { "zh": "对构建加速没有认知", "en": "No awareness of build acceleration" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-05",
+      "criteria": [
+        {
+          "name": "工具链覆盖",
+          "weight": 0.35,
+          "excellent": { "zh": "能系统性列出 7+ 工具并说明各自职责和协作关系", "en": "Systematically lists 7+ tools explaining responsibilities and interactions" },
+          "pass": { "zh": "能说出 ESLint + Prettier + Husky 的基本作用", "en": "Can state basic roles of ESLint + Prettier + Husky" },
+          "fail": { "zh": "只知道有 ESLint 但不清楚整体体系", "en": "Only knows ESLint without understanding the overall system" }
+        },
+        {
+          "name": "执行时机",
+          "weight": 0.35,
+          "excellent": { "zh": "能区分编码时/提交时/CI 时各阶段的检查内容和执行方式", "en": "Can distinguish checks at coding/commit/CI stages and their execution methods" },
+          "pass": { "zh": "知道 pre-commit 会跑 lint", "en": "Knows pre-commit runs lint" },
+          "fail": { "zh": "不清楚检查在什么时候执行", "en": "Unclear when checks execute" }
+        },
+        {
+          "name": "实际效果",
+          "weight": 0.30,
+          "excellent": { "zh": "能举例说明规范体系解决了什么实际问题（代码风格统一、提交可追溯等）", "en": "Can give examples of real problems solved (style consistency, traceable commits)" },
+          "pass": { "zh": "知道是为了代码质量", "en": "Knows it's for code quality" },
+          "fail": { "zh": "认为规范只是形式主义", "en": "Considers standards merely formalistic" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-06",
+      "criteria": [
+        {
+          "name": "设计思路",
+          "weight": 0.35,
+          "excellent": { "zh": "能说出框架无关、职责单一、按需导入三个设计原则及其落地方式", "en": "Can articulate framework-agnostic, single responsibility, on-demand import principles and implementation" },
+          "pass": { "zh": "知道有公共包抽象", "en": "Knows about shared package abstraction" },
+          "fail": { "zh": "不了解公共包的设计考量", "en": "Doesn't understand shared package design considerations" }
+        },
+        {
+          "name": "打包配置",
+          "weight": 0.35,
+          "excellent": { "zh": "能解释 tsup 的优势、ESM/CJS 双格式的必要性、exports 字段的条件导出语法", "en": "Can explain tsup advantages, ESM/CJS necessity, and exports field conditional export syntax" },
+          "pass": { "zh": "知道用 tsup 打包但不清楚配置细节", "en": "Knows tsup is used but unclear on config details" },
+          "fail": { "zh": "不了解库打包工具", "en": "Unfamiliar with library bundling tools" }
+        },
+        {
+          "name": "Tree Shaking",
+          "weight": 0.30,
+          "excellent": { "zh": "能解释 Tree Shaking 的前提条件（ESM + sideEffects: false）和多入口的优势", "en": "Can explain Tree Shaking prerequisites (ESM + sideEffects: false) and multi-entry advantages" },
+          "pass": { "zh": "知道 Tree Shaking 概念", "en": "Knows Tree Shaking concept" },
+          "fail": { "zh": "不了解 Tree Shaking", "en": "Unfamiliar with Tree Shaking" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-07",
+      "criteria": [
+        {
+          "name": "监控维度",
+          "weight": 0.35,
+          "excellent": { "zh": "能说出性能/错误/API/自定义四个维度及各自采集的具体指标", "en": "Can name performance/error/API/custom dimensions with specific metrics collected" },
+          "pass": { "zh": "知道有性能和错误监控", "en": "Knows about performance and error monitoring" },
+          "fail": { "zh": "对监控维度没有认知", "en": "No awareness of monitoring dimensions" }
+        },
+        {
+          "name": "Web Vitals",
+          "weight": 0.35,
+          "excellent": { "zh": "能准确解释 FCP/LCP/CLS/FID 的含义和优化方向", "en": "Can accurately explain FCP/LCP/CLS/FID meanings and optimization directions" },
+          "pass": { "zh": "听说过 Web Vitals 但不能准确描述", "en": "Has heard of Web Vitals but can't describe accurately" },
+          "fail": { "zh": "不了解 Web Vitals", "en": "Unfamiliar with Web Vitals" }
+        },
+        {
+          "name": "微前端特殊处理",
+          "weight": 0.30,
+          "excellent": { "zh": "能说明微前端场景下的错误归因、路由上报、多实例管理等特殊处理", "en": "Can explain error attribution, route reporting, multi-instance management in micro-frontend" },
+          "pass": { "zh": "能想到微前端下可能有特殊问题", "en": "Can identify potential micro-frontend specific issues" },
+          "fail": { "zh": "没考虑过微前端场景的差异", "en": "Haven't considered micro-frontend scenario differences" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-08",
+      "criteria": [
+        {
+          "name": "路由配置",
+          "weight": 0.40,
+          "excellent": { "zh": "能解释 try_files 匹配逻辑、location 优先级规则、root vs alias 区别", "en": "Can explain try_files matching logic, location priority rules, root vs alias differences" },
+          "pass": { "zh": "知道用 try_files 做 SPA 支持", "en": "Knows try_files is for SPA support" },
+          "fail": { "zh": "不了解 Nginx 路由配置", "en": "Unfamiliar with Nginx routing configuration" }
+        },
+        {
+          "name": "性能优化",
+          "weight": 0.35,
+          "excellent": { "zh": "能解释 sendfile/tcp_nopush/gzip/epoll 各自的优化原理", "en": "Can explain optimization principles of sendfile/tcp_nopush/gzip/epoll" },
+          "pass": { "zh": "知道开了 gzip 压缩", "en": "Knows gzip compression is enabled" },
+          "fail": { "zh": "对 Nginx 性能优化没有认知", "en": "No awareness of Nginx performance optimization" }
+        },
+        {
+          "name": "改进方向",
+          "weight": 0.25,
+          "excellent": { "zh": "能提出 HTTP/2、Brotli、Cache-Control、CDN 等进一步优化方案", "en": "Can propose HTTP/2, Brotli, Cache-Control, CDN as further optimizations" },
+          "pass": { "zh": "能想到一两个优化点", "en": "Can think of one or two optimization points" },
+          "fail": { "zh": "认为当前配置已经足够", "en": "Believes current configuration is sufficient" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-09",
+      "criteria": [
+        {
+          "name": "隔离方案",
+          "weight": 0.40,
+          "excellent": { "zh": "能列出多层隔离策略（CSS Modules + BEM + scoped + CSS 变量）及各自适用场景", "en": "Can list multi-layer isolation strategies and their applicable scenarios" },
+          "pass": { "zh": "知道用了 CSS Modules 或 BEM", "en": "Knows CSS Modules or BEM is used" },
+          "fail": { "zh": "不了解样式隔离策略", "en": "Unfamiliar with style isolation strategies" }
+        },
+        {
+          "name": "实际问题",
+          "weight": 0.35,
+          "excellent": { "zh": "能举出具体遇到的样式冲突问题（如弹窗挂载 body、全局样式覆盖）及解决方案", "en": "Can cite specific style conflict issues encountered and solutions" },
+          "pass": { "zh": "知道可能有冲突但没有具体案例", "en": "Knows conflicts are possible but no specific cases" },
+          "fail": { "zh": "没遇到过也想不到问题", "en": "Never encountered issues and can't identify potential ones" }
+        },
+        {
+          "name": "方案对比",
+          "weight": 0.25,
+          "excellent": { "zh": "能对比 Shadow DOM/CSS-in-JS/iframe 等方案的优劣", "en": "Can compare Shadow DOM/CSS-in-JS/iframe approaches" },
+          "pass": { "zh": "知道有其他隔离方案", "en": "Knows other isolation approaches exist" },
+          "fail": { "zh": "只知道当前方案", "en": "Only knows current approach" }
+        }
+      ]
+    },
+    {
+      "question_id": "iq-10",
+      "criteria": [
+        {
+          "name": "反思深度",
+          "weight": 0.35,
+          "excellent": { "zh": "能从多个维度（框架统一/构建加速/测试/版本管理）系统性提出改进，有优先级排序", "en": "Systematically proposes improvements across dimensions with prioritization" },
+          "pass": { "zh": "能提出 2-3 个改进方向", "en": "Can propose 2-3 improvement directions" },
+          "fail": { "zh": "认为架构没什么问题或只能泛泛而谈", "en": "Believes architecture has no issues or can only speak generally" }
+        },
+        {
+          "name": "可行性评估",
+          "weight": 0.35,
+          "excellent": { "zh": "能评估每个改进的收益、风险和实施成本，给出 ROI 排序", "en": "Can assess benefits, risks, and costs for each improvement with ROI ranking" },
+          "pass": { "zh": "提到了风险或成本", "en": "Mentions risks or costs" },
+          "fail": { "zh": "只说理想方案不考虑实际约束", "en": "Only discusses ideal solutions without practical constraints" }
+        },
+        {
+          "name": "技术视野",
+          "weight": 0.30,
+          "excellent": { "zh": "能引用 Turborepo/Module Federation/Changesets 等工具并解释其适用场景", "en": "Can reference Turborepo/Module Federation/Changesets and explain applicability" },
+          "pass": { "zh": "知道一些新工具", "en": "Aware of some new tools" },
+          "fail": { "zh": "技术视野局限在当前使用的工具", "en": "Technical vision limited to currently used tools" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "schema_version": "1.0",
+  "platform_name": "宇恒运营管理系统 (yuheng-monorepo)",
+  "one_liner": "QQ 运营管理系统前端 Monorepo 大仓，采用微前端架构管理 10 个子应用与 4 个公共包",
+  "domain": "运营管理后台 / 内部工具平台",
+  "platform_tech_stack": {
+    "languages": ["TypeScript 5.2.2", "JavaScript", "Vue SFC", "Less"],
+    "frameworks": ["Vue 3", "React 17", "Pinia", "Redux Toolkit", "Vue Router 4", "React Router 6"],
+    "infra": ["pnpm 8 (workspace)", "Vite 4", "tsup", "Docker (Nginx Alpine)", "OrangeCI", "CDN-OA"]
+  },
+  "sub_projects": [
+    {
+      "name": "base-framework",
+      "path": "apps/base-framework",
+      "scope": "frontend",
+      "tech_stack": {
+        "languages": ["TypeScript", "Less"],
+        "frameworks": ["React 17", "Redux Toolkit", "React Router 6", "TDesign React", "@tencent/power-design-react"],
+        "infra": ["Vite 4"]
+      },
+      "modules": [
+        { "name": "全局路由分发", "path": "src/router", "responsibility": "微前端基座路由管理，按路径分发到子应用" },
+        { "name": "权限管理", "path": "src/auth", "responsibility": "统一登录认证与权限校验" },
+        { "name": "全局布局", "path": "src/layouts", "responsibility": "顶部导航 + 侧边栏 + 内容区框架" }
+      ],
+      "active_areas": ["微前端基座", "全局状态管理", "权限路由"]
+    },
+    {
+      "name": "qq-copilot",
+      "path": "apps/qq-copilot",
+      "scope": "frontend",
+      "tech_stack": {
+        "languages": ["TypeScript", "Less"],
+        "frameworks": ["React 17", "Redux Toolkit", "ECharts", "Markdown Preview"],
+        "infra": ["Vite 4"]
+      },
+      "modules": [
+        { "name": "AI 对话", "path": "src/pages/chat", "responsibility": "AI 助手对话交互界面" },
+        { "name": "数据可视化", "path": "src/pages/dashboard", "responsibility": "ECharts 图表展示" }
+      ],
+      "active_areas": ["AI 交互", "Markdown 渲染", "数据可视化"]
+    },
+    {
+      "name": "lucy",
+      "path": "apps/lucy",
+      "scope": "frontend",
+      "tech_stack": {
+        "languages": ["TypeScript", "Vue SFC", "Less"],
+        "frameworks": ["Vue 3", "Pinia", "TDesign Vue Next", "ECharts", "vuedraggable"],
+        "infra": ["Vite 4", "vue-tsc"]
+      },
+      "modules": [
+        { "name": "拖拽配置", "path": "src/pages/config", "responsibility": "基于 vuedraggable 的运营配置拖拽排序" },
+        { "name": "数据看板", "path": "src/pages/dashboard", "responsibility": "运营数据 ECharts 可视化" }
+      ],
+      "active_areas": ["拖拽交互", "Vue 3 Composition API", "运营数据看板"]
+    },
+    {
+      "name": "qq-bff-gateway",
+      "path": "apps/qq-bff-gateway",
+      "scope": "frontend",
+      "tech_stack": {
+        "languages": ["TypeScript", "Vue SFC", "Less"],
+        "frameworks": ["Vue 3", "Pinia", "Vue Router", "TDesign Vue Next"],
+        "infra": ["Vite 4", "vitest"]
+      },
+      "modules": [
+        { "name": "网关管理", "path": "src/pages/gateway", "responsibility": "BFF 网关配置与管理界面" }
+      ],
+      "active_areas": ["Vue 3 + Vitest 单元测试", "网关配置"]
+    },
+    {
+      "name": "qq-qun",
+      "path": "apps/qq-qun",
+      "scope": "frontend",
+      "tech_stack": {
+        "languages": ["TypeScript", "Less"],
+        "frameworks": ["React 17", "Redux Toolkit", "TDesign React", "@dnd-kit", "cos-js-sdk-v5", "ECharts"],
+        "infra": ["Vite 4"]
+      },
+      "modules": [
+        { "name": "拖拽排序", "path": "src/pages/sort", "responsibility": "基于 @dnd-kit 的列表拖拽排序" },
+        { "name": "文件上传", "path": "src/pages/upload", "responsibility": "腾讯云 COS SDK 文件上传" }
+      ],
+      "active_areas": ["拖拽排序", "COS 文件上传", "数据图表"]
+    },
+    {
+      "name": "packages/shared",
+      "path": "packages/shared",
+      "scope": "frontend",
+      "tech_stack": {
+        "languages": ["TypeScript"],
+        "frameworks": [],
+        "infra": ["tsup"]
+      },
+      "modules": [
+        { "name": "共享常量", "path": "src/constants", "responsibility": "全平台共享常量定义" },
+        { "name": "共享类型", "path": "src/types", "responsibility": "全平台 TypeScript 类型声明" },
+        { "name": "共享工具", "path": "src/utils", "responsibility": "框架无关的工具函数" },
+        { "name": "共享配置", "path": "src/configs", "responsibility": "tsconfig/vite 基础配置" }
+      ],
+      "active_areas": ["多入口 tsup 打包", "类型导出", "配置共享"]
+    }
+  ],
+  "highlights": [
+    {
+      "title": "pnpm workspace Monorepo 管理 10+ 子应用",
+      "scope": "infra",
+      "summary": "使用 pnpm workspace 统一管理 10 个子应用 + 4 个公共包，通过 workspace 协议实现本地依赖链接，preinstall 钩子强制统一包管理器"
+    },
+    {
+      "title": "微前端架构：Nginx 路由分发 + 基座管理",
+      "scope": "frontend",
+      "summary": "基座(React) 负责全局导航与权限，子应用独立构建部署，Nginx try_files 实现 SPA 路由 fallback，各子应用通过路径隔离"
+    },
+    {
+      "title": "Vue 3 + React 双框架共存方案",
+      "scope": "frontend",
+      "summary": "同一 Monorepo 下 Vue 3 和 React 17 并行开发，通过 ESLint overrides 分层配置、TDesign 统一设计系统、框架无关的公共包实现一致性"
+    },
+    {
+      "title": "OrangeCI 增量构建 + Docker 容器化部署",
+      "scope": "infra",
+      "summary": "CI 通过 ifModify 按文件变更范围触发对应子应用构建，Docker 缓存 node_modules 加速构建，Nginx Alpine 轻量镜像部署"
+    },
+    {
+      "title": "全链路工程化体系",
+      "scope": "infra",
+      "summary": "ESLint + Prettier + CommitLint + Husky + lint-staged + ls-lint + cspell 从代码编写到提交的全链路规范，TypeScript strict mode 保障类型安全"
+    }
+  ]
+}

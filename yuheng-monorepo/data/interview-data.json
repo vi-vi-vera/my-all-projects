@@ -1,0 +1,424 @@
+{
+  "schema_version": "1.0",
+  "mode": "candidate",
+  "platform_name": "宇恒运营管理系统 (yuheng-monorepo)",
+  "role": "前端",
+  "level": "中级",
+  "project_pitch": {
+    "elevator": {
+      "zh": "这是 QQ 运营管理系统的前端 Monorepo 大仓，使用 pnpm workspace 管理 10 个微前端子应用和 4 个公共包，支持 Vue 3 + React 双框架并行开发，通过 OrangeCI 实现增量构建与 Docker 容器化部署。",
+      "en": "This is a frontend Monorepo for the QQ operations management platform, managing 10 micro-frontend sub-applications and 4 shared packages via pnpm workspace, supporting Vue 3 + React dual-framework development with OrangeCI incremental builds and Docker containerized deployment."
+    },
+    "standard": {
+      "zh": "宇恒是小世界前端团队负责的 QQ 运营管理系统，采用 pnpm workspace Monorepo 架构统一管理 10 个子应用。架构上是微前端模式——React 基座负责全局路由和权限，各子应用（包括 Vue 3 和 React）独立开发部署。公共层抽象了 4 个 npm 包：shared（常量/类型/配置）、utils、components 和 theme-chalk，通过 tsup 打包成 ESM/CJS 双格式。工程化方面从 ESLint + Prettier + CommitLint 到 Husky + lint-staged 全链路覆盖，CI 使用 OrangeCI 实现按文件变更范围增量构建，Docker + Nginx Alpine 容器化部署，前端监控通过 Aegis SDK 接入。",
+      "en": "Yuheng is the QQ operations management system maintained by the XiaoShiJie frontend team, using a pnpm workspace Monorepo architecture to manage 10 sub-applications. The architecture follows a micro-frontend pattern — a React shell handles global routing and authentication while sub-apps (both Vue 3 and React) are independently developed and deployed. The shared layer consists of 4 packages: shared (constants/types/configs), utils, components, and theme-chalk, bundled via tsup into ESM/CJS dual formats. Engineering coverage spans ESLint + Prettier + CommitLint through Husky + lint-staged, CI uses OrangeCI with file-change-scoped incremental builds, and deployment is Docker + Nginx Alpine containerized with Aegis SDK for frontend monitoring."
+    },
+    "deep_dive": {
+      "zh": "宇恒运营管理系统是 QQ 业务线的核心运营后台，服务于多个运营团队的日常管理需求。项目采用 pnpm workspace Monorepo 架构，包含 10 个子应用（base-framework 基座、qq-copilot AI 助手、lucy 运营工具、qq-bff-gateway 网关管理、qq-qun 群管理等）和 4 个公共包。\n\n架构核心是微前端模式：base-framework 作为 React 基座负责统一的登录认证、权限管理和全局导航，各子应用通过 Nginx 路由分发实现路径隔离（try_files 保证 SPA 路由 fallback）。部署时 scripts/cp-dist.js 聚合所有子应用的构建产物到统一 dist 目录，Docker 镜像基于 Nginx Alpine 提供服务。\n\n技术选型上的特殊点是 Vue 3 和 React 17 共存——lucy 和 qq-bff-gateway 使用 Vue 3 + Pinia + TDesign Vue Next，其余 React 子应用使用 Redux Toolkit + TDesign React。通过 ESLint overrides 分层处理不同框架的 lint 规则，公共包层只导出框架无关代码保证解耦。\n\nCI/CD 方面使用 OrangeCI，核心优化是增量构建——通过 ifModify 检测文件变更范围，只触发受影响子应用的构建流水线；packages 变更则全量构建。cache.dockerfile 缓存 node_modules 层避免重复安装。CR 通过后自动 rebase 合并并通过企微机器人通知。\n\n工程化体系覆盖完整：TypeScript 5.2.2 strict mode 保障类型安全，CommitLint 规范提交信息，ls-lint 统一文件命名，cspell 检查拼写，preinstall 钩子强制使用 pnpm 避免混用包管理器。前端监控通过 Aegis SDK 采集 Web Vitals 和错误上报。",
+      "en": "The Yuheng Operations Management System is the core operations backend for QQ business lines, serving daily management needs of multiple operations teams. The project uses a pnpm workspace Monorepo architecture containing 10 sub-applications (base-framework shell, qq-copilot AI assistant, lucy operations tool, qq-bff-gateway management, qq-qun group management, etc.) and 4 shared packages.\n\nThe architecture centers on a micro-frontend pattern: base-framework serves as the React shell handling unified authentication, permission management, and global navigation. Sub-applications achieve path isolation through Nginx route distribution (try_files ensures SPA routing fallback). During deployment, scripts/cp-dist.js aggregates all sub-app build artifacts into a unified dist directory, with Docker images based on Nginx Alpine serving the content.\n\nA notable technical decision is the coexistence of Vue 3 and React 17 — lucy and qq-bff-gateway use Vue 3 + Pinia + TDesign Vue Next, while remaining React sub-apps use Redux Toolkit + TDesign React. ESLint overrides handle framework-specific lint rules in layers, and the shared package layer exports only framework-agnostic code to maintain decoupling.\n\nFor CI/CD, the project uses OrangeCI with incremental builds as the core optimization — ifModify detects file change scope and triggers only affected sub-app build pipelines; package changes trigger full builds. A cache.dockerfile caches the node_modules layer to avoid repeated installations. After code review approval, auto-rebase merge executes with WeCom bot notifications.\n\nThe engineering system provides complete coverage: TypeScript 5.2.2 strict mode ensures type safety, CommitLint standardizes commit messages, ls-lint enforces file naming conventions, cspell checks spelling, and a preinstall hook forces pnpm usage to prevent mixed package managers. Frontend monitoring uses Aegis SDK for Web Vitals collection and error reporting."
+    }
+  },
+  "highlights": [
+    {
+      "title": "pnpm workspace Monorepo 管理 10+ 子应用",
+      "scope": "infra",
+      "primary_dimension": "architecture",
+      "story": {
+        "zh": "使用 pnpm workspace 统一管理 10 个子应用和 4 个公共包，workspace 协议实现本地依赖链接，preinstall 钩子强制统一包管理器，tsup 多入口打包公共包支持 ESM/CJS 双格式输出",
+        "en": "Unified management of 10 sub-apps and 4 shared packages via pnpm workspace, workspace protocol for local dependency linking, preinstall hook enforcing unified package manager, tsup multi-entry bundling with ESM/CJS dual-format output"
+      },
+      "tech_keywords": ["pnpm", "workspace", "monorepo", "tsup", "esbuild"]
+    },
+    {
+      "title": "微前端：Nginx 路由分发 + React 基座",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "story": {
+        "zh": "React 基座管理全局认证与导航，Nginx try_files 实现多子应用路径隔离与 SPA fallback，构建产物聚合脚本实现统一部署",
+        "en": "React shell manages global auth and navigation, Nginx try_files achieves multi-app path isolation with SPA fallback, build artifact aggregation script enables unified deployment"
+      },
+      "tech_keywords": ["微前端", "Nginx", "try_files", "SPA", "路由分发"]
+    },
+    {
+      "title": "Vue 3 + React 双框架共存",
+      "scope": "frontend",
+      "primary_dimension": "trade-off",
+      "story": {
+        "zh": "同一 Monorepo 下 Vue 3 和 React 17 并行，ESLint overrides 分层配置，TDesign 统一设计语言，公共包层框架无关保证解耦",
+        "en": "Vue 3 and React 17 coexisting in same Monorepo, ESLint overrides for layered configuration, TDesign unified design language, framework-agnostic shared packages ensuring decoupling"
+      },
+      "tech_keywords": ["Vue 3", "React 17", "TDesign", "ESLint overrides"]
+    },
+    {
+      "title": "OrangeCI 增量构建 + Docker 容器化",
+      "scope": "infra",
+      "primary_dimension": "performance",
+      "story": {
+        "zh": "ifModify 按文件变更范围精准触发子应用构建，cache.dockerfile 缓存 node_modules 加速，Docker Nginx Alpine 轻量部署",
+        "en": "ifModify precisely triggers sub-app builds based on file change scope, cache.dockerfile accelerates via node_modules caching, Docker Nginx Alpine lightweight deployment"
+      },
+      "tech_keywords": ["OrangeCI", "增量构建", "Docker", "Nginx Alpine", "ifModify"]
+    },
+    {
+      "title": "全链路工程化规范体系",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "story": {
+        "zh": "ESLint + Prettier + CommitLint + Husky + lint-staged + ls-lint + cspell 覆盖从编码到提交全链路，TypeScript strict mode 保障类型安全",
+        "en": "ESLint + Prettier + CommitLint + Husky + lint-staged + ls-lint + cspell covering the full chain from coding to commit, TypeScript strict mode ensuring type safety"
+      },
+      "tech_keywords": ["ESLint", "CommitLint", "Husky", "TypeScript strict"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-01",
+      "primary_dimension": "architecture",
+      "scope": "infra",
+      "sub_project": "root",
+      "source_tech_point": "tp-001",
+      "question": {
+        "zh": "请介绍这个项目的 Monorepo 架构是如何设计的？为什么选择 pnpm workspace？",
+        "en": "How is the Monorepo architecture designed? Why did you choose pnpm workspace?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "使用 pnpm workspace 管理 10 个子应用和 4 个公共包，通过 workspace 协议本地链接依赖，严格隔离避免幽灵依赖。",
+          "en": "Using pnpm workspace to manage 10 sub-apps and 4 shared packages, with workspace protocol for local dependency linking and strict isolation preventing phantom dependencies."
+        },
+        "standard": {
+          "zh": "项目采用 pnpm workspace Monorepo 架构，pnpm-workspace.yaml 声明 apps/*、packages/*、templates/* 三个包范围。选择 pnpm 的核心原因：一是 content-addressable store + hard link 使安装速度比 npm/yarn 快 2-3 倍、磁盘节省 50%+；二是非扁平 node_modules 杜绝幽灵依赖；三是原生 workspace 协议 (workspace:*) 无需额外工具即可链接本地包；四是 filter 命令 (pnpm -F=<pkg>) 精准执行命令便于 CI 增量构建。公共包通过 tsup 打包成 ESM/CJS 双格式供子应用引用。",
+          "en": "The project uses pnpm workspace Monorepo architecture with pnpm-workspace.yaml declaring three package scopes: apps/*, packages/*, templates/*. The core reasons for choosing pnpm: first, content-addressable store + hard links make installation 2-3x faster than npm/yarn with 50%+ disk savings; second, non-flat node_modules eliminates phantom dependencies; third, native workspace protocol (workspace:*) links local packages without extra tools; fourth, filter commands (pnpm -F=<pkg>) enable precise command execution for CI incremental builds. Shared packages are bundled via tsup into ESM/CJS dual formats for sub-app consumption."
+        },
+        "deep_dive": {
+          "zh": "Monorepo 架构分为三层：应用层（apps/ 下 10 个子应用）、公共包层（packages/ 下 4 个包：shared 导出常量/类型/工具/配置、utils 导出工具方法、components 导出公共组件、theme-chalk 导出主题样式）、模板层（templates/）。\n\n选择 pnpm 而非 yarn/lerna/turborepo 的决策分析：\n1. **依赖安装效率**：pnpm 使用全局 content-addressable store，相同版本的包只存储一份，通过 hard link 引用，大仓场景下安装速度提升显著\n2. **依赖安全性**：pnpm 默认不提升依赖到根 node_modules（非 hoist），子应用只能访问自己 package.json 中声明的依赖，从根源避免幽灵依赖问题\n3. **workspace 协议**：`\"@infras/shared\": \"workspace:*\"` 在开发时直接链接源码，发布时自动替换为实际版本号，我们不发 npm 所以始终用 workspace 链接\n4. **CI 友好**：`pnpm -F=./apps/qq-copilot run build` 可精准构建单个包，配合 CI 的 ifModify 实现真正的增量构建\n\n对比考量：Lerna 已停维护；Yarn workspace 的 hoist 策略可能导致子应用意外引用未声明依赖；Turborepo 的 Remote Cache 很强但引入了额外的学习成本和基础设施依赖，对当前 10 个子应用的规模来说 pnpm workspace 已经足够。\n\n公共包的打包策略：使用 tsup（底层 esbuild）实现毫秒级构建，packages/shared 配置多入口（constants、types、utils、configs），通过 package.json 的 exports 字段映射子路径导出，支持 Tree Shaking。",
+          "en": "The Monorepo architecture has three layers: application layer (10 sub-apps under apps/), shared packages layer (4 packages under packages/: shared exports constants/types/utils/configs, utils exports utility methods, components exports shared UI, theme-chalk exports theme styles), and templates layer (templates/).\n\nDecision analysis for choosing pnpm over yarn/lerna/turborepo:\n1. **Installation efficiency**: pnpm uses a global content-addressable store where identical package versions are stored once and referenced via hard links, significantly improving installation speed for large repos\n2. **Dependency safety**: pnpm defaults to non-hoisted node_modules, sub-apps can only access dependencies declared in their own package.json, preventing phantom dependency issues at the root\n3. **Workspace protocol**: `\"@infras/shared\": \"workspace:*\"` links source directly during development and auto-replaces with actual versions on publish — we don't publish to npm so always use workspace links\n4. **CI-friendly**: `pnpm -F=./apps/qq-copilot run build` precisely builds a single package, combined with CI ifModify for true incremental builds\n\nComparison considerations: Lerna maintenance has stopped; Yarn workspace's hoist strategy risks sub-apps accidentally importing undeclared dependencies; Turborepo's Remote Cache is powerful but introduces extra learning curve and infrastructure dependency — for our current scale of 10 sub-apps, pnpm workspace suffices.\n\nShared package bundling strategy: tsup (esbuild underneath) achieves millisecond-level builds, packages/shared configures multiple entry points (constants, types, utils, configs), with package.json exports field mapping subpath exports supporting Tree Shaking."
+        }
+      },
+      "knowledge_points": ["pnpm content-addressable store", "hard link vs symlink", "workspace 协议", "非扁平 node_modules", "幽灵依赖", "tsup 多入口打包"],
+      "learning_plan": {
+        "must_read": ["pnpm 官方文档 - Workspace", "pnpm 官方文档 - Motivation", "Node.js 模块解析算法"],
+        "hands_on": ["创建一个 3 包的 pnpm workspace 项目", "对比 npm/yarn/pnpm 的 node_modules 结构", "配置 tsup 多入口打包"],
+        "common_pitfalls": ["workspace:* 在 CI 中需要先 build packages", "pnpm store 路径配置不当导致 CI 缓存失效"],
+        "mock_questions": ["pnpm 如何避免幽灵依赖？", "workspace 协议在发布时如何处理？"],
+        "time_estimate": "3-5 天"
+      },
+      "follow_ups": ["pnpm 的 shamefully-hoist 和 public-hoist-pattern 配置有什么作用？", "如果包数量增长到 50+，当前方案需要做什么调整？"]
+    },
+    {
+      "id": "q-02",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "base-framework",
+      "source_tech_point": "tp-002",
+      "question": {
+        "zh": "微前端架构是如何设计的？基座和子应用之间如何协作？",
+        "en": "How is the micro-frontend architecture designed? How do the shell and sub-applications collaborate?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "React 基座管理全局认证和导航，子应用独立构建部署，通过 Nginx 路由分发实现路径隔离。",
+          "en": "React shell manages global auth and navigation, sub-apps are independently built and deployed, with Nginx route distribution achieving path isolation."
+        },
+        "standard": {
+          "zh": "微前端采用「基座 + Nginx 路由分发」模式。base-framework（React）作为基座负责统一登录、权限校验、全局导航和侧边栏。各子应用独立开发独立构建，构建产物通过 cp-dist.js 脚本聚合到统一 dist/ 目录。Nginx 配置 location 按路径匹配到对应子应用的静态资源，try_files 保证 SPA 路由 fallback。子应用间通过公共包 @infras/shared 共享类型和常量，基座通过 URL 参数传递上下文。这种模式的优势是零运行时开销、技术栈自由，劣势是无 JS 沙箱隔离。",
+          "en": "The micro-frontend uses a 'shell + Nginx route distribution' pattern. base-framework (React) serves as the shell handling unified login, permission checks, global navigation, and sidebar. Sub-apps are independently developed and built, with build artifacts aggregated to a unified dist/ directory via cp-dist.js. Nginx location blocks match paths to corresponding sub-app static resources, with try_files ensuring SPA routing fallback. Sub-apps share types and constants through @infras/shared, and the shell passes context via URL parameters. This pattern's advantages are zero runtime overhead and tech stack freedom; the disadvantage is no JS sandbox isolation."
+        },
+        "deep_dive": {
+          "zh": "微前端架构的设计决策和实现细节：\n\n**选型考量**：我们选择了最轻量的「Nginx 路由分发」而非 qiankun/Module Federation，原因是：(1) 子应用之间业务耦合度低，不需要运行时动态加载；(2) 每个子应用都是独立的 SPA，用户一次只访问一个；(3) 避免引入沙箱/通信框架的复杂度和运行时开销。\n\n**部署架构**：\n```\n用户请求 → Nginx (80端口)\n  ├── /base-framework → html/base-framework/ (基座)\n  ├── /qq-copilot → html/qq-copilot/ (子应用)\n  ├── /lucy → html/lucy/ (子应用)\n  └── / → html/base-framework/base-framework/ (默认路由)\n```\n\n**构建流程**：\n1. CI 触发后各子应用独立 build（产物在 apps/<name>/dist/）\n2. scripts/cp-dist.js 遍历 apps/ 下所有目录，将各自 dist/ 复制到根 dist/<name>/\n3. Dockerfile COPY /dist 到 Nginx html 目录\n\n**Nginx 关键配置**：\n- `try_files $uri $uri/ /index.html`：保证 SPA 客户端路由在刷新时不 404\n- `gzip on` + `sendfile on`：静态资源压缩与零拷贝传输\n\n**通信方案**：\n- 类型/常量共享：通过 @infras/shared 包在构建时链接\n- 运行时通信：URL search params 传递用户/权限信息\n- 跨应用事件：可通过 window.postMessage 或 CustomEvent（当前项目未使用）\n\n**不足与改进方向**：\n- 无 CSS 隔离：依赖 BEM 命名约定 + CSS Modules，主题通过 theme-chalk 统一\n- 无 JS 沙箱：子应用的全局变量可能冲突，需要约定命名空间\n- 未来可考虑 Module Federation 实现运行时共享和按需加载",
+          "en": "Design decisions and implementation details of the micro-frontend architecture:\n\n**Selection rationale**: We chose the lightest 'Nginx route distribution' over qiankun/Module Federation because: (1) sub-apps have low business coupling and don't need runtime dynamic loading; (2) each sub-app is an independent SPA with users accessing only one at a time; (3) avoids complexity and runtime overhead of sandbox/communication frameworks.\n\n**Deployment architecture**:\n```\nUser request → Nginx (port 80)\n  ├── /base-framework → html/base-framework/ (shell)\n  ├── /qq-copilot → html/qq-copilot/ (sub-app)\n  ├── /lucy → html/lucy/ (sub-app)\n  └── / → html/base-framework/base-framework/ (default)\n```\n\n**Build flow**:\n1. CI triggers independent builds for each sub-app (output in apps/<name>/dist/)\n2. scripts/cp-dist.js iterates all apps/ directories, copies each dist/ to root dist/<name>/\n3. Dockerfile COPYs /dist to Nginx html directory\n\n**Key Nginx configuration**:\n- `try_files $uri $uri/ /index.html`: Ensures SPA client-side routing doesn't 404 on refresh\n- `gzip on` + `sendfile on`: Static resource compression and zero-copy transfer\n\n**Communication patterns**:\n- Type/constant sharing: via @infras/shared package linked at build time\n- Runtime communication: URL search params for user/permission context\n- Cross-app events: window.postMessage or CustomEvent (not currently used)\n\n**Limitations and improvement directions**:\n- No CSS isolation: relies on BEM naming + CSS Modules, theme unified via theme-chalk\n- No JS sandbox: sub-app globals may conflict, requires namespace conventions\n- Future consideration: Module Federation for runtime sharing and on-demand loading"
+        }
+      },
+      "knowledge_points": ["微前端架构模式", "Nginx 路由配置", "try_files", "SPA fallback", "样式隔离", "JS 沙箱"],
+      "learning_plan": {
+        "must_read": ["Micro Frontends 概念文档", "Nginx location 匹配规则", "qiankun vs Module Federation 对比"],
+        "hands_on": ["配置 Nginx 多 SPA 路由分发", "实现一个简单的微前端 demo（基座 + 2 个子应用）"],
+        "common_pitfalls": ["try_files 路径配置错误导致子路由 404", "多子应用间 CSS 类名冲突"],
+        "mock_questions": ["如何实现子应用间的运行时通信？", "try_files 的匹配顺序是怎样的？"],
+        "time_estimate": "5-7 天"
+      },
+      "follow_ups": ["如果要支持子应用的独立灰度发布，架构需要怎么调整？", "对比 qiankun 方案，你的方案在哪些场景下会遇到瓶颈？"]
+    },
+    {
+      "id": "q-03",
+      "primary_dimension": "trade-off",
+      "scope": "frontend",
+      "sub_project": "root",
+      "source_tech_point": "tp-003",
+      "question": {
+        "zh": "Vue 3 和 React 在同一个 Monorepo 中共存，你们是怎么管理的？为什么会出现双框架并存？",
+        "en": "How do you manage Vue 3 and React coexisting in the same Monorepo? Why does dual-framework coexistence exist?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "历史原因导致双框架并存，通过 ESLint overrides 分层配置、TDesign 统一设计系统、框架无关公共包实现管理。",
+          "en": "Historical reasons led to dual-framework coexistence, managed through ESLint overrides for layered config, TDesign unified design system, and framework-agnostic shared packages."
+        },
+        "standard": {
+          "zh": "双框架并存是团队演进的结果——早期子应用用 Vue 3 开发（lucy、qq-bff-gateway），后续基座和新子应用选择了 React。管理策略：(1) ESLint 根配置通过 overrides 按文件扩展名分别处理 .vue（vue-eslint-parser + plugin-vue）和 .tsx（plugin-react），规则互不干扰；(2) UI 层统一使用 TDesign 设计系统（tdesign-vue-next / tdesign-react），保证视觉一致性；(3) 公共包层（@infras/shared, @infras/utils）只导出纯 TypeScript 工具函数、类型和常量，不包含任何框架相关代码；(4) 每个子应用有独立的 vite.config 和 tsconfig，构建互不影响。",
+          "en": "Dual-framework coexistence resulted from team evolution — early sub-apps were built with Vue 3 (lucy, qq-bff-gateway), while the shell and newer sub-apps chose React. Management strategy: (1) Root ESLint config uses overrides by file extension to handle .vue (vue-eslint-parser + plugin-vue) and .tsx (plugin-react) separately without rule conflicts; (2) UI layer unified with TDesign design system (tdesign-vue-next / tdesign-react) ensuring visual consistency; (3) Shared packages (@infras/shared, @infras/utils) export only pure TypeScript utilities, types, and constants with no framework-specific code; (4) Each sub-app has independent vite.config and tsconfig with isolated builds."
+        },
+        "deep_dive": {
+          "zh": "双框架共存的详细管理方案和 trade-off 分析：\n\n**产生原因**：项目早期（2022 年）团队主要使用 Vue 3 技术栈，开发了 lucy 和 qq-bff-gateway。后来基座 base-framework 需要更灵活的状态管理和路由控制，团队评估后选择了 React + Redux Toolkit。此后新增的子应用也统一采用 React。\n\n**ESLint 分层配置方案**：\n```javascript\n// .eslintrc.js\noverrides: [\n  { files: ['*.ts', '*.js'], parser: '@typescript-eslint/parser' },\n  { files: ['*.tsx', '*.jsx'], plugins: ['react'], extends: ['plugin:react/recommended'] },\n  { files: ['*.vue'], parser: 'vue-eslint-parser', extends: ['plugin:vue/vue3-recommended'] }\n]\n```\n这确保了 Vue SFC 和 React JSX 各自使用正确的解析器和规则集。\n\n**公共包设计原则**：\n- @infras/shared：纯 TS 类型声明 + 常量定义 + 工具函数，零框架依赖\n- @infras/components：这里存在挑战——目前公共组件较少，因为跨框架组件难以复用\n- @infras/theme-chalk：CSS 变量 + Less 变量层面的主题定制，框架无关\n\n**Trade-off 分析**：\n- 优势：子应用技术选型自由，团队可根据场景选择最合适的框架\n- 劣势：(1) 公共组件难以跨框架复用，需要维护两套；(2) 新人上手成本高，需要同时了解两个框架；(3) 部分工具链配置复杂（ESLint、TypeScript、IDE 支持）\n\n**如果重来的决策**：会统一选择 React 或 Vue，双框架带来的维护成本高于灵活性收益。但在当前阶段，迁移成本远大于维持现状，所以选择通过工程化手段管理好共存。",
+          "en": "Detailed management approach and trade-off analysis for dual-framework coexistence:\n\n**Origin**: In the project's early stage (2022), the team primarily used Vue 3, building lucy and qq-bff-gateway. Later, base-framework needed more flexible state management and routing control, and after evaluation the team chose React + Redux Toolkit. Subsequent new sub-apps also adopted React.\n\n**ESLint layered configuration**:\n```javascript\n// .eslintrc.js\noverrides: [\n  { files: ['*.ts', '*.js'], parser: '@typescript-eslint/parser' },\n  { files: ['*.tsx', '*.jsx'], plugins: ['react'], extends: ['plugin:react/recommended'] },\n  { files: ['*.vue'], parser: 'vue-eslint-parser', extends: ['plugin:vue/vue3-recommended'] }\n]\n```\nThis ensures Vue SFCs and React JSX each use the correct parser and rule sets.\n\n**Shared package design principles**:\n- @infras/shared: Pure TS type declarations + constants + utilities, zero framework dependencies\n- @infras/components: Challenge here — few shared components exist because cross-framework component reuse is difficult\n- @infras/theme-chalk: CSS variables + Less variable-level theming, framework-agnostic\n\n**Trade-off analysis**:\n- Advantages: Sub-app tech freedom, teams can choose the most suitable framework per scenario\n- Disadvantages: (1) Shared components can't be reused across frameworks, requiring dual maintenance; (2) Higher onboarding cost for new members needing both frameworks; (3) Complex toolchain configuration (ESLint, TypeScript, IDE support)\n\n**Retrospective decision**: Would unify on React or Vue — dual-framework maintenance cost exceeds flexibility benefits. But at current stage, migration cost far exceeds maintaining status quo, so managing coexistence through engineering practices is the pragmatic choice."
+        }
+      },
+      "knowledge_points": ["ESLint overrides", "vue-eslint-parser", "eslint-plugin-react", "框架无关设计", "TDesign 设计系统"],
+      "learning_plan": {
+        "must_read": ["ESLint overrides 文档", "Vue 3 与 React 核心差异对比"],
+        "hands_on": ["配置一个支持 Vue + React 的 ESLint 规则", "实现一个框架无关的工具库"],
+        "common_pitfalls": ["ESLint overrides 优先级与规则冲突", "跨框架组件状态管理不一致"],
+        "mock_questions": ["如何设计一个能被 Vue 和 React 同时使用的公共模块？"],
+        "time_estimate": "2-3 天"
+      },
+      "follow_ups": ["如果现在要把 Vue 子应用迁移到 React，你会怎么规划？", "公共组件层如何做到跨框架复用？Web Components 可行吗？"]
+    },
+    {
+      "id": "q-04",
+      "primary_dimension": "performance",
+      "scope": "infra",
+      "sub_project": "ci",
+      "source_tech_point": "tp-004",
+      "question": {
+        "zh": "CI/CD 流程是怎样的？增量构建是如何实现的？",
+        "en": "What does the CI/CD pipeline look like? How is incremental building implemented?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "OrangeCI 通过 ifModify 检测文件变更范围触发对应子应用构建，cache.dockerfile 缓存 node_modules 加速。",
+          "en": "OrangeCI uses ifModify to detect file change scope and trigger corresponding sub-app builds, with cache.dockerfile caching node_modules for acceleration."
+        },
+        "standard": {
+          "zh": "CI 平台使用 OrangeCI，核心流程：MR 提交 → 安装依赖 → CommitLint 检查 → ESLint 全量扫描 → 按范围构建 → Docker 镜像 → CDN 上传 → 部署。增量构建通过 ifModify 实现：CI 配置中声明每个子应用的触发路径（如 apps/qq-copilot/**），当 MR 中的文件变更匹配该路径时才触发对应构建任务。packages/** 变更触发全量构建，因为公共包影响所有应用。构建加速使用 cache.dockerfile 预构建包含 node_modules 的缓存层，避免每次 CI 都从零安装依赖。CR 通过后自动 rebase 合并 + 删除源分支 + 企微机器人通知。",
+          "en": "CI platform is OrangeCI with core flow: MR submit → install deps → CommitLint check → ESLint full scan → scoped build → Docker image → CDN upload → deploy. Incremental builds use ifModify: CI config declares trigger paths for each sub-app (e.g. apps/qq-copilot/**), triggering builds only when MR file changes match. packages/** changes trigger full builds since shared code affects all apps. Build acceleration uses cache.dockerfile pre-building a cached layer with node_modules to avoid fresh installs on each CI run. After CR approval, auto-rebase merge + delete source branch + WeCom bot notification."
+        },
+        "deep_dive": {
+          "zh": "CI/CD 流水线的完整设计和优化策略：\n\n**分支策略与触发条件**：\n| 事件 | 行为 |\n|------|------|\n| master merge_request | 完整校验流程（lint + build） |\n| master push | 自动打 tag |\n| master review (CR通过) | 自动 rebase 合并 + 删除源分支 |\n| tag_push | 全量构建所有子应用 |\n| feature/bugfix push | 按 ifModify 增量构建 |\n| preview push | 全量构建（预发布环境） |\n\n**增量构建原理**：\n```yaml\n# ci/.orange-ci.yml 示例\n- name: build-copilot\n  ifModify:\n    - apps/qq-copilot/**\n    - packages/**\n  script: pnpm -F=./apps/qq-copilot run build\n```\nOrangeCI 对比 base commit 和 head commit 的 diff，只有文件路径命中 ifModify 模式时才执行该任务。packages/** 作为公共依赖被所有子应用的 ifModify 包含。\n\n**Docker 缓存策略**：\n```dockerfile\n# cache.dockerfile\nFROM node:16-alpine\nCOPY pnpm-lock.yaml ./\nRUN pnpm install --frozen-lockfile\n```\n缓存镜像只在 pnpm-lock.yaml 变更时重建，日常 CI 直接复用已安装好的 node_modules 层，将安装时间从 3-5 分钟降到 10 秒以内。\n\n**产物聚合与部署**：\n1. 各子应用 build 完成后，cp-dist.js 聚合到 root/dist/\n2. Docker build 将 dist/ 和 nginx.conf 打入 Nginx Alpine 镜像\n3. 镜像推送到 csighub 镜像仓库\n4. tkex 平台更新容器镜像版本\n5. CDN 上传静态资源（cdn-oa:go 工具）\n\n**通知机制**：构建结果通过企微群机器人 Webhook 推送，包含分支名、提交者、构建状态。",
+          "en": "Complete CI/CD pipeline design and optimization strategies:\n\n**Branch strategy and triggers**:\n| Event | Behavior |\n|-------|----------|\n| master merge_request | Full validation (lint + build) |\n| master push | Auto tag |\n| master review (CR approved) | Auto rebase merge + delete source branch |\n| tag_push | Full build all sub-apps |\n| feature/bugfix push | Incremental build via ifModify |\n| preview push | Full build (pre-production) |\n\n**Incremental build mechanism**:\n```yaml\n# ci/.orange-ci.yml example\n- name: build-copilot\n  ifModify:\n    - apps/qq-copilot/**\n    - packages/**\n  script: pnpm -F=./apps/qq-copilot run build\n```\nOrangeCI compares diff between base and head commits, executing tasks only when file paths match ifModify patterns. packages/** is included in all sub-apps' ifModify as shared dependency.\n\n**Docker caching strategy**:\n```dockerfile\n# cache.dockerfile\nFROM node:16-alpine\nCOPY pnpm-lock.yaml ./\nRUN pnpm install --frozen-lockfile\n```\nCache image rebuilds only when pnpm-lock.yaml changes, daily CI reuses pre-installed node_modules layer, reducing install time from 3-5 minutes to under 10 seconds.\n\n**Artifact aggregation and deployment**:\n1. After sub-app builds complete, cp-dist.js aggregates to root/dist/\n2. Docker build packages dist/ and nginx.conf into Nginx Alpine image\n3. Image pushed to csighub registry\n4. tkex platform updates container image version\n5. CDN upload for static resources (cdn-oa:go tool)\n\n**Notification**: Build results pushed via WeCom bot webhook, including branch name, committer, and build status."
+        }
+      },
+      "knowledge_points": ["OrangeCI", "增量构建", "ifModify", "Docker 层缓存", "cache.dockerfile", "CDN 部署"],
+      "learning_plan": {
+        "must_read": ["Docker 多阶段构建文档", "Nginx 配置最佳实践", "CI/CD 概念入门"],
+        "hands_on": ["编写一个 Dockerfile 实现 node_modules 缓存", "配置 Nginx 多 SPA 部署"],
+        "common_pitfalls": ["Docker 缓存失效（COPY 顺序影响层缓存）", "ifModify 路径模式写错导致漏构建"],
+        "mock_questions": ["如何判断哪些子应用需要重新构建？", "Docker 层缓存何时会失效？"],
+        "time_estimate": "3-5 天"
+      },
+      "follow_ups": ["如果要引入 Turborepo Remote Cache，你会怎么设计？", "全量构建太慢时还有什么优化手段？"]
+    },
+    {
+      "id": "q-05",
+      "primary_dimension": "reliability",
+      "scope": "infra",
+      "sub_project": "root",
+      "source_tech_point": "tp-007",
+      "question": {
+        "zh": "项目的代码规范和质量保障体系是怎样的？",
+        "en": "What does the code quality and standards system look like?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "ESLint + Prettier + CommitLint + Husky + lint-staged + ls-lint + cspell 覆盖编码到提交全链路，TypeScript strict mode 保障类型安全。",
+          "en": "ESLint + Prettier + CommitLint + Husky + lint-staged + ls-lint + cspell covering coding to commit full chain, TypeScript strict mode ensuring type safety."
+        },
+        "standard": {
+          "zh": "质量保障分为四层：\n1. **编码阶段**：ESLint（继承 @tencent/eslint-config-tencent）+ Prettier 统一代码风格，TypeScript 5.2.2 strict mode（strictNullChecks/noUnusedLocals/noImplicitReturns）保障类型安全\n2. **文件命名**：ls-lint 强制文件命名规范（如组件用 PascalCase，工具用 camelCase），cspell 检查变量拼写\n3. **提交阶段**：Husky 注册 pre-commit hook 触发 lint-staged（只对暂存文件执行 ESLint + Prettier），commit-msg hook 触发 CommitLint（Conventional Commits 规范）\n4. **CI 阶段**：MR 时执行全量 ESLint 检查 + TypeScript 类型检查 + 完整构建\n\n另外 preinstall 钩子通过 `npx only-allow pnpm` 强制团队使用 pnpm，避免混用包管理器导致 lockfile 冲突。",
+          "en": "Quality assurance has four layers:\n1. **Coding stage**: ESLint (extending @tencent/eslint-config-tencent) + Prettier for unified code style, TypeScript 5.2.2 strict mode (strictNullChecks/noUnusedLocals/noImplicitReturns) for type safety\n2. **File naming**: ls-lint enforces naming conventions (PascalCase for components, camelCase for utils), cspell checks variable spelling\n3. **Commit stage**: Husky registers pre-commit hook triggering lint-staged (runs ESLint + Prettier on staged files only), commit-msg hook triggers CommitLint (Conventional Commits)\n4. **CI stage**: Full ESLint check + TypeScript type check + complete build on MR\n\nAdditionally, preinstall hook via `npx only-allow pnpm` forces the team to use pnpm, preventing lockfile conflicts from mixed package managers."
+        },
+        "deep_dive": {
+          "zh": "代码规范体系的分层设计和落地细节：\n\n**ESLint 配置架构**：\n- 基础层：@tencent/eslint-config-tencent + @tencent/eslint-config-tencent/ts（覆盖通用规则）\n- Vue 层：overrides 针对 .vue 文件启用 vue-eslint-parser + plugin:vue/vue3-recommended\n- React 层：overrides 针对 .tsx 文件启用 @typescript-eslint/parser + plugin:react/recommended\n- Prettier 集成：eslint-config-prettier 关闭与 Prettier 冲突的 ESLint 规则\n\n**TypeScript 严格模式配置**（packages/shared/configs/tsconfig.base.json）：\n```json\n{\n  \"strictNullChecks\": true,        // 空值安全\n  \"strictFunctionTypes\": true,     // 函数参数逆变\n  \"strictPropertyInitialization\": true, // 类属性必须初始化\n  \"noUnusedLocals\": true,          // 禁止未使用变量\n  \"noUnusedParameters\": true,      // 禁止未使用参数\n  \"noImplicitReturns\": true        // 所有分支必须返回\n}\n```\n\n**lint-staged 工作原理**：\n只对 git add 到暂存区的文件执行检查，避免全量扫描浪费时间。配置示例：\n```json\n\"lint-staged\": {\n  \"*.{ts,tsx,vue,js}\": [\"eslint --fix\"],\n  \"*.{ts,tsx,vue,js,json,md}\": [\"prettier --write\"]\n}\n```\n\n**CommitLint 规范**：遵循 Conventional Commits，格式 `type(scope): subject`，type 包括 feat/fix/docs/style/refactor/perf/test/chore。\n\n**实际效果**：\n- 代码风格 100% 一致（Prettier 自动格式化）\n- 提交历史可读性高（CommitLint 规范化）\n- 新人上手快（IDE 实时提示 + pre-commit 兜底）\n- CI 阶段作为最后防线拦截不合规代码",
+          "en": "Layered design and implementation details of the code standards system:\n\n**ESLint configuration architecture**:\n- Base layer: @tencent/eslint-config-tencent + /ts (covers general rules)\n- Vue layer: overrides for .vue files with vue-eslint-parser + plugin:vue/vue3-recommended\n- React layer: overrides for .tsx files with @typescript-eslint/parser + plugin:react/recommended\n- Prettier integration: eslint-config-prettier disables ESLint rules conflicting with Prettier\n\n**TypeScript strict mode config** (packages/shared/configs/tsconfig.base.json):\n```json\n{\n  \"strictNullChecks\": true,\n  \"strictFunctionTypes\": true,\n  \"strictPropertyInitialization\": true,\n  \"noUnusedLocals\": true,\n  \"noUnusedParameters\": true,\n  \"noImplicitReturns\": true\n}\n```\n\n**lint-staged principle**:\nOnly runs checks on files staged via git add, avoiding full scan waste. Config example:\n```json\n\"lint-staged\": {\n  \"*.{ts,tsx,vue,js}\": [\"eslint --fix\"],\n  \"*.{ts,tsx,vue,js,json,md}\": [\"prettier --write\"]\n}\n```\n\n**CommitLint convention**: Follows Conventional Commits format `type(scope): subject`, types include feat/fix/docs/style/refactor/perf/test/chore.\n\n**Actual impact**:\n- 100% consistent code style (Prettier auto-format)\n- Highly readable commit history (CommitLint standardization)\n- Fast onboarding (IDE real-time hints + pre-commit safety net)\n- CI stage as final gate blocking non-compliant code"
+        }
+      },
+      "knowledge_points": ["ESLint overrides", "lint-staged", "Husky", "CommitLint", "Conventional Commits", "TypeScript strict"],
+      "learning_plan": {
+        "must_read": ["ESLint 配置文档", "Husky 文档", "Conventional Commits 规范"],
+        "hands_on": ["从零搭建 Husky + lint-staged + CommitLint", "配置 TypeScript strict mode 并修复类型错误"],
+        "common_pitfalls": ["Husky v4 到 v8 的迁移变化", "lint-staged 与 IDE auto-save 冲突"],
+        "mock_questions": ["lint-staged 是如何只对暂存文件生效的？", "CommitLint 和 CI 检查有什么区别？"],
+        "time_estimate": "2-3 天"
+      },
+      "follow_ups": ["如果团队成员绕过 Husky 提交了不合规代码怎么办？", "如何自定义 ESLint 规则？"]
+    },
+    {
+      "id": "q-06",
+      "primary_dimension": "architecture",
+      "scope": "frontend",
+      "sub_project": "packages/shared",
+      "source_tech_point": "tp-006",
+      "question": {
+        "zh": "公共包是如何设计和打包的？子路径导出是如何实现的？",
+        "en": "How are shared packages designed and bundled? How are subpath exports implemented?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "使用 tsup 打包成 ESM/CJS 双格式，通过 package.json exports 字段实现子路径导出。",
+          "en": "Bundled with tsup into ESM/CJS dual formats, with package.json exports field implementing subpath exports."
+        },
+        "standard": {
+          "zh": "@infras/shared 是最核心的公共包，使用 tsup（底层 esbuild）打包。设计上按职责拆分为 4 个子模块：constants（业务常量）、types（TypeScript 类型声明）、utils（工具函数）、configs（tsconfig/vite 基础配置）。每个子模块是独立入口点，通过 package.json 的 exports 字段映射子路径：\n```json\n\"exports\": {\n  \"./constants\": { \"import\": \"./dist/constants.mjs\", \"require\": \"./dist/constants.js\" },\n  \"./types\": { \"import\": \"./dist/types.mjs\", \"require\": \"./dist/types.js\" },\n  \"./utils\": { \"import\": \"./dist/utils.mjs\", \"require\": \"./dist/utils.js\" }\n}\n```\n使用时 `import { xxx } from '@infras/shared/constants'` 即可精准引入，支持 Tree Shaking。",
+          "en": "@infras/shared is the core shared package, bundled with tsup (esbuild underneath). It's designed with 4 sub-modules by responsibility: constants (business constants), types (TypeScript declarations), utils (utility functions), configs (tsconfig/vite base configs). Each sub-module is an independent entry point mapped via package.json exports field for subpath imports:\n```json\n\"exports\": {\n  \"./constants\": { \"import\": \"./dist/constants.mjs\", \"require\": \"./dist/constants.js\" },\n  \"./types\": { \"import\": \"./dist/types.mjs\", \"require\": \"./dist/types.js\" },\n  \"./utils\": { \"import\": \"./dist/utils.mjs\", \"require\": \"./dist/utils.js\" }\n}\n```\nUsage: `import { xxx } from '@infras/shared/constants'` for precise imports with Tree Shaking support."
+        },
+        "deep_dive": {
+          "zh": "公共包的设计哲学和技术实现细节：\n\n**设计原则**：\n1. 框架无关：所有公共包不依赖 Vue 或 React，确保双框架子应用都能使用\n2. 职责单一：shared 负责类型和常量，utils 负责工具方法，components 负责 UI，theme-chalk 负责样式\n3. 按需导入：通过多入口打包 + exports 映射，消费方只引入需要的子模块\n\n**tsup 配置要点**：\n```typescript\n// tsup.config.ts\nexport default defineConfig({\n  entry: ['src/constants/index.ts', 'src/types/index.ts', 'src/utils/index.ts', 'src/configs/index.ts'],\n  format: ['esm', 'cjs'],   // 双格式输出\n  dts: true,                  // 生成 .d.ts 类型声明\n  splitting: true,            // 代码分割\n  clean: true                 // 构建前清理\n})\n```\n\n**为什么用 tsup 而不是 Rollup/Webpack**：\n- tsup 底层是 esbuild，打包速度是 Rollup 的 10-100 倍\n- 零配置即可输出 ESM/CJS/IIFE 多格式\n- 内置 .d.ts 生成（底层调 TypeScript compiler API）\n- 对于纯 TS 工具库来说是最优解\n\n**版本管理策略**：\n- 版本号固定为 0.0.0（不发 npm）\n- 通过 workspace:* 协议本地链接\n- 开发时 pnpm 直接链接源码目录\n- 构建时先 `pnpm run build:pkg` 确保公共包产物最新\n\n**构建顺序保证**：\n根目录 scripts 中 `build:pkg` 先于所有子应用构建执行，确保子应用引用的公共包产物是最新的。dev 模式下也通过 `pnpm run build:pkg &&` 串联保证。",
+          "en": "Design philosophy and technical implementation of shared packages:\n\n**Design principles**:\n1. Framework-agnostic: All packages have zero Vue/React dependencies, ensuring both framework sub-apps can consume them\n2. Single responsibility: shared for types/constants, utils for utilities, components for UI, theme-chalk for styles\n3. On-demand imports: Multi-entry bundling + exports mapping ensures consumers only import needed sub-modules\n\n**tsup configuration highlights**:\n```typescript\n// tsup.config.ts\nexport default defineConfig({\n  entry: ['src/constants/index.ts', 'src/types/index.ts', 'src/utils/index.ts', 'src/configs/index.ts'],\n  format: ['esm', 'cjs'],\n  dts: true,\n  splitting: true,\n  clean: true\n})\n```\n\n**Why tsup over Rollup/Webpack**:\n- tsup uses esbuild underneath, 10-100x faster than Rollup\n- Zero-config ESM/CJS/IIFE multi-format output\n- Built-in .d.ts generation (calls TypeScript compiler API)\n- Optimal choice for pure TS utility libraries\n\n**Version management**:\n- Version pinned at 0.0.0 (no npm publishing)\n- Linked locally via workspace:* protocol\n- Development mode: pnpm directly links source directories\n- Build time: `pnpm run build:pkg` first ensures latest package artifacts\n\n**Build order guarantee**:\nRoot `build:pkg` script executes before all sub-app builds, ensuring sub-apps reference latest package artifacts. Dev mode also chains via `pnpm run build:pkg &&`."
+        }
+      },
+      "knowledge_points": ["tsup", "esbuild", "package.json exports", "条件导出", "ESM/CJS 双格式", "Tree Shaking"],
+      "learning_plan": {
+        "must_read": ["tsup 官方文档", "Node.js package.json exports 规范", "esbuild 官方文档"],
+        "hands_on": ["使用 tsup 打包一个多入口工具库", "配置 exports 子路径导出并验证 Tree Shaking"],
+        "common_pitfalls": ["exports 字段与 main/module 字段的优先级关系", "dts 生成在复杂类型下可能失败"],
+        "mock_questions": ["ESM 和 CJS 的核心区别是什么？", "exports 字段的条件导出是如何匹配的？"],
+        "time_estimate": "2-3 天"
+      },
+      "follow_ups": ["如果要支持按需引入组件（类似 antd 的 tree shaking），你会怎么配置？"]
+    },
+    {
+      "id": "q-07",
+      "primary_dimension": "observability",
+      "scope": "frontend",
+      "sub_project": "root",
+      "source_tech_point": "tp-008",
+      "question": {
+        "zh": "前端监控是如何接入的？监控了哪些指标？",
+        "en": "How is frontend monitoring integrated? What metrics are monitored?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "通过 Aegis SDK 接入，监控 Web Vitals 性能指标、JS 错误、API 请求成功率。",
+          "en": "Integrated via Aegis SDK, monitoring Web Vitals performance metrics, JS errors, and API request success rates."
+        },
+        "standard": {
+          "zh": "使用 @tencent/aegis-web-sdk 接入腾讯前端监控平台。监控维度包括：(1) 性能指标——FCP、LCP、CLS、FID 等 Web Vitals，页面加载瀑布图；(2) 错误监控——JS 运行时错误、Promise 未捕获异常、资源加载失败；(3) API 监控——请求成功率、耗时分布、异常状态码；(4) 自定义上报——业务关键节点打点、用户行为追踪。Aegis 在基座应用初始化时挂载，子应用可复用同一实例或创建独立实例。",
+          "en": "Using @tencent/aegis-web-sdk integrated with Tencent frontend monitoring platform. Monitoring dimensions include: (1) Performance metrics — FCP, LCP, CLS, FID and other Web Vitals, page load waterfall; (2) Error monitoring — JS runtime errors, uncaught Promise rejections, resource load failures; (3) API monitoring — request success rate, latency distribution, abnormal status codes; (4) Custom reporting — business critical node tracking, user behavior analytics. Aegis initializes in the shell app, sub-apps can reuse the same instance or create independent ones."
+        },
+        "deep_dive": {
+          "zh": "前端监控的接入方案和实践细节：\n\n**Aegis SDK 初始化**：\n```typescript\nimport Aegis from '@tencent/aegis-web-sdk';\n\nconst aegis = new Aegis({\n  id: 'PROJECT_ID',\n  reportApiSpeed: true,    // API 测速\n  reportAssetSpeed: true,  // 静态资源测速\n  spa: true,               // SPA 模式\n});\n```\n\n**监控维度详解**：\n1. **Web Vitals**：\n   - FCP（First Contentful Paint）：首次内容绘制\n   - LCP（Largest Contentful Paint）：最大内容绘制\n   - CLS（Cumulative Layout Shift）：累积布局偏移\n   - FID（First Input Delay）：首次输入延迟\n   - TTFB（Time to First Byte）：首字节时间\n\n2. **错误采集**：\n   - window.onerror 捕获 JS 异常\n   - window.onunhandledrejection 捕获 Promise 异常\n   - 资源加载失败（img/script/link onerror）\n   - 自定义 try-catch 上报\n\n3. **API 监控**：\n   - 通过 XMLHttpRequest/fetch 拦截\n   - 记录请求 URL、状态码、耗时\n   - 可配置告警阈值（如 API 成功率 < 99%）\n\n**微前端场景的特殊处理**：\n- 基座和子应用使用不同的 Aegis 实例（不同 PROJECT_ID）\n- SPA 模式下路由切换自动上报页面 PV\n- 子应用的 JS 错误会包含应用标识便于定位\n\n**告警与大盘**：\n- Aegis 平台配置告警规则（错误率突增、API 耗时 P99 超阈值）\n- 实时大盘查看各子应用的性能和错误趋势",
+          "en": "Frontend monitoring integration approach and practical details:\n\n**Aegis SDK initialization**:\n```typescript\nimport Aegis from '@tencent/aegis-web-sdk';\n\nconst aegis = new Aegis({\n  id: 'PROJECT_ID',\n  reportApiSpeed: true,\n  reportAssetSpeed: true,\n  spa: true,\n});\n```\n\n**Monitoring dimensions in detail**:\n1. **Web Vitals**: FCP, LCP, CLS, FID, TTFB\n2. **Error collection**: window.onerror for JS exceptions, unhandledrejection for Promise errors, resource load failures\n3. **API monitoring**: XMLHttpRequest/fetch interception, recording URL, status code, latency\n\n**Micro-frontend specific handling**:\n- Shell and sub-apps use different Aegis instances (different PROJECT_IDs)\n- SPA mode auto-reports page PV on route changes\n- Sub-app JS errors include app identifiers for quick localization\n\n**Alerting and dashboards**:\n- Aegis platform configures alert rules (error rate spikes, API P99 latency exceeding thresholds)\n- Real-time dashboards showing performance and error trends per sub-app"
+        }
+      },
+      "knowledge_points": ["Aegis SDK", "Web Vitals", "前端错误监控", "API 监控", "SPA 路由上报"],
+      "learning_plan": {
+        "must_read": ["Web Vitals 指标定义", "前端错误监控原理", "Performance API"],
+        "hands_on": ["接入一个前端监控 SDK（如 Sentry）", "手动实现 JS 错误捕获上报"],
+        "common_pitfalls": ["SPA 模式下 PV 统计不准", "跨域 Script Error 信息丢失"],
+        "mock_questions": ["FCP 和 LCP 的区别是什么？", "如何捕获跨域脚本的错误详情？"],
+        "time_estimate": "2-3 天"
+      },
+      "follow_ups": ["如何区分是基座的错误还是子应用的错误？", "监控数据量大时如何做采样？"]
+    },
+    {
+      "id": "q-08",
+      "primary_dimension": "performance",
+      "scope": "infra",
+      "sub_project": "root",
+      "source_tech_point": "tp-011",
+      "question": {
+        "zh": "Nginx 是如何配置的？SPA 路由和性能优化分别怎么做？",
+        "en": "How is Nginx configured? How do you handle SPA routing and performance optimization?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "try_files 实现 SPA fallback，gzip + sendfile + keepalive 优化性能。",
+          "en": "try_files for SPA fallback, gzip + sendfile + keepalive for performance optimization."
+        },
+        "standard": {
+          "zh": "Nginx 配置的核心要点：\n1. **SPA 路由支持**：`try_files $uri $uri/ /index.html` 将所有未匹配到静态文件的请求 fallback 到 index.html，由前端路由接管\n2. **多子应用路由**：通过 location 块按路径前缀（/base-framework, /qq-copilot 等）映射到对应的 dist 目录\n3. **Gzip 压缩**：`gzip on` 对 text/html、application/javascript 等类型启用压缩，减少传输体积\n4. **零拷贝传输**：`sendfile on` + `tcp_nopush on` 减少内核态用户态数据拷贝\n5. **长连接**：`keepalive_timeout 1500` 复用 TCP 连接减少握手开销\n6. **并发支持**：`worker_processes 2` + `worker_connections 65535` 支持高并发",
+          "en": "Core Nginx configuration points:\n1. **SPA routing**: `try_files $uri $uri/ /index.html` falls back all unmatched static file requests to index.html for frontend routing\n2. **Multi-app routing**: location blocks map path prefixes (/base-framework, /qq-copilot, etc.) to corresponding dist directories\n3. **Gzip compression**: `gzip on` for text/html, application/javascript reducing transfer size\n4. **Zero-copy transfer**: `sendfile on` + `tcp_nopush on` reducing kernel-userspace data copies\n5. **Keep-alive**: `keepalive_timeout 1500` reusing TCP connections to reduce handshake overhead\n6. **Concurrency**: `worker_processes 2` + `worker_connections 65535` for high concurrency"
+        },
+        "deep_dive": {
+          "zh": "Nginx 配置的设计决策和优化细节：\n\n**完整配置解析**：\n```nginx\nuser root;\nworker_processes 2;           # 2 个工作进程（容器环境一般 = CPU 核数）\nworker_rlimit_nofile 65535;   # 最大文件描述符数\n\nevents {\n    use epoll;                  # Linux 高性能事件模型\n    worker_connections 65535;   # 每个 worker 最大连接数\n}\n\nhttp {\n    sendfile on;                # 零拷贝文件传输\n    tcp_nopush on;              # 配合 sendfile 减少网络包数量\n    tcp_nodelay on;             # 禁用 Nagle 算法，减少小包延迟\n    keepalive_timeout 1500;     # TCP 长连接超时\n    client_max_body_size 5000m; # 大文件上传支持\n    gzip on;                    # Gzip 压缩\n\n    server {\n        listen 80;\n        # 子应用路由\n        location /base-framework {\n            root /etc/nginx/html;\n            try_files $uri $uri/ /index.html;\n        }\n        # 默认路由到基座\n        location / {\n            root /etc/nginx/html/base-framework/base-framework;\n            try_files $uri $uri/ /index.html;\n        }\n    }\n}\n```\n\n**try_files 工作原理**：\n`try_files $uri $uri/ /index.html` 的匹配顺序：\n1. 尝试精确匹配文件 $uri（如 /assets/main.js）\n2. 尝试匹配目录 $uri/\n3. 都不匹配则返回 /index.html（SPA fallback）\n\n这确保了静态资源正常加载，而前端路由路径（如 /dashboard/users）会 fallback 到 index.html 由 Vue Router / React Router 处理。\n\n**性能优化原理**：\n- sendfile：直接在内核态完成文件到 socket 的数据传输，避免用户态拷贝\n- tcp_nopush：在 sendfile 启用时等待响应头和数据一起发送，减少小包\n- tcp_nodelay：在 keepalive 连接上禁用 Nagle 算法，降低交互延迟\n- epoll：Linux 下 O(1) 复杂度的事件通知机制，比 select/poll 高效\n\n**可能的优化方向**：\n- 添加 `gzip_types` 精确指定压缩类型\n- 启用 Brotli 压缩（比 Gzip 压缩率高 15-25%）\n- 添加 Cache-Control 长缓存策略（配合文件名 hash）\n- 配置 HTTP/2 支持多路复用",
+          "en": "Nginx configuration design decisions and optimization details:\n\n**try_files mechanism**: Matching order of `try_files $uri $uri/ /index.html`: first tries exact file match, then directory, finally falls back to index.html for SPA routing.\n\n**Performance optimization principles**:\n- sendfile: Kernel-space file-to-socket transfer avoiding userspace copying\n- tcp_nopush: Batches response header and data together with sendfile\n- tcp_nodelay: Disables Nagle algorithm on keepalive connections\n- epoll: Linux O(1) event notification mechanism\n\n**Potential improvements**: gzip_types specification, Brotli compression (15-25% better than Gzip), Cache-Control with filename hashing, HTTP/2 multiplexing."
+        }
+      },
+      "knowledge_points": ["Nginx location", "try_files", "SPA fallback", "sendfile", "gzip", "epoll", "keepalive"],
+      "learning_plan": {
+        "must_read": ["Nginx 入门指南", "Nginx location 匹配规则详解", "Linux epoll 原理"],
+        "hands_on": ["配置 Nginx 部署一个 SPA 应用", "对比 gzip 开启前后的资源体积"],
+        "common_pitfalls": ["try_files 路径写错导致 404", "gzip 对已压缩资源（如图片）反而增大体积"],
+        "mock_questions": ["Nginx location 的匹配优先级？", "sendfile 的零拷贝原理是什么？"],
+        "time_estimate": "2-3 天"
+      },
+      "follow_ups": ["如果要支持 HTTP/2 和 Brotli，需要怎么配置？", "如何设计静态资源的缓存策略？"]
+    },
+    {
+      "id": "q-09",
+      "primary_dimension": "security",
+      "scope": "frontend",
+      "sub_project": "root",
+      "source_tech_point": "tp-015",
+      "question": {
+        "zh": "微前端环境下样式隔离是怎么做的？遇到过什么问题？",
+        "en": "How do you handle style isolation in the micro-frontend environment? What issues have you encountered?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "通过 CSS Modules + BEM 命名约定 + theme-chalk 统一主题变量实现样式隔离。",
+          "en": "Style isolation through CSS Modules + BEM naming convention + theme-chalk unified theme variables."
+        },
+        "standard": {
+          "zh": "样式隔离采用多层策略：(1) **CSS Modules**：Vite 默认支持 .module.less，编译时自动添加 hash 后缀避免类名冲突；(2) **BEM 命名约定**：组件样式遵循 Block__Element--Modifier 命名，配合子应用命名空间前缀（如 .copilot-xxx, .lucy-xxx）；(3) **统一主题层**：@infras/theme-chalk 定义全局 CSS 变量和 TDesign 主题覆盖，保证各子应用视觉统一；(4) **Scoped Style**：Vue 子应用使用 `<style scoped>` 限制样式作用域。\n\n实际遇到的问题：TDesign 全局样式在多子应用场景下可能冲突（如弹窗组件挂载到 body），通过主题前缀和 CSS 变量覆盖解决。",
+          "en": "Style isolation uses multiple strategies: (1) **CSS Modules**: Vite's default .module.less support with compile-time hash suffixes preventing class name conflicts; (2) **BEM naming**: Component styles follow Block__Element--Modifier with app namespace prefixes (e.g. .copilot-xxx, .lucy-xxx); (3) **Unified theme layer**: @infras/theme-chalk defines global CSS variables and TDesign theme overrides for visual consistency; (4) **Scoped Style**: Vue sub-apps use `<style scoped>` for scope limitation.\n\nIssue encountered: TDesign global styles (e.g. modal components mounted to body) may conflict across sub-apps, resolved via theme prefixes and CSS variable overrides."
+        },
+        "deep_dive": {
+          "zh": "微前端样式隔离的完整方案和挑战：\n\n**隔离层次**：\n```\n第一层：CSS Modules (编译时隔离)\n  └─ .module.less 文件，Vite 编译为 .className_hash\n第二层：BEM + 命名空间 (约定隔离)\n  └─ .app-name__component__element--modifier\n第三层：Vue scoped (运行时隔离)\n  └─ <style scoped> 添加 data-v-xxx 属性选择器\n第四层：主题变量 (样式统一)\n  └─ theme-chalk 定义 --td-brand-color 等 CSS 变量\n```\n\n**遇到的问题及解决方案**：\n\n1. **TDesign 全局样式冲突**：\n   - 问题：多个子应用引入 TDesign 时，全局重置样式和组件基础样式重复加载\n   - 解决：基座统一引入 TDesign 全局样式，子应用只引入组件级样式\n\n2. **弹窗/Tooltip 挂载 body**：\n   - 问题：Dialog、Tooltip 等组件 teleport 到 body，脱离子应用作用域\n   - 解决：TDesign 支持配置挂载容器（attach），限制在子应用根节点内\n\n3. **Less 变量覆盖不生效**：\n   - 问题：子应用修改 Less 变量但未影响 TDesign 组件\n   - 解决：通过 CSS 变量覆盖（TDesign 支持 CSS Variable 方案），在 theme-chalk 统一定义\n\n**对比其他隔离方案**：\n- Shadow DOM：完全隔离但 TDesign 组件不支持，弹窗等会突破边界\n- CSS-in-JS：React 子应用可用但 Vue 不适合，且有运行时开销\n- iframe：最强隔离但通信复杂、性能差\n- 当前方案（CSS Modules + BEM）：平衡了隔离性和开发体验",
+          "en": "Complete style isolation approach and challenges in micro-frontend:\n\n**Isolation layers**: CSS Modules (compile-time) → BEM + namespace (convention) → Vue scoped (runtime) → Theme variables (unification)\n\n**Issues and solutions**:\n1. TDesign global style conflicts → Shell loads global styles, sub-apps only component styles\n2. Modal/Tooltip mounting to body → Configure attach container to sub-app root\n3. Less variable overrides not working → CSS Variable approach via theme-chalk\n\n**Comparison**: Shadow DOM (full isolation but breaks components), CSS-in-JS (runtime overhead), iframe (strongest but poor performance), current approach (balanced isolation and DX)"
+        }
+      },
+      "knowledge_points": ["CSS Modules", "BEM", "CSS 变量", "Vue scoped", "样式隔离", "Shadow DOM"],
+      "learning_plan": {
+        "must_read": ["CSS Modules 规范", "BEM 命名方法论", "CSS Custom Properties"],
+        "hands_on": ["在 Vite 项目中配置 CSS Modules", "实现一个 CSS 变量主题切换方案"],
+        "common_pitfalls": ["CSS Modules 与全局样式混用时的优先级问题", "scoped 样式影响子组件的穿透写法"],
+        "mock_questions": ["CSS Modules 的原理是什么？", "Vue scoped 的实现原理？"],
+        "time_estimate": "2-3 天"
+      },
+      "follow_ups": ["如果引入 qiankun，它的样式隔离机制是怎样的？", "CSS 变量方案在 IE 兼容性方面怎么处理？"]
+    },
+    {
+      "id": "q-10",
+      "primary_dimension": "trade-off",
+      "scope": "fullstack",
+      "sub_project": "root",
+      "source_tech_point": "tp-002",
+      "question": {
+        "zh": "如果让你重新设计这个项目的架构，你会做什么不同的决策？",
+        "en": "If you could redesign this project's architecture, what decisions would you make differently?"
+      },
+      "answer": {
+        "elevator": {
+          "zh": "统一框架选型、引入 Turborepo、升级微前端方案（Module Federation）、完善测试体系。",
+          "en": "Unify framework selection, introduce Turborepo, upgrade micro-frontend approach (Module Federation), establish comprehensive testing."
+        },
+        "standard": {
+          "zh": "主要改进方向：\n1. **统一技术栈**：选择 React 作为唯一框架，消除双框架带来的维护成本和团队切换成本\n2. **引入 Turborepo**：利用 Remote Cache 实现跨 CI 的构建缓存复用，减少 50%+ 构建时间\n3. **升级微前端方案**：从 Nginx 路由分发升级到 Module Federation，实现运行时代码共享和按需加载\n4. **完善测试体系**：全面推广 Vitest 单元测试 + Testing Library 组件测试，CI 卡覆盖率门槛\n5. **引入 Changesets**：管理公共包版本和自动生成 Changelog\n6. **添加 Monorepo 可视化**：引入依赖图谱工具（如 nx graph）帮助理解包间依赖关系",
+          "en": "Key improvements:\n1. **Unify tech stack**: Choose React as sole framework, eliminating dual-framework maintenance cost\n2. **Introduce Turborepo**: Leverage Remote Cache for cross-CI build cache reuse, reducing 50%+ build time\n3. **Upgrade micro-frontend**: From Nginx route distribution to Module Federation for runtime code sharing\n4. **Establish testing**: Adopt Vitest + Testing Library across all apps with CI coverage gates\n5. **Introduce Changesets**: Manage package versions and auto-generate changelog\n6. **Add Monorepo visualization**: Dependency graph tools (like nx graph) for understanding package relationships"
+        },
+        "deep_dive": {
+          "zh": "逐项分析改进决策的理由和可行性：\n\n**1. 统一技术栈 → React**\n- 理由：当前 Vue 子应用只有 2 个，React 有 8 个，统一到 React 迁移成本可控\n- 收益：团队只需精通一个框架、公共组件可复用、ESLint 配置简化、新人上手快\n- 迁移策略：新功能统一用 React，Vue 子应用逐步重写，设置截止时间\n\n**2. 引入 Turborepo**\n- 理由：当前 pnpm workspace 只解决了依赖管理，缺少任务编排和缓存\n- 收益：\n  - Remote Cache：同样的源码 + 依赖 → 直接复用上次构建产物\n  - 任务并行：自动分析依赖图，最大化并行执行\n  - 增量 lint/test：只对变更影响的包执行\n- 与 pnpm workspace 的关系：Turborepo 负责任务编排，pnpm 继续管理依赖\n\n**3. Module Federation 替代 Nginx 路由分发**\n- 理由：当前方案无法实现运行时共享（如公共依赖 React/TDesign），每个子应用都打包了一份\n- 收益：\n  - 公共依赖运行时共享，总包体积减少\n  - 子应用可按需懒加载（不需要整个 SPA 加载完）\n  - 支持独立部署 + 独立版本控制\n- 风险：增加了运行时复杂度，需要处理版本兼容性\n\n**4. 测试体系**\n- 现状：只有 qq-bff-gateway 配置了 vitest，其他子应用无测试\n- 目标：核心工具函数 80%+ 覆盖率，关键页面组件测试\n- 实施：Vitest（与 Vite 共享配置） + @testing-library/react + MSW mock API\n\n**5. Changesets 版本管理**\n- 虽然当前不发 npm，但 Changesets 可以：\n  - 自动生成 CHANGELOG.md\n  - 标记哪些包有变更\n  - 配合 CI 自动发布 pre-release 供测试\n\n**优先级排序**：Turborepo（ROI 最高） > 测试体系 > Module Federation > 统一框架 > Changesets",
+          "en": "Detailed analysis of each improvement decision:\n\n**1. Unify to React**: Only 2 Vue apps vs 8 React, manageable migration cost. Benefits: single-framework expertise, shared components, simplified tooling.\n\n**2. Turborepo**: Current pnpm workspace only handles deps, lacks task orchestration/caching. Remote Cache reuses previous build artifacts, task parallelization via dependency graph analysis.\n\n**3. Module Federation**: Current approach can't share runtime deps (React/TDesign packaged per app). MF enables runtime sharing, on-demand lazy loading, independent deployment.\n\n**4. Testing**: Vitest + @testing-library/react + MSW, targeting 80%+ coverage for core utilities.\n\n**5. Changesets**: Auto-generate CHANGELOG, mark changed packages, enable pre-release publishing.\n\n**Priority**: Turborepo (highest ROI) > Testing > Module Federation > Unify framework > Changesets"
+        }
+      },
+      "knowledge_points": ["Turborepo Remote Cache", "Module Federation", "Changesets", "Vitest", "架构演进"],
+      "learning_plan": {
+        "must_read": ["Turborepo 官方文档", "Module Federation 概念", "Changesets 文档"],
+        "hands_on": ["在现有项目中集成 Turborepo", "搭建一个 Module Federation demo"],
+        "common_pitfalls": ["Module Federation 版本兼容性问题", "Turborepo Remote Cache 安全性"],
+        "mock_questions": ["Turborepo 的 Remote Cache 原理是什么？", "Module Federation 和微前端的关系？"],
+        "time_estimate": "5-7 天"
+      },
+      "follow_ups": ["Module Federation 的版本冲突如何处理？", "如何评估架构迁移的 ROI？"]
+    }
+  ],
+  "dimension_coverage": {
+    "architecture": 3,
+    "performance": 2,
+    "reliability": 1,
+    "security": 1,
+    "observability": 1,
+    "trade-off": 2,
+    "feature": 0
+  }
+}

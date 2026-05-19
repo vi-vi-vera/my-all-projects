@@ -1,0 +1,157 @@
+{
+  "schema_version": "1.0",
+  "role": "前端",
+  "level": "中级",
+  "points": [
+    {
+      "id": "tp-001",
+      "topic": "pnpm workspace Monorepo 架构设计：10+ 子应用 + 4 公共包的依赖管理与构建编排",
+      "scope": "infra",
+      "primary_dimension": "architecture",
+      "sub_project": "root",
+      "evidence": ["pnpm-workspace.yaml", "package.json", "packages/shared/package.json"],
+      "depth_tags": ["pnpm", "monorepo", "workspace协议", "依赖隔离"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-002",
+      "topic": "微前端架构：基座(React) + Nginx 路由分发实现多子应用独立部署",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "base-framework",
+      "evidence": ["apps/base-framework/", "nginx.conf", "Dockerfile"],
+      "depth_tags": ["微前端", "路由分发", "SPA fallback", "独立部署"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-003",
+      "topic": "Vue 3 + React 双框架共存：ESLint 分层配置 + TDesign 统一设计系统",
+      "scope": "frontend",
+      "primary_dimension": "trade-off",
+      "sub_project": "root",
+      "evidence": [".eslintrc.js", "apps/lucy/package.json", "apps/base-framework/package.json"],
+      "depth_tags": ["多框架", "ESLint overrides", "设计系统统一"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-004",
+      "topic": "OrangeCI 增量构建：基于 ifModify 的文件变更范围触发策略",
+      "scope": "infra",
+      "primary_dimension": "performance",
+      "sub_project": "ci",
+      "evidence": ["ci/.orange-ci.yml", "ci/qq-copilot.push.yml", "ci/base-framework.push.yml"],
+      "depth_tags": ["CI/CD", "增量构建", "ifModify", "构建加速"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-005",
+      "topic": "Docker 缓存加速 + Nginx Alpine 轻量部署",
+      "scope": "infra",
+      "primary_dimension": "performance",
+      "sub_project": "root",
+      "evidence": ["Dockerfile", "cache.dockerfile", "nginx.conf"],
+      "depth_tags": ["Docker", "层缓存", "Nginx", "容器化"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-006",
+      "topic": "tsup 多入口打包公共包：ESM/CJS 双格式 + 子路径导出",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "sub_project": "packages/shared",
+      "evidence": ["packages/shared/package.json", "packages/utils/package.json"],
+      "depth_tags": ["tsup", "esbuild", "多入口", "双格式输出"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-007",
+      "topic": "全链路代码规范：ESLint + Prettier + CommitLint + Husky + lint-staged + ls-lint + cspell",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "sub_project": "root",
+      "evidence": [".eslintrc.js", ".prettierrc.json", "commitlint.config.js", ".husky/", ".ls-lint.yml", "cspell.json"],
+      "depth_tags": ["代码规范", "Git Hooks", "自动化检查"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-008",
+      "topic": "Aegis 前端监控接入：性能指标采集与错误上报",
+      "scope": "frontend",
+      "primary_dimension": "observability",
+      "sub_project": "root",
+      "evidence": ["package.json"],
+      "depth_tags": ["Aegis", "前端监控", "Web Vitals", "错误上报"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-009",
+      "topic": "Vite 4 构建配置：开发代理 + 环境变量 + 多应用独立配置",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "root",
+      "evidence": ["apps/base-framework/vite.config.ts", "apps/lucy/vite.config.ts"],
+      "depth_tags": ["Vite", "HMR", "开发代理", "环境变量"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-010",
+      "topic": "CI 自动化流程：CR 自动合并 + 企微通知 + CDN 上传",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "sub_project": "ci",
+      "evidence": ["ci/.orange-ci.yml"],
+      "depth_tags": ["自动合并", "企微机器人", "CDN", "代码审查"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-011",
+      "topic": "Nginx SPA 路由配置与 Gzip 压缩优化",
+      "scope": "infra",
+      "primary_dimension": "performance",
+      "sub_project": "root",
+      "evidence": ["nginx.conf"],
+      "depth_tags": ["Nginx", "try_files", "gzip", "SPA路由"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-012",
+      "topic": "TypeScript 严格模式配置与跨包类型共享",
+      "scope": "frontend",
+      "primary_dimension": "reliability",
+      "sub_project": "packages/shared",
+      "evidence": ["tsconfig.json", "packages/shared/configs/tsconfig.base.json"],
+      "depth_tags": ["TypeScript strict", "类型共享", "dts生成"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-013",
+      "topic": "构建产物聚合脚本：cp-dist.js 实现多子应用 dist 统一部署",
+      "scope": "infra",
+      "primary_dimension": "architecture",
+      "sub_project": "root",
+      "evidence": ["scripts/cp-dist.js"],
+      "depth_tags": ["构建脚本", "产物聚合", "部署自动化"],
+      "interview_value": "低"
+    },
+    {
+      "id": "tp-014",
+      "topic": "@dnd-kit 拖拽排序与 COS SDK 文件上传集成",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "sub_project": "qq-qun",
+      "evidence": ["apps/qq-qun/package.json"],
+      "depth_tags": ["拖拽排序", "文件上传", "COS SDK"],
+      "interview_value": "低"
+    },
+    {
+      "id": "tp-015",
+      "topic": "微前端环境下的样式隔离策略",
+      "scope": "frontend",
+      "primary_dimension": "security",
+      "sub_project": "root",
+      "evidence": ["packages/theme-chalk/", ".eslintrc.js"],
+      "depth_tags": ["样式隔离", "CSS Module", "BEM", "主题定制"],
+      "interview_value": "高"
+    }
+  ]
+}

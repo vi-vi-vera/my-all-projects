@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0",
+  "mode": "knowledge",
+  "platform_name": "宇恒运营管理系统 (yuheng-monorepo)",
+  "knowledge_map": {
+    "topics": [
+      {
+        "name": "pnpm workspace 与 Monorepo",
+        "level": "必须掌握",
+        "related_dimensions": ["architecture"],
+        "questions_using": ["q-01"],
+        "must_read": ["pnpm 官方文档 - Workspace", "pnpm 官方文档 - Motivation (Why pnpm)", "Node.js 模块解析算法 (require.resolve)"],
+        "hands_on": ["创建 3 包 pnpm workspace 项目并配置依赖", "对比 npm/yarn/pnpm 安装后的 node_modules 结构", "使用 pnpm -F 命令精准构建单个包"]
+      },
+      {
+        "name": "微前端架构模式",
+        "level": "必须掌握",
+        "related_dimensions": ["architecture"],
+        "questions_using": ["q-02", "q-09"],
+        "must_read": ["Micro Frontends 概念文档 (micro-frontends.org)", "qiankun 官方文档 - 设计理念", "Module Federation 官方文档"],
+        "hands_on": ["配置 Nginx 实现多 SPA 路由分发", "搭建 qiankun 主应用 + 子应用 demo", "实现 Module Federation 共享依赖 demo"]
+      },
+      {
+        "name": "Nginx 配置与优化",
+        "level": "必须掌握",
+        "related_dimensions": ["performance", "architecture"],
+        "questions_using": ["q-02", "q-08"],
+        "must_read": ["Nginx 入门指南 (官方文档)", "Nginx location 匹配规则详解", "Linux sendfile/epoll 原理"],
+        "hands_on": ["配置 Nginx 部署 SPA 应用（try_files）", "开启 gzip 并对比压缩前后体积", "配置 Cache-Control 长缓存策略"]
+      },
+      {
+        "name": "Vite 构建工具",
+        "level": "必须掌握",
+        "related_dimensions": ["performance", "feature"],
+        "questions_using": ["q-01", "q-06"],
+        "must_read": ["Vite 官方文档 - Why Vite", "Vite 官方文档 - Plugin API", "esbuild 官方文档 - Transform API"],
+        "hands_on": ["从零搭建 Vite + React/Vue 项目", "配置 Vite 开发代理和环境变量", "编写一个简单的 Vite 插件"]
+      },
+      {
+        "name": "TypeScript 严格模式",
+        "level": "必须掌握",
+        "related_dimensions": ["reliability"],
+        "questions_using": ["q-05"],
+        "must_read": ["TypeScript Handbook - Strict Mode", "TypeScript Deep Dive - Compiler Options", "tsconfig.json 完全指南"],
+        "hands_on": ["将一个 JS 项目迁移到 TypeScript strict mode", "修复 strictNullChecks 引入的类型错误", "配置 path aliases 并验证跨包类型推导"]
+      },
+      {
+        "name": "ESLint 多框架配置",
+        "level": "必须掌握",
+        "related_dimensions": ["reliability", "trade-off"],
+        "questions_using": ["q-03", "q-05"],
+        "must_read": ["ESLint 官方文档 - Overrides", "eslint-plugin-vue 文档", "eslint-plugin-react 文档"],
+        "hands_on": ["配置支持 Vue + React 的 ESLint 规则", "编写自定义 ESLint 规则", "配置 Prettier 与 ESLint 集成"]
+      },
+      {
+        "name": "tsup 与库打包",
+        "level": "必须掌握",
+        "related_dimensions": ["architecture"],
+        "questions_using": ["q-06"],
+        "must_read": ["tsup 官方文档", "package.json exports 规范 (Node.js)", "ESM vs CJS 模块系统对比"],
+        "hands_on": ["使用 tsup 打包多入口 TypeScript 库", "配置 exports 子路径导出并验证 Tree Shaking", "对比 tsup/rollup/webpack 打包产物"]
+      },
+      {
+        "name": "Docker 容器化部署",
+        "level": "必须掌握",
+        "related_dimensions": ["performance", "architecture"],
+        "questions_using": ["q-04", "q-08"],
+        "must_read": ["Docker 官方文档 - Dockerfile Best Practices", "Docker 多阶段构建", "Docker 层缓存原理"],
+        "hands_on": ["编写 Dockerfile 部署 Node.js 应用", "实现 node_modules 缓存层优化", "对比不同 COPY 顺序对缓存的影响"]
+      },
+      {
+        "name": "CI/CD 流水线设计",
+        "level": "必须掌握",
+        "related_dimensions": ["performance", "reliability"],
+        "questions_using": ["q-04"],
+        "must_read": ["CI/CD 概念入门", "GitHub Actions / GitLab CI 文档", "增量构建策略设计"],
+        "hands_on": ["配置一个完整的 CI 流水线 (lint→test→build→deploy)", "实现基于文件变更的增量触发", "配置 Docker 镜像自动构建和推送"]
+      },
+      {
+        "name": "Git Hooks 与提交规范",
+        "level": "加分项",
+        "related_dimensions": ["reliability"],
+        "questions_using": ["q-05"],
+        "must_read": ["Husky 官方文档 (v8)", "Conventional Commits 规范", "lint-staged 原理"],
+        "hands_on": ["从零配置 Husky + lint-staged + CommitLint", "自定义 CommitLint 规则", "模拟绕过 hook 并验证 CI 兜底"]
+      },
+      {
+        "name": "Web Vitals 与前端监控",
+        "level": "加分项",
+        "related_dimensions": ["observability"],
+        "questions_using": ["q-07"],
+        "must_read": ["Web Vitals 官方文档 (web.dev)", "Performance API (MDN)", "前端错误监控最佳实践"],
+        "hands_on": ["接入 Sentry 或类似 SDK 到 SPA 应用", "手动实现 JS 错误捕获和上报", "使用 Lighthouse 分析页面性能"]
+      },
+      {
+        "name": "CSS 隔离方案",
+        "level": "加分项",
+        "related_dimensions": ["security", "architecture"],
+        "questions_using": ["q-09"],
+        "must_read": ["CSS Modules 规范", "BEM 方法论", "Shadow DOM 与 Web Components"],
+        "hands_on": ["在 Vite 项目中配置 CSS Modules", "实现 CSS 变量主题切换", "对比 CSS Modules vs styled-components vs Tailwind"]
+      },
+      {
+        "name": "架构演进与技术选型",
+        "level": "加分项",
+        "related_dimensions": ["trade-off", "architecture"],
+        "questions_using": ["q-10"],
+        "must_read": ["Turborepo 官方文档 - Why Turborepo", "Module Federation 实践指南", "Changesets 文档"],
+        "hands_on": ["在现有 pnpm workspace 中集成 Turborepo", "搭建 Module Federation 微前端 demo", "配置 Changesets 版本管理"]
+      },
+      {
+        "name": "Vue 3 Composition API",
+        "level": "加分项",
+        "related_dimensions": ["feature"],
+        "questions_using": ["q-03"],
+        "must_read": ["Vue 3 Composition API FAQ", "Pinia 官方文档", "Vue Router 4 导航守卫"],
+        "hands_on": ["使用 Composition API 重构 Options API 组件", "实现 Pinia Store 的模块化设计", "配置 Vue Router 全局前置守卫"]
+      },
+      {
+        "name": "React Hooks 与 Redux Toolkit",
+        "level": "加分项",
+        "related_dimensions": ["feature"],
+        "questions_using": ["q-03"],
+        "must_read": ["React Hooks 官方文档", "Redux Toolkit 官方教程", "React Router 6 嵌套路由"],
+        "hands_on": ["使用 createSlice 实现状态管理", "用 createAsyncThunk 处理异步请求", "实现 React Router 6 权限路由"]
+      }
+    ]
+  }
+}
