@@ -1,10 +1,13 @@
 /**
  * 簇 7 主服务：Redis 缓存与降级 完整 Demo
  *
- * 启动步骤：
- *   1. docker-compose up -d        # 启动 Redis
- *   2. node server.js              # 启动服务（端口 3000）
- *   3. 浏览器打开 http://localhost:3000
+ * 启动步骤（无需 Docker！）：
+ *   1. node server.js              # 用 Mock Redis，直接启动
+ *   2. 浏览器打开 http://localhost:3000
+ *
+ * 如果想连真实 Redis：
+ *   docker run -d -p 6379:6379 redis:7-alpine
+ *   REDIS_REAL=1 node server.js
  *
  * 涵盖 5 个 Demo：
  *   Demo 1 - Cache-Aside（标准读写模式）
@@ -15,26 +18,37 @@
  */
 
 const express = require('express');
-const Redis = require('ioredis');
+const MockRedis = require('./mock-redis');
 
 const app = express();
 app.use(express.json());
 
 // ────────────────────────────────────────
-// Redis 连接
+// Redis 连接：默认用 Mock（无需 Docker）
+// 设置环境变量 REDIS_REAL=1 可连真实 Redis
 // ────────────────────────────────────────
-const redis = new Redis({
-  host: '127.0.0.1',
-  port: 6379,
-  lazyConnect: true,        // 不自动连接，手动 connect()
-  maxRetriesPerRequest: 1, // 减少重试，方便演示降级
-  connectTimeout: 3000,
-});
+let redis;
 
-// 连接失败时不崩进程（降级场景需要）
-redis.on('error', (err) => {
-  console.log('[Redis] 连接异常（这是正常的，用于演示降级）:', err.message);
-});
+if (process.env.REDIS_REAL === '1') {
+  // 连真实 Redis（需要先启动 Redis 服务）
+  const Redis = require('ioredis');
+  redis = new Redis({
+    host: '127.0.0.1',
+    port: 6379,
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+    connectTimeout: 3000,
+  });
+  redis.on('error', (err) => {
+    console.log('[Redis] 连接异常:', err.message);
+  });
+  console.log('[启动] 使用真实 Redis（127.0.0.1:6379）');
+} else {
+  // 用 Mock Redis（纯内存，无需任何外部服务）
+  redis = new MockRedis();
+  console.log('[启动] 使用 Mock Redis（纯内存，无需 Docker）');
+  console.log('[启动] 如需连真实 Redis，运行：REDIS_REAL=1 node server.js');
+}
 
 // ────────────────────────────────────────
 // 模拟数据库（内存对象代替）

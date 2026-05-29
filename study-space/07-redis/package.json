@@ -1,13 +1,11 @@
 {
   "name": "07-redis",
   "version": "1.0.0",
-  "description": "簇7：Redis 缓存与降级 - Cache-Aside / 雪崩 / 击穿 / 穿透 / 降级",
+  "description": "簇7：Redis缓存与降级 - Cache-Aside / 雪崩 / 击穿 / 穿透 / 降级（无需Docker，纯内存Mock）",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker logs -f study-redis"
+    "start:real": "REDIS_REAL=1 node server.js"
   },
   "keywords": [],
   "author": "",
