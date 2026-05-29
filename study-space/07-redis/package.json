@@ -1,0 +1,19 @@
+{
+  "name": "07-redis",
+  "version": "1.0.0",
+  "description": "簇7：Redis 缓存与降级 - Cache-Aside / 雪崩 / 击穿 / 穿透 / 降级",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker logs -f study-redis"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "ioredis": "^5.11.0"
+  }
+}

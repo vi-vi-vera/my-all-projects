@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: study-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    # --maxmemory-policy allkeys-lru：内存满时淘汰最久未访问的 key
+    # 这是生产环境最常用的淘汰策略
