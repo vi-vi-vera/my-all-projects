@@ -29,7 +29,7 @@
 | 3 | q-06 git + shell 严格模式 | plumbing / set -euo pipefail / stash -u | [`03-git-shell/`](./03-git-shell/) | ✅ | 四件套防御 + git 三层对象模型 + stash -u，详见 [`03-git-shell/NOTES.md`](./03-git-shell/NOTES.md) |
 | 4 | q-10 React Hooks + Zustand | 单一职责 / selector / slice | [`04-hooks-zustand/`](./04-hooks-zustand/) | ✅ | Hook 3 信号拆分 + Zustand selector 浅比较，详见 [`04-hooks-zustand/NOTES.md`](./04-hooks-zustand/NOTES.md) |
 | 5 | q-09 postMessage + 状态机 | origin 校验 / FSM / AbortController | [`05-postmsg-fsm/`](./05-postmsg-fsm/) | ✅ | 双向 origin 校验 + useReducer 状态机 + abort 双保险，详见 [`05-postmsg-fsm/NOTES.md`](./05-postmsg-fsm/NOTES.md) |
-| 6 | q-08 Vite base + nginx | base / proxy_pass / 子路径部署 | [`06-vite-nginx/`](./06-vite-nginx/) | ☐ |  |
+| 6 | q-08 Vite base + nginx | base / proxy_pass / 子路径部署 / 负载均衡 / HTTPS / 缓存 / 限流 / CORS / WebSocket | [`06-vite-nginx/`](./06-vite-nginx/) | ✅ | Vite base 配子路径前缀 + nginx 反代（静态/try_files/API转发/WebSocket）+ 负载均衡 upstream + HTTPS SSL Termination + 缓存策略（强缓存/协商缓存/hash文件名）+ 限流 limit_req + CORS 反代同源 + WebSocket 三件套，详见 [`06-vite-nginx/NOTES.md`](./06-vite-nginx/NOTES.md) |
 | 7 | q-05 Redis 缓存与降级 | cache-aside / 雪崩 / 双写 | [`07-redis/`](./07-redis/) | ☐ |  |
 | 8 | q-03 Linux 沙箱 + 适配器 | namespace / cgroups / Adapter | [`08-sandbox/`](./08-sandbox/) | ☐ |  |
 | 9 | q-04 对象池 + warm pool | min/max/idle / 预热 / 扩缩 | [`09-object-pool/`](./09-object-pool/) | ☐ |  |
