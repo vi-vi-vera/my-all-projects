@@ -697,3 +697,298 @@ Sentinel 选举新主节点
 这三个方向偏"进阶"，如果面试岗位是高级/资深前端或全栈，可以补充；如果目标是中级，目前的内容已经够用了。
 
 ---
+
+
+## 十三、进阶1：Redis 分布式锁的坑
+
+### 1. 为什么需要分布式锁？
+
+单机用 `Mutex`（互斥锁）就够了，但多台服务器同时改同一个资源（比如"同时扣库存"），单机锁没用，需要一把"所有服务器都能看见的锁" → Redis 天然适合（单线程 + 所有服务连同一个 Redis）。
+
+### 2. 最简单的分布式锁（就是 Demo 3 的写法）
+
+```js
+// 获取锁：只有 key 不存在才能设置成功
+const lock = await redis.set("lock:order:1", "1", "NX", "EX", 5);
+if (lock) {
+  // 拿到锁，执行业务逻辑
+  await redis.del("lock:order:1"); // 释放锁
+}
+```
+
+### 3. 坑 1：锁超时，业务还没执行完
+
+**现象**：
+```
+T1: 获取锁（TTL=5s）
+T2: 处理业务逻辑（很慢，用了 10s）
+T3: 锁自动过期（5s 到了）
+T4: T2 还在跑，T3 另一个请求获取到了锁 ← 两把锁同时存在！
+T5: T2 业务结束，执行 DEL → 把 T3 的锁给删了！← 错删别人的锁
+```
+
+**解法 1：锁续期（watch dog）**
+
+```js
+// 获取锁时，同时启动一个定时器，每隔 TTL/3 时间自动续期
+let ttlRenewTimer = setInterval(async () => {
+  await redis.expire("lock:order:1", 5); // 续期到 5s
+}, 5000 / 3 * 1000);
+
+// 业务结束，清除定时器
+clearInterval(ttlRenewTimer);
+await redis.del("lock:order:1");
+```
+
+**解法 2：value 存唯一 ID，删除锁时校验（防误删）**
+
+```js
+const lockId = require("crypto").randomUUID();
+
+// 获取锁：value 存唯一 ID
+await redis.set("lock:order:1", lockId, "NX", "EX", 5);
+
+// 释放锁：先校验 value 是不是自己的，是才删（Lua 脚本保证原子性）
+const lua = `
+  if redis.call("get", KEYS[1]) == ARGV[1] then
+    return redis.call("del", KEYS[1])
+  else
+    return 0
+  end
+`;
+await redis.eval(lua, 1, "lock:order:1", lockId);
+```
+
+### 4. 坑 2：DEL 删锁不是原子操作
+
+**现象**：
+```
+T1: GET lock → 发现 value 是自己的
+T2: 锁过期了（TTL 到了）
+T3: T1 执行 DEL → 把别人的锁删了！
+```
+
+**解决**：用 Lua 脚本（上面已经写了），把"查询 + 比对 + 删除"三步合成一个原子操作。
+
+### 5. 坑 3：Redis 挂了，锁丢了
+
+**现象**：获取锁成功 → Redis 主节点挂了，锁还没同步到从节点 → 从节点升主 → 另一个请求又获取到了同一把锁。
+
+**解决：Redlock 算法**（Redis 官方分布式锁算法）
+
+```
+// 向 N 个独立的 Redis 节点申请锁（比如 5 个）
+// 只有半数以上（>= 3 个）节点申请成功，才算获取锁成功
+// 这样即使挂了 1~2 个节点，锁不会丢
+```
+
+> **面试评价**：Redlock 有争议（Martin Kleppmann 批评过），生产一般用"单 Redis + Lua 脚本"已经够用，除非是金融场景才需要 Redlock。
+
+### 6. 面试金句
+
+> "分布式锁用 SET NX EX 获取，value 存唯一 UUID，释放锁用 Lua 脚本先比对 value 再删除（防误删 + 保证原子性）。锁快过期时要用定时器续期（watch dog）。如果业务时间真的不可控，说明锁的粒度太粗，应该拆细。"
+
+---
+
+## 十四、进阶2：Redis 大 key 问题
+
+### 1. 什么是大 key？
+
+| 类型 | 多大算"大" |
+|---|---|
+| String | value > 10KB |
+| Hash/List/Set/ZSet | 元素个数 > 5000 或 总大小 > 10MB |
+
+大 key 的危害：
+- **阻塞**：DEL 大 key 会阻塞 Redis 主线程（秒级），所有请求卡住
+- **网络拥塞**：一次返回 10MB 数据，带宽被占满
+- **内存不均**：Cluster 模式下大 key 导致某些槽位内存爆满
+
+### 2. 怎么发现大 key？
+
+```bash
+# 离线扫描（不影响线上）
+redis-cli --bigkeys
+
+# 在线采样（O(N) 复杂度，小心使用）
+redis-cli --memkeys
+```
+
+### 3. 怎么删除大 key 不阻塞？
+
+**错误做法**：直接 `DEL bigKey` → 阻塞主线程！
+
+**正确做法 1**：`UNLINK`（Redis 4.0+，异步删除）
+
+```js
+// UNLINK 把 key 扔到后台线程删除，主线程不阻塞
+await redis.unlink("bigKey");
+```
+
+**正确做法 2**：分批删除（Hash/List/Set/ZSet）
+
+```js
+// 分批删除 Hash 的元素（每次删 100 个）
+let cursor = "0";
+do {
+  const [newCursor, fields] = await redis.hscan("bigHash", cursor, "COUNT", 100);
+  if (fields.length > 0) {
+    await redis.hdel("bigHash", ...fields);
+  }
+  cursor = newCursor;
+} while (cursor !== "0");
+// 最后删掉空 key
+await redis.unlink("bigHash");
+```
+
+### 4. 怎么拆分大 key？
+
+**场景 1**：一个 Hash 存了 10 万个用户偏好
+
+```js
+// 拆分前：所有用户在一个 key 里
+// Hash: user:prefers → { 1: "...", 2: "...", ..., 100000: "..." }
+
+// 拆分后：按 userId 哈希分散到 16 个 key
+const slot = userId % 16;
+await redis.hset(`user:prefers:${slot}`, userId, value);
+```
+
+**场景 2**：一个 String 存了 5MB 的 JSON
+
+```js
+// 拆分前：一次取 5MB
+// String: page:cache:1 → {"sections":[...500KB 的 JSON"]}
+
+// 拆分后：按 section 拆成多个 key
+await redis.set(`page:cache:1:section:1`, JSON.stringify(section1));
+await redis.set(`page:cache:1:section:2`, JSON.stringify(section2));
+// 取的时候只取需要的 section
+```
+
+### 5. 面试金句
+
+> "大 key 指 String > 10KB 或集合元素 > 5000。危害是阻塞主线程、网络拥塞、内存不均。发现用 redis-cli --bigkeys，删除用 UNLINK 异步删除（Redis 4.0+）或分批 HSCAN + HDEL。拆分按哈希分散或按业务维度拆成多个 key。"
+
+---
+
+## 十五、进阶3：Redis 数据结构实战
+
+### 1. String（最常用）
+
+**底层 encoding**：
+- `int`：值是整数时，直接存整数（省内存）
+- `embstr`：短字符串（<= 44 字节），一块连续内存
+- `raw`：长字符串（> 44 字节），两块内存
+
+**适合场景**：
+- 缓存对象（JSON.stringify 后存进去）
+- 计数器（INCR / INCRBY）
+- 分布式锁（SET NX EX）
+
+```js
+// 缓存
+await redis.setex("user:1", 60, JSON.stringify(user));
+
+// 计数器
+await redis.incr("page:view:1"); // 原子 +1
+
+// 分布式锁
+await redis.set("lock:1", uuid, "NX", "EX", 5);
+```
+
+### 2. Hash（对象属性级缓存）
+
+**优势**：不用整个对象反序列化，可以只改一个字段。
+
+**适合场景**：
+- 对象有部分字段频繁更新（比如用户的"最后登录时间"）
+- 需要单独获取/修改某个字段
+
+```js
+// 整个对象缓存（不推荐用 Hash，用 String + JSON 更简单）
+await redis.hset("user:1", "name", "张三", "age", 25);
+
+// 只更新一个字段（优势在这里）
+await redis.hincrby("user:1", "loginCount", 1); // 登录次数 +1
+await redis.hset("user:1", "lastLogin", Date.now()); // 只改最后登录时间
+
+// 只取一个字段
+const name = await redis.hget("user:1", "name");
+```
+
+### 3. List（链表，有序）
+
+**底层 encoding**：
+- `quicklist`（Redis 3.2+）：压缩链表 + 普通链表混合
+
+**适合场景**：
+- 消息队列（LPUSH + BRPOP）
+- 最新动态（LPUSH + LTRIM 保留最近 N 条）
+
+```js
+// 消息队列（简单场景）
+await redis.lpush("queue:tasks", JSON.stringify(task));
+const [task] = await redis.brpop("queue:tasks", 5); // 阻塞等待，最多等 5s
+
+// 最新 10 条动态
+await redis.lpush("user:1:timeline", JSON.stringify(post));
+await redis.ltrim("user:1:timeline", 0, 9); // 只保留最近 10 条
+```
+
+> **注意**：List 做消息队列不保证可靠性（进程挂了消息丢），生产用专门的 MQ（Kafka / RabbitMQ）。
+
+### 4. Set（无序集合，去重）
+
+**底层 encoding**：
+- `intset`：元素全是整数且数量少时用（省内存）
+- `hashtable`：否则用哈希表
+
+**适合场景**：
+- 点赞 / 收藏（SADD + SREM，天然去重）
+- 共同关注（SINTER 求交集）
+- 抽奖（SRANDMEMBER 随机取，不删除）
+
+```js
+// 点赞
+await redis.sadd("post:1:likes", userId);
+const likeCount = await redis.scard("post:1:likes");
+
+// 共同关注
+const common = await redis.sinter("user:1:follows", "user:2:follows");
+
+// 抽奖（随机取 3 个，不删除）
+const winners = await redis.srandmember("lottery:1", 3);
+```
+
+### 5. ZSet（有序集合，排行榜）
+
+**底层 encoding**：
+- `ziplist`（小数据量）：压缩列表
+- `skiplist`（大数据量）：跳表 + hashtable（O(logN) 查询 + O(1) 按成员查分）
+
+**适合场景**：
+- 排行榜（ZADD + ZREVRANGE 取 Top N）
+- 延迟队列（ZADD score=时间戳，定时扫 score < now 的元素）
+- 滑动窗口限流（ZREMRANGEBYSCORE 删过期记录）
+
+```js
+// 排行榜
+await redis.zadd("leaderboard", 95, "user:1", 88, "user:2");
+const top10 = await redis.zrevrange("leaderboard", 0, 9, "WITHSCORES");
+
+// 延迟队列（score = 执行时间戳）
+await redis.zadd("delay:queue", Date.now() + 5000, taskId);
+// 定时扫：找出所有 score <= now 的任务
+const tasks = await redis.zrangebyscore("delay:queue", 0, Date.now());
+```
+
+### 6. 数据结构选型口诀（面试背这个）
+
+> "缓存整个对象用 String；部分字段要单独改/取用 Hash；消息队列用 List（简单场景）；去重用 Set；排行榜用 ZSet。如果 value 很大（> 10KB），考虑拆成 Hash 的多个 field 或拆成多个 String。"
+
+### 7. 面试金句
+
+> "String 适合缓存整个对象或计数器；Hash 适合对象有部分字段频繁更新；List 适合简单消息队列和最新列表；Set 适合点赞去重和共同关注；ZSet 适合排行榜和延迟队列。选型核心：是否需要单独操作某个字段、是否需要排序、是否需要去重。"
+
+---
