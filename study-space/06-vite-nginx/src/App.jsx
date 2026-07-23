@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
 // ★ 关键：basename 要和 vite base 一致
 // 部署到 /qpilot/ 时，改成 basename="/qpilot"
-const BASE = '/';  // 修复时改为 '/qpilot'
+const BASE = '/qpilot';  // 修复时改为 '/qpilot'
 
 function Home() {
   return <div><h2>首页</h2><p>当前路径：{window.location.pathname}</p></div>;

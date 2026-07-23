@@ -32,10 +32,10 @@
 | 6 | q-08 Vite base + nginx | base / proxy_pass / 子路径部署 / 负载均衡 / HTTPS / 缓存 / 限流 / CORS / WebSocket | [`06-vite-nginx/`](./06-vite-nginx/) | ✅ | Vite base 配子路径前缀 + nginx 反代（静态/try_files/API转发/WebSocket）+ 负载均衡 upstream + HTTPS SSL Termination + 缓存策略（强缓存/协商缓存/hash文件名）+ 限流 limit_req + CORS 反代同源 + WebSocket 三件套，详见 [`06-vite-nginx/NOTES.md`](./06-vite-nginx/NOTES.md) |
 | 7 | q-05 Redis 缓存与降级 | cache-aside / 雪崩 / 击穿 / 穿透 / 降级 / 持久化 / 集群 | [`07-redis/`](./07-redis/) | ✅ | Cache-Aside 先DB再删缓存 + 雪崩TTL抖动 + 击穿互斥锁SET-NX + 穿透布隆过滤器 + 降级熔断三级防御 + RDB/AOF混合持久化 + Sentinel/Cluster，详见 [`07-redis/NOTES.md`](./07-redis/NOTES.md) |
 | 8 | q-03 Linux 沙箱 + 适配器 | namespace(7种) / cgroups(CPU/内存) / Adapter模式 / 依赖倒置 | [`08-sandbox/`](./08-sandbox/) | ✅ | namespace隔离资源视图 + cgroups限制资源用量 + 适配器模式（Sandbox接口+Mock/Docker实现+Demo验证），详见 [`08-sandbox/NOTES.md`](./08-sandbox/NOTES.md) |
-| 9 | q-04 对象池 + warm pool | min/max/idle / 预热 / 扩缩 | [`09-object-pool/`](./09-object-pool/) | ☐ |  |
-| 10 | q-02 MCP + Tool use | JSON-RPC / capability / 错误归一化 | [`10-mcp/`](./10-mcp/) | ☐ |  |
-| 11 | q-11 OTel + Langfuse | span / traceparent / LLM 埋点 | [`11-otel-langfuse/`](./11-otel-langfuse/) | ☐ |  |
-| 12 | q-07 Feature Flag + 权限 | toggle / blast radius / 后端鉴权 | [`12-feature-flag/`](./12-feature-flag/) | ☐ |  |
+| 9 | q-04 对象池 + warm pool | min/max/idle / 预热 / 扩缩 | [`09-object-pool/`](./09-object-pool/) | ✅ | 对象池 = 共享单车：min 预热备用，max 防压垮，idleTimeout 空闲回收；超出 max 排队等，超时报 TimeoutError，详见 [`09-object-pool/NOTES.md`](./09-object-pool/NOTES.md) |
+| 10 | q-02 MCP + Tool use | JSON-RPC / capability / 错误归一化 | [`10-mcp/`](./10-mcp/) | ✅ | Tool use 4 步：模型返回 stop_reason="tool_use" + JSON 参数 → 你执行 → 结果用 tool_result 塞回，id 必须对应；MCP 是这套流程的标准插头，详见 [`10-mcp/NOTES.md`](./10-mcp/NOTES.md) |
+| 11 | q-11 OTel + Langfuse | span / traceparent / LLM 埋点 | [`11-otel-langfuse/`](./11-otel-langfuse/) | ✅ | span 是操作的"日志+计时器"，traceparent 头把跨服务 span 串成完整 trace；Langfuse 是 LLM 专用可视化平台，看 prompt/token/费用，详见 [`11-otel-langfuse/NOTES.md`](./11-otel-langfuse/NOTES.md) |
+| 12 | q-07 Feature Flag + 权限 | toggle / blast radius / 后端鉴权 | [`12-feature-flag/`](./12-feature-flag/) | ✅ | flag 是功能电闸，前端按 flag 隐藏入口（体验层），后端按 flag 拒绝请求（安全层）；灰度用哈希保证同一用户结果一致，详见 [`12-feature-flag/NOTES.md`](./12-feature-flag/NOTES.md) |
 
 ---
 

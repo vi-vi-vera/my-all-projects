@@ -7,5 +7,5 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  // base: '/qpilot/',  // ← 取消注释这行就能修复子路径 404
+  base: '/qpilot/',  // ← 取消注释这行就能修复子路径 404
 });
