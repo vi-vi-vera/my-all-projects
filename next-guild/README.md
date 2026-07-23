@@ -1,6 +1,7 @@
 # next-guild — 面试复盘材料
 
 > QQ 频道相关的 Hybrid H5 门户（内部）。Next.js 15 Pages Router · TypeScript 4.9 · React 18 · Redux Toolkit（极简只挂 walletSlice）· next-redux-wrapper · antd-mobile 5 · @tencent/exeditor3 · @tencent/universal-report · @tencent/trpc-rpc-client · log4js + @tencent/atta UDP · Aegis RUM + Next reportWebVitals + 大同三通道监控 · Orange CI 双流水线（master tag_push + test push stke:update）· Node 20 Alpine Docker · TKE StatefulSetPlus · MSDK iOS/Android WebView 桥接 · postcss-px-to-viewport (1284 vw) · Whistle 本地代理 · standard-version（CHANGELOG 已到 v0.1.190）。
+> Git 仓库：`待补充`
 
 由 [`project-interview-coach`](https://github.com/codebuddy-skills/project-interview-coach) skill 四阶段产出，覆盖**候选人 / 面试官 / 知识图谱 / 学习指引**四种视角，全部产物 `python -m scripts.render_markdown` lint=0 通过。
 

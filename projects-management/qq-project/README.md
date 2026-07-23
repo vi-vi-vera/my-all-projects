@@ -1,6 +1,7 @@
 # qq-project — 面试复盘材料
 
 > QQ 客户端的项目管理门户（内部）。Next.js 14 Pages Router · NoSSR SPA · React 18 · TDesign React 1.7 · Zustand 4（createWithEqualityFn + shallow）· Axios（humps camelize / 401 logout / Aegis 上报 / 重试 3×1s）· OpenSpec 规格驱动 · Orange CI + Docker（业务镜像 + cache 镜像）+ TKE + 北极星 · Playwright（storageState 登录态分离）· QPilot AI Agent 入口注入。
+> Git 仓库：`待补充`
 
 由 [`project-interview-coach`](https://github.com/codebuddy-skills/project-interview-coach) skill 三阶段产出，覆盖**候选人 / 面试官 / 知识图谱**三种视角，全部产物 `python -m scripts.render_markdown` lint=0 通过。
 

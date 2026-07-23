@@ -1,6 +1,7 @@
 # QQ频道H5静态页面仓库 (guild_h5) — 面试复盘材料
 
 > Vue 3 + TypeScript + Vite 2.7 MPA · 63 个独立业务页面 · QQ WebView Hybrid · TailwindCSS + Less · Docker + STKE + OrangeCI
+> Git 仓库：`待补充`
 
 由 `project-interview-coach` skill 全阶段产出，覆盖**候选人 / 面试官 / 知识图谱 / 学习指引**四种视角。
 

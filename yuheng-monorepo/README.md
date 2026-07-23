@@ -1,6 +1,7 @@
 # 宇恒运营管理系统 (yuheng-monorepo) — 面试复盘材料
 
 > pnpm workspace Monorepo · 微前端(Nginx 路由分发) · Vue 3 + React 17 · TDesign · Vite 4 · Docker · OrangeCI
+> Git 仓库：`待补充`
 
 由 `project-interview-coach` skill 全阶段产出，覆盖**候选人 / 面试官 / 知识图谱 / 学习指引**四种视角。
 

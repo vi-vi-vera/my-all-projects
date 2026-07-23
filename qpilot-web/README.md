@@ -1,6 +1,7 @@
 # QPilot Web 面试复盘材料
 
 > 由 `project-interview-coach` skill 基于 `qpilot-web-v2` 仓库（git@git.woa.com:qagent/qpilot-web-v2.git）扫描生成。
+> Git 仓库：`git@git.woa.com:qagent/qpilot-web-v2.git`
 > 角色：全栈　|　目标级别：中级　|　基线：平实口吻 + 反 hallucination + 双语独立写作
 
 ## 文件结构

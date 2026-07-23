@@ -7,6 +7,7 @@
 | 项目 | 说明 |
 |---|---|
 | [`qpilot-code/`](./qpilot-code) | QPilot Code Agent（企业级 AI 编程平台，backagent + backagent-web 全栈）的面试材料与知识图谱 |
+| [`code-agent/`](./code-agent) | LightApp Code Agent（基于 Claude Code 的云端应用生成后台，Express + Drizzle + Rainbow + COS + 模板系统 + 验证部署流水线）的项目沉淀、面试材料、知识图谱与学习指引 |
 | [`qpilot-web/`](./qpilot-web) | QPilot Web LLMOps 工作台 `qpilot-web-v2`（pnpm + lerna monorepo · Next.js 16 App Router · Vercel AI SDK 5 ToolLoopAgent · 桌面端/移动端双轨）的面试材料与知识图谱 |
 | [`projects-management/qq-project/`](./projects-management/qq-project) | QQ 客户端项目管理门户 `qq-project`（Next.js 14 Pages Router · NoSSR SPA · Zustand 9 store · TDesign React · OpenSpec · Orange CI + TKE）的面试材料与知识图谱 |
 | [`next-guild/`](./next-guild) | QQ 频道 Hybrid H5 门户 `next-guild`（Next.js 15 Pages Router · TypeScript · MSDK WebView 桥接 · Redux Toolkit 极简 · log4js + atta 双日志 · Aegis/web-vitals/大同三通道监控 · Orange CI 双流水线）的面试材料、知识图谱与学习指引 |
@@ -59,20 +60,20 @@
 
 ## 目录文件矩阵
 
-| 文件 | qpilot-code | qpilot-web | qq-project | next-guild | yuheng-monorepo | guild_h5 | guild-mp | guild_web |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `project-context.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `tech-points.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `raw-bundle.json` | ✅ | — | — | — | — | — | — | — |
-| `interview-data.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `interview-data.interviewer.json` | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `interview-data.knowledge.json` | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `study-guide-data.json` | — | — | — | ✅ | ✅ | — | — | — |
-| `interview-prep.{zh,en}.md` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `interviewer-pack.{zh,en}.md` | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `knowledge-data.json` | ✅ | — | — | — | — | — | ✅ | ✅ |
-| `knowledge-map.{zh,en}.md` | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `study-guide.{zh,en}.md` | — | — | — | ✅ | ✅ | ✅ | — | — |
+| 文件 | qpilot-code | code-agent | qpilot-web | qq-project | next-guild | yuheng-monorepo | guild_h5 | guild-mp | guild_web |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `project-context.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
+| `tech-points.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
+| `raw-bundle.json` | ✅ | — | — | — | — | — | — | — | — |
+| `interview-data.json` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
+| `interview-data.interviewer.json` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
+| `interview-data.knowledge.json` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
+| `study-guide-data.json` | — | — | — | — | ✅ | ✅ | — | — | — |
+| `interview-prep.{zh,en}.md` | ✅ | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `interviewer-pack.{zh,en}.md` | — | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `knowledge-data.json` | ✅ | — | — | — | — | — | — | ✅ | ✅ |
+| `knowledge-map.{zh,en}.md` | — | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `study-guide.{zh,en}.md` | — | zh | — | — | ✅ | ✅ | ✅ | — | — |
 
 ## 复现方式
 

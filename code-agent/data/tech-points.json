@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0.0",
+  "project": "Code Agent",
+  "tech_points": [
+    {
+      "id": "tp-001",
+      "primary_dimension": "architecture",
+      "title": "start/chat 双入口与长任务编排",
+      "summary": "同一条生成能力同时提供 SSE 流式入口和异步快返入口，路由层负责准备上下文和模板分支，Orchestrator 负责长任务管道。"
+    },
+    {
+      "id": "tp-002",
+      "primary_dimension": "architecture",
+      "title": "Session / Conversation / App / Workspace 四实体模型",
+      "summary": "用数据库记录业务状态，用本地工作区承载代码，用 COS 保存源码和部署产物，形成可恢复、可轮询、可二创的生成模型。"
+    },
+    {
+      "id": "tp-003",
+      "primary_dimension": "performance",
+      "title": "模板严格匹配快速路径",
+      "summary": "prompt 解码成骨架后按 SHA-256 命中模板，跳过 Claude 从零生成，直接替换占位符、验证、部署。"
+    },
+    {
+      "id": "tp-004",
+      "primary_dimension": "performance",
+      "title": "trag 模糊召回 + LLM 二次判定",
+      "summary": "严格未命中后用向量库召回相似模板，再让 LLM 判断是 miss 还是 should remix，降低误套模板风险。"
+    },
+    {
+      "id": "tp-005",
+      "primary_dimension": "security",
+      "title": "Prompt Guard 前置安全门禁",
+      "summary": "Agent 启动前用结构化 LLM 调用判断越狱和非目标任务，通过时顺带生成标题描述；失败时按配置拦截或观察放行。"
+    },
+    {
+      "id": "tp-006",
+      "primary_dimension": "security",
+      "title": "Claude Code 工具权限硬约束",
+      "summary": "Bash 命令、文件路径、插件目录读写都有程序级拦截，避免只靠提示词约束工具调用。"
+    },
+    {
+      "id": "tp-007",
+      "primary_dimension": "reliability",
+      "title": "验证-自动修复循环",
+      "summary": "代码生成后先验证，失败则构造修复 prompt 让 Agent 再跑，有限轮次后回到部署阶段，减少坏产物。"
+    },
+    {
+      "id": "tp-008",
+      "primary_dimension": "reliability",
+      "title": "取消、心跳与孤儿任务修复",
+      "summary": "AbortController 中断活跃任务，taskMonitor 刷新数据库和 workspace 心跳，多实例下修复长时间无心跳的 running 任务。"
+    },
+    {
+      "id": "tp-009",
+      "primary_dimension": "feature",
+      "title": "Remix 二创工作区恢复",
+      "summary": "根据 appid 从 COS 恢复旧源码，构造修改型 prompt，让 Agent 在已有代码上继续改，支持派生应用。"
+    },
+    {
+      "id": "tp-010",
+      "primary_dimension": "feature",
+      "title": "插件与 skills 注入",
+      "summary": "按请求下载插件，把 plugin skills 软链到 workspace 的 .claude/skills，使 Claude Code 的 Skill 工具能发现能力扩展。"
+    },
+    {
+      "id": "tp-011",
+      "primary_dimension": "observability",
+      "title": "事件总线驱动的可观测性",
+      "summary": "CodeService、Orchestrator、监听器通过 TypedEventBus 解耦，统一记录阶段耗时、工具调用、状态推进、Langfuse 和 Galileo 上报。"
+    },
+    {
+      "id": "tp-012",
+      "primary_dimension": "trade-off",
+      "title": "模板命中与 Agent 生成的取舍",
+      "summary": "模板路径快且稳定，但容易误套；Agent 路径慢但灵活。项目用 strict / fuzzy / LLM judge / remix 分支平衡二者。"
+    },
+    {
+      "id": "tp-013",
+      "primary_dimension": "trade-off",
+      "title": "验证失败是否阻断部署",
+      "summary": "验证和修复提升质量，但完全阻断会影响产出率；当前设计记录错误、尽量修复、到上限后仍允许进入部署兜底。"
+    },
+    {
+      "id": "tp-014",
+      "primary_dimension": "architecture",
+      "title": "Rainbow 远程配置热更新",
+      "summary": "模型、超时、最大轮次、限流、模板阈值、验证开关等由 Rainbow 管理，启动加载并 watch，业务同步读缓存。"
+    },
+    {
+      "id": "tp-015",
+      "primary_dimension": "feature",
+      "title": "源码备份与部署产物分离",
+      "summary": "workspace 源码保存到 COS workspaces 前缀，部署产物保存到 deployments 前缀，支持访问、重建部署、跨环境导入和模板复制。"
+    }
+  ],
+  "dimension_coverage": {
+    "architecture": 4,
+    "performance": 2,
+    "security": 2,
+    "reliability": 2,
+    "feature": 3,
+    "observability": 1,
+    "trade-off": 2
+  }
+}

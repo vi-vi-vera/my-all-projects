@@ -1,0 +1,196 @@
+{
+  "schema_version": "1.0.0",
+  "platform_name": "Code Agent",
+  "source_path": "/data/workspace/light-app/code-agent",
+  "one_liner": "基于 Claude Agent SDK / Claude Code 的云端代码生成、验证、部署后台：接收自然语言需求，创建隔离工作区，让 Agent 写前端应用，并自动完成模板命中、二创、校验、打包、发布和截图。",
+  "domain": "AI coding agent · cloud app generation · template reuse · deployment pipeline",
+  "platform_tech_stack": {
+    "languages": ["TypeScript", "SQL", "JavaScript"],
+    "frameworks": [
+      "Express",
+      "Bun runtime scripts",
+      "Vercel AI SDK streamText",
+      "ai-sdk-provider-claude-code",
+      "Claude Agent SDK",
+      "Drizzle ORM",
+      "PostgreSQL",
+      "Zod",
+      "Puppeteer",
+      "Vite bundling",
+      "Vitest"
+    ],
+    "infra": [
+      "Tencent Rainbow remote config",
+      "Tencent COS object storage",
+      "CDN COS asset publishing",
+      "Langfuse tracing",
+      "Galileo / OpenTelemetry logging and metrics",
+      "trag vector retrieval for template fuzzy matching",
+      "local isolated workspaces under AGENT_OUTPUT_PATH"
+    ]
+  },
+  "core_entities": [
+    {
+      "name": "Session",
+      "table": "sessions",
+      "meaning": "一次用户工作空间，绑定一个本地 workspace 目录和 Claude Code 内部 agentSessionId。"
+    },
+    {
+      "name": "Conversation",
+      "table": "conversations",
+      "meaning": "一次 AI 生成或修改任务，状态从 running 流转到 completed / validating / deploying / deployed / failed / cancelled。"
+    },
+    {
+      "name": "Message",
+      "table": "messages",
+      "meaning": "用户输入、AI 文本、工具调用与工具结果的结构化记录，兼容 AI SDK UI message parts。"
+    },
+    {
+      "name": "App",
+      "table": "apps",
+      "meaning": "最终产出的应用元信息，包括标题、描述、封面、预览图、父应用和来源类型。"
+    },
+    {
+      "name": "Template",
+      "table": "templates",
+      "meaning": "高频 prompt 的骨架、占位符 schema 和模板工作区，用于命中后跳过从零生成。"
+    }
+  ],
+  "modules": [
+    {
+      "name": "Server bootstrap",
+      "paths": ["src/index.ts", "src/server.ts", "src/api/index.ts"],
+      "responsibility": "启动日志、Langfuse、Rainbow、trag、数据库、Express、任务监控、工作区清理和定时任务；注册全局错误处理和优雅退出。"
+    },
+    {
+      "name": "Agent API routes",
+      "paths": ["src/api/routes/agent.routes.ts"],
+      "responsibility": "核心入口：/api/agent/start 异步生成、/api/agent/chat 流式生成、/api/agent/check 状态轮询、/api/agent/cancel 取消任务；负责 prepareConversation、模板匹配决策、门禁前置、任务注册和响应收口。"
+    },
+    {
+      "name": "Chat facade",
+      "paths": ["src/services/chat.service.ts"],
+      "responsibility": "把配置、会话、二创、消息、附件、代码执行、验证、部署、截图和事件监听器组装成统一门面，降低路由层复杂度。"
+    },
+    {
+      "name": "Orchestration pipeline",
+      "paths": ["src/services/orchestration/orchestrator.service.ts", "src/services/orchestration/validation-loop.ts", "src/services/orchestration/orchestrator-listeners.ts"],
+      "responsibility": "主流程协调：安全预处理、消息准备、插件加载、模型初始化、Claude Code 执行、验证修复、部署；通过事件总线解耦状态推进、阶段记录、Langfuse 和监控。"
+    },
+    {
+      "name": "Claude Code execution engine",
+      "paths": ["src/services/code/code.service.ts", "src/services/code/bash-guard.ts", "src/services/code/message.service.ts", "src/services/code/tool-tracker.ts", "src/services/code/trusted-dirs.ts"],
+      "responsibility": "创建 Claude Code 模型实例，限制可用工具、Bash 命令和文件访问范围；录制流式输出、持久化消息 parts、追踪工具调用。"
+    },
+    {
+      "name": "Session and workspace",
+      "paths": ["src/services/orchestration/session.service.ts", "src/services/workspace/workspace.service.ts", "src/services/workspace/cleanup.service.ts"],
+      "responsibility": "创建或复用 session，确保每个 session 有独立工作目录；维护 .heartbeat 防止长任务期间被清理；提供工作区文件读取、统计和删除能力。"
+    },
+    {
+      "name": "Template system",
+      "paths": ["src/services/cache/template-matcher.service.ts", "src/services/template/*", "src/api/routes/template.routes.ts", "docs/template-system.md"],
+      "responsibility": "模板创建、占位符扫描、COS 工作区复制、严格 hash 匹配、trag 模糊召回、LLM 二次判断、模板执行和管理端调试接口。"
+    },
+    {
+      "name": "Remix workflow",
+      "paths": ["src/services/orchestration/remix.service.ts", "src/prompts/remix.prompt.ts", "src/api/routes/app.routes.ts"],
+      "responsibility": "基于已有 App 二创：从 COS 恢复源工作区，构造修改型 prompt，让 Agent 在已有代码上继续改；支持第三方 zip 导入和跨环境 workspace 迁移。"
+    },
+    {
+      "name": "Validation and auto-fix",
+      "paths": ["src/services/validation/*", "src/prompts/fix-errors.ts"],
+      "responsibility": "静态分析 HTML/CSS/JS、打包检查、浏览器运行时检查；发现错误后构造修复 prompt，驱动 Claude Code 进行有限轮次自修复。"
+    },
+    {
+      "name": "App deployment",
+      "paths": ["src/services/app.service.ts", "src/services/orchestration/deployment.service.ts", "src/services/workspace/bundler.ts", "src/services/workspace/cdn-asset-publisher.ts", "src/services/preview/*"],
+      "responsibility": "将 workspace 打包为可访问应用，上传部署产物和源码到 COS，处理 CDN 外置资源，截图并更新 app 元信息。"
+    },
+    {
+      "name": "Configuration and observability",
+      "paths": ["src/core/rainbow/index.ts", "src/config/model.ts", "src/core/langfuse/*", "src/core/galileo-report/*", "src/services/monitor/*"],
+      "responsibility": "从 Rainbow 热更新模型、部署、限流、pipeline、模板检索配置；记录阶段耗时、trace、score、活跃任务和孤儿任务修复。"
+    }
+  ],
+  "main_workflows": [
+    {
+      "name": "新建应用异步生成",
+      "entry": "POST /api/agent/start",
+      "steps": [
+        "解析用户与请求体，读取默认配置。",
+        "创建或复用 session，并准备本地 workspace。",
+        "创建 conversation 和 app 记录。",
+        "非 remix 请求先做模板严格匹配；严格命中时返回 templateHit 并后台执行模板部署。",
+        "未严格命中时立即返回 sessionId / conversationId / appId。",
+        "后台执行 guard -> fuzzy template -> LLM judge；命中 need_modify 时转 remix，否则进入 Agent。",
+        "Claude Code 在 workspace 内写代码，消息和工具调用持续落库。",
+        "执行验证-修复循环。",
+        "打包部署、同步 COS、截图，conversation 进入 deployed。"
+      ]
+    },
+    {
+      "name": "流式生成",
+      "entry": "POST /api/agent/chat",
+      "steps": [
+        "前置准备与异步生成相同。",
+        "未命中模板时通过 SSE 返回 AI SDK UI message 流。",
+        "服务端边接收 Claude 输出边持久化消息 parts 和工具调用。",
+        "流完成后同样验证、部署、截图。"
+      ]
+    },
+    {
+      "name": "模板快速路径",
+      "entry": "matchStrict / processTemplateHit",
+      "steps": [
+        "prompt-decode 抽取结构化数据并生成 skeletonPrompt。",
+        "按 skeletonPrompt 的 SHA-256 查 templates 表。",
+        "下载模板工作区，按 placeholder_schema 替换占位符。",
+        "渲染标题描述，执行验证和部署。",
+        "跳过 Claude 从零生成，降低耗时和成本。"
+      ]
+    },
+    {
+      "name": "二创 Remix",
+      "entry": "请求体 appid 或 fuzzy_remix",
+      "steps": [
+        "检查源 app 在 DB 或 COS 中是否可恢复。",
+        "从 workspaces/{sourceAppId} 恢复源码到当前 session workspace。",
+        "构造基于当前应用修改的 prompt。",
+        "走 Claude Code 生成、验证、部署流程，生成新 app。"
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "title": "Express 路由层先快返、后台跑长任务",
+      "scope": "backend",
+      "summary": "/api/agent/start 把同步准备和严格模板匹配控制在响应前，后续 guard、模糊匹配、Agent 生成、部署在后台执行；客户端通过 check 轮询状态。"
+    },
+    {
+      "title": "模板系统把高频请求从从零生成变成替换部署",
+      "scope": "architecture",
+      "summary": "严格 hash 匹配、trag 模糊召回、LLM 二次判断三段式组合，既减少误命中，又能复用优质模板工作区。"
+    },
+    {
+      "title": "Claude Code 工具调用有硬边界",
+      "scope": "security",
+      "summary": "Bash 命令、Read/Write/Edit/Grep/Glob 都经过路径与命令校验，写操作限制在工作区内，插件 skills 目录只读，防止 Agent 越权。"
+    },
+    {
+      "title": "验证-修复-部署闭环",
+      "scope": "reliability",
+      "summary": "代码生成后自动执行静态、打包、运行时检查；失败时构造修复 prompt 让 Agent 自修复，达到轮次上限后仍保留错误信息并继续进入部署兜底。"
+    },
+    {
+      "title": "工作区源码和部署产物双轨保存",
+      "scope": "feature",
+      "summary": "源码同步到 workspaces/{appId}，部署产物同步到 deployments/{appId}，二创和跨环境迁移可以从源码恢复，线上访问走部署产物。"
+    },
+    {
+      "title": "多层观测覆盖任务全过程",
+      "scope": "observability",
+      "summary": "事件总线、execution_phases、Langfuse trace/tag/score、Galileo summary、taskMonitor 心跳共同定位慢阶段、失败分支和孤儿任务。"
+    }
+  ]
+}
