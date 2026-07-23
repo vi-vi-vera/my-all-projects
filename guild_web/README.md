@@ -1,7 +1,7 @@
 # guild_web — 面试复盘材料
 
 > QQ 频道 Web 平台项目沉淀。
-> Git 仓库：`待补充`
+> Git 仓库：`git@git.woa.com:qq_guild_web/guild_web.git`
 
 ## 文件结构
 

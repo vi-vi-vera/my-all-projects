@@ -1,5 +1,7 @@
 # projects-management
 
+> Git 仓库：`git@git.woa.com:qq_management_system/qq-project.git`
+
 「项目管理类」前端门户的面试复盘归档目录。
 
 | 项目 | 说明 |

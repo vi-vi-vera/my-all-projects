@@ -1,5 +1,6 @@
 # QPilot 学习工作区（study-space）
 
+> Git 仓库：`git@github.com:vi-vi-vera/my-all-projects.git`（monorepo 内 `study-space/`）
 > 配套指引：[`../qpilot-code/study-guide.zh.md`](../qpilot-code/study-guide.zh.md)
 > 知识图谱：[`../qpilot-code/knowledge-map.zh.md`](../qpilot-code/knowledge-map.zh.md)
 >
