@@ -1,12 +1,9 @@
 /**
- * 一个最简单的 MCP Server
+ * MCP Server 示例
+ * 提供两个工具：get_weather（查天气）、calc（加法）
  *
- * MCP = Model Context Protocol，AI 调工具的"标准插头"
- * 这个 server 提供两个工具：
- *   - get_weather：查城市天气（假数据）
- *   - calc：做简单加法
- *
- * 跑起来后可以被 Claude Desktop / Cursor / 任何 MCP 客户端连接
+ * 传输方式：stdio（标准输入/输出）
+ * 客户端 spawn 这个进程，通过 stdin/stdout 发 JSON-RPC 消息
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -18,32 +15,21 @@ import {
 
 // ── 1. 创建 MCP Server ────────────────────────────────────────────────
 const server = new Server(
-  {
-    name: 'study-demo-server',  // server 名字
-    version: '0.1.0',
-  },
-  {
-    capabilities: {
-      tools: {},  // 声明"我支持工具调用"
-    },
-  }
+  { name: 'study-demo-server', version: '0.1.0' },
+  { capabilities: { tools: {} } }  // 声明：我支持工具调用
 );
 
-// ── 2. 注册"列出工具"的处理器 ─────────────────────────────────────────
-// 客户端问"你有哪些工具？"时，这里返回
+// ── 2. 注册 ListTools：告诉客户端"我有哪些工具" ──────────────────────
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
         name: 'get_weather',
-        description: '查询某个城市当前天气',
+        description: '查询某个城市的当前天气',
         inputSchema: {
           type: 'object',
           properties: {
-            city: {
-              type: 'string',
-              description: '城市名，例如：北京、上海',
-            },
+            city: { type: 'string', description: '城市名，如"北京"' },
           },
           required: ['city'],
         },
@@ -64,54 +50,37 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
-// ── 3. 注册"执行工具"的处理器 ─────────────────────────────────────────
-// 客户端说"帮我调 get_weather，city=北京"时，这里执行
+// ── 3. 注册 CallTool：真正执行工具 ────────────────────────────────────
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   if (name === 'get_weather') {
-    const { city } = args;
-    // 真实场景这里调天气 API，现在用假数据
     const weather = {
-      city,
+      city: args.city,
       temp: Math.floor(20 + Math.random() * 15),
       condition: ['晴', '多云', '小雨'][Math.floor(Math.random() * 3)],
     };
     return {
-      content: [
-        {
-          type: 'text',
-          text: `${city}天气：${weather.condition}，${weather.temp}°C`,
-        },
-      ],
+      content: [{ type: 'text', text: `${weather.city}天气：${weather.condition}，${weather.temp}°C` }],
     };
   }
 
   if (name === 'calc') {
-    const { a, b } = args;
     return {
-      content: [
-        {
-          type: 'text',
-          text: `${a} + ${b} = ${a + b}`,
-        },
-      ],
+      content: [{ type: 'text', text: `${args.a} + ${args.b} = ${args.a + args.b}` }],
     };
   }
 
-  // 未知工具：返回错误（而不是抛异常，这样客户端能优雅处理）
+  // 未知工具：不抛异常，用 isError 标记
   return {
     content: [{ type: 'text', text: `未知工具: ${name}` }],
     isError: true,
   };
 });
 
-// ── 4. 启动，使用 stdio 通信 ──────────────────────────────────────────
-// stdio = 标准输入/输出，是 MCP 最常用的传输方式
-// 客户端会 spawn 这个进程，通过 stdin/stdout 发 JSON-RPC 消息
+// ── 4. 启动，通过 stdio 与客户端通信 ──────────────────────────────────
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-// 注意：不要 console.log，stdout 是给 MCP 客户端用的！
-// 要调试就写到 stderr
-process.stderr.write('MCP Server 已启动，等待客户端连接...\n');
+// 注意：stdout 归 MCP 协议用，调试信息必须写 stderr！
+process.stderr.write('MCP Server 已启动\n');

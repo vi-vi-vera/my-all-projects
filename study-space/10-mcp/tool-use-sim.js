@@ -1,12 +1,8 @@
 /**
  * 演示：Tool use 4 步流程（纯模拟版，不需要 API key）
- *
- * 真实情况下，步骤 1/2/4 是模型自己做的
- * 步骤 3 是你（宿主程序）做的
- * 这里我们手动走一遍，理解数据结构
  */
 
-// ── 你定义的工具列表（告诉模型"你有什么工具可以用"）───────────────
+// ── 第一步：定义工具列表 ──────────────────────────────────────────────
 const tools = [
   {
     name: 'get_weather',
@@ -32,73 +28,74 @@ const tools = [
   },
 ];
 
-// ── 步骤 1：用户发消息，模型"看到"工具列表 ──────────────────────────
-console.log('=== 步骤 1：用户发消息 ===');
+// ── 第二步：模拟 LLM 返回 tool_use ─────────────────────────────────────
+console.log('=== 用户发消息 ===');
 const userMessage = '北京今天天气怎么样？';
 console.log(`用户: ${userMessage}\n`);
-console.log('（模型拿到工具列表，判断需要调 get_weather）\n');
 
-// ── 步骤 2：模型返回"工具调用请求"，不是文字回答 ────────────────────
-console.log('=== 步骤 2：模型输出工具调用请求 ===');
-// 这是模型实际返回的数据结构（stop_reason = "tool_use"）
+// LLM 不直接回答，而是返回"我要调这个工具"
 const modelResponse = {
-  stop_reason: 'tool_use',  // 关键！不是 "end_turn"，说明还没完
+  stop_reason: 'tool_use',       // 不是 'end_turn'，说明还没说完
   content: [
     {
       type: 'tool_use',
-      id: 'toolu_01ABC123',          // 这次调用的唯一 ID
-      name: 'get_weather',           // 调哪个工具
-      input: { city: '北京' },       // 参数
+      id: 'toolu_01ABC123',      // 这次调用的唯一 ID
+      name: 'get_weather',       // 调哪个工具
+      input: { city: '北京' },   // LLM 从用户消息里提取的参数
     },
   ],
 };
-console.log('模型返回:', JSON.stringify(modelResponse, null, 2), '\n');
 
-// ── 步骤 3：你（宿主程序）真正去执行工具 ────────────────────────────
-console.log('=== 步骤 3：宿主程序执行工具 ===');
+console.log('LLM 返回:');
+console.log(`  stop_reason = "${modelResponse.stop_reason}"`);
+console.log(`  type       = "${modelResponse.content[0].type}"`);
+console.log(`  id         = "${modelResponse.content[0].id}"`);
+console.log(`  name       = "${modelResponse.content[0].name}"`);
+console.log(`  input      = ${JSON.stringify(modelResponse.content[0].input)}`);
+console.log();
 
-// 真实场景：这里可能是调天气 API、查数据库、读文件...
+// ── 第三步：宿主程序真正执行工具 ───────────────────────────────────────
+console.log('=== 宿主程序执行工具 ===');
+
+// 你的真实工具实现（查数据库、调 API、读文件...）
 function get_weather({ city }) {
-  // 模拟一个假的天气结果
+  // 模拟返回天气数据
   return { city, temp: 28, condition: '晴', humidity: '45%' };
 }
 
-const toolUseBlock = modelResponse.content[0];
-const toolResult = get_weather(toolUseBlock.input);
-console.log(`调用 ${toolUseBlock.name}(${JSON.stringify(toolUseBlock.input)})`);
-console.log(`结果:`, toolResult, '\n');
+const toolBlock = modelResponse.content[0];
+const toolResult = get_weather(toolBlock.input);
+console.log(`调用 ${toolBlock.name}(${JSON.stringify(toolBlock.input)})`);
+console.log(`返回: ${JSON.stringify(toolResult)}`);
+console.log();
 
-// ── 步骤 4：把工具结果还给模型，模型生成最终回答 ─────────────────────
-console.log('=== 步骤 4：把结果塞回给模型 ===');
+// ── 第四步：把工具结果塞回 LLM ─────────────────────────────────────────
+console.log('=== 把结果塞回给 LLM ===');
 
-// 下一轮对话要带上这些内容（工具调用 + 工具结果）
 const nextMessages = [
-  { role: 'user', content: userMessage },
-  { role: 'assistant', content: modelResponse.content },  // 步骤 2 的内容
+  { role: 'user', content: userMessage },                        // 1. 原始用户消息
+  { role: 'assistant', content: modelResponse.content },         // 2. LLM 的工具调用
   {
-    role: 'user',
+    role: 'user',                                                // 3. 工具执行结果
     content: [
       {
         type: 'tool_result',
-        tool_use_id: toolUseBlock.id,   // 对应步骤 2 的 id
+        tool_use_id: toolBlock.id,                               // 必须对上！
         content: JSON.stringify(toolResult),
       },
     ],
   },
 ];
 
-console.log('发给模型的完整消息链:');
 nextMessages.forEach((m, i) => {
-  const content = typeof m.content === 'string'
-    ? m.content
-    : JSON.stringify(m.content);
-  console.log(`  [${i}] role=${m.role}: ${content.slice(0, 80)}...`);
+  const label = ['用户消息', 'LLM 工具调用', '工具结果'][i];
+  console.log(`[${i}] ${label}: role=${m.role}`);
 });
 
-console.log('\n（模型收到天气数据后，生成："北京今天晴，28°C，湿度45%，适合出门！"）');
-
-console.log('\n=== 关键点总结 ===');
-console.log('1. stop_reason="tool_use" 表示模型还没说完，等你执行工具');
-console.log('2. tool_use_id 要对应，把结果交还给正确的调用');
-console.log('3. 工具结果用 role=user + type=tool_result 格式传回');
-console.log('4. 可能多轮：模型可以连续调多个工具再给最终回答');
+console.log('\n（LLM 收到天气数据后，生成最终回复："北京今天晴，28°C，适合出门！"）');
+console.log('\n=== 4 步总结 ===');
+console.log('1. 用户消息 + 工具列表 → 发给 LLM');
+console.log('2. LLM 返回 stop_reason="tool_use" + 工具名和参数');
+console.log('3. 宿主程序执行工具，拿到结果');
+console.log('4. 结果用 tool_result 格式 + tool_use_id 塞回 LLM');
+console.log('5. LLM 基于结果生成最终回答（stop_reason="end_turn"）');
