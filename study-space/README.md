@@ -34,9 +34,9 @@
 | 7 | q-05 Redis 缓存与降级 | cache-aside / 雪崩 / 击穿 / 穿透 / 降级 / 持久化 / 集群 | [`07-redis/`](./07-redis/) | ✅ | Cache-Aside 先DB再删缓存 + 雪崩TTL抖动 + 击穿互斥锁SET-NX + 穿透布隆过滤器 + 降级熔断三级防御 + RDB/AOF混合持久化 + Sentinel/Cluster，详见 [`07-redis/NOTES.md`](./07-redis/NOTES.md) |
 | 8 | q-03 Linux 沙箱 + 适配器 | namespace(7种) / cgroups(CPU/内存) / Adapter模式 / 依赖倒置 | [`08-sandbox/`](./08-sandbox/) | ✅ | namespace隔离资源视图 + cgroups限制资源用量 + 适配器模式（Sandbox接口+Mock/Docker实现+Demo验证），详见 [`08-sandbox/NOTES.md`](./08-sandbox/NOTES.md) |
 | 9 | q-04 对象池 + warm pool | min/max/idle / 预热 / 扩缩 | [`09-object-pool/`](./09-object-pool/) | ✅ | 对象池 = 共享单车：min 预热备用，max 防压垮，idleTimeout 空闲回收；超出 max 排队等，超时报 TimeoutError，详见 [`09-object-pool/NOTES.md`](./09-object-pool/NOTES.md) |
-| 10 | q-02 MCP + Tool use | JSON-RPC / capability / 错误归一化 | [`10-mcp/`](./10-mcp/) | ✅ | Tool use 4 步：模型返回 stop_reason="tool_use" + JSON 参数 → 你执行 → 结果用 tool_result 塞回，id 必须对应；MCP 是这套流程的标准插头，详见 [`10-mcp/NOTES.md`](./10-mcp/NOTES.md) |
-| 11 | q-11 OTel + Langfuse | span / traceparent / LLM 埋点 | [`11-otel-langfuse/`](./11-otel-langfuse/) | ✅ | span 是操作的"日志+计时器"，traceparent 头把跨服务 span 串成完整 trace；Langfuse 是 LLM 专用可视化平台，看 prompt/token/费用，详见 [`11-otel-langfuse/NOTES.md`](./11-otel-langfuse/NOTES.md) |
-| 12 | q-07 Feature Flag + 权限 | toggle / blast radius / 后端鉴权 | [`12-feature-flag/`](./12-feature-flag/) | ✅ | flag 是功能电闸，前端按 flag 隐藏入口（体验层），后端按 flag 拒绝请求（安全层）；灰度用哈希保证同一用户结果一致，详见 [`12-feature-flag/NOTES.md`](./12-feature-flag/NOTES.md) |
+| 10 | q-02 MCP + Tool use | JSON-RPC / stdio / 错误归一化 | [`10-mcp/`](./10-mcp/) | ✅ | Tool use 4 步：给 LLM 工具列表 → LLM 返回 stop_reason="tool_use" + 参数 → 宿主执行 → tool_result 用 tool_use_id 对应塞回；MCP 是标准协议，ListTools + CallTool 两个 Schema，stdio 传输 stdout 归协议/stderr 归调试，详见 [`10-mcp/NOTES.md`](./10-mcp/NOTES.md) |
+| 11 | q-11 OTel + Langfuse | span / traceparent / 采样 / GenAI埋点 | [`11-otel-langfuse/`](./11-otel-langfuse/) | ✅ | OTel 采数据 + Langfuse/Galileo 看数据；startActiveSpan 自动建立父子 Span（Context栈）；propagation.inject/extract 跨服务传递 traceparent；采样策略 AlwaysOn/RatioBased/ParentBased/Tail-based；GenAI Conventions 标准属性让平台自动识别 LLM 调用，详见 [`11-otel-langfuse/NOTES.md`](./11-otel-langfuse/NOTES.md) |
+| 12 | q-07 Feature Flag + 权限 | toggle / 灰度哈希 / 双闸门 | [`12-feature-flag/`](./12-feature-flag/) | ✅ | flag 是功能电闸：白名单优先 > 哈希灰度(hash(userId)%100<rollout，同用户稳定) > 总开关；前端隐藏入口（体验层）+ 后端 requireFlag 中间件拦截（安全层）= 双闸门；实际项目：qpilot-web 白名单、yuheng 盘古 RBAC、guild_web 七彩石+版本灰度，详见 [`12-feature-flag/NOTES.md`](./12-feature-flag/NOTES.md) |
 
 ---
 
