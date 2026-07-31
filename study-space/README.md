@@ -8,6 +8,250 @@
 
 ---
 
+## 面试复盘：qpilot-code 项目核心技术点
+
+> 以下基于 `qpilot-code-backagent` + `qpilot-web-v2` 源码验证（2026-07-31）。
+
+### 一、沙箱 Git 操作性能问题
+
+**现象**：切换到 OpenSandbox 沙箱后，Git 操作变得非常慢甚至超时。
+
+**根因**：原模式逐条 `exec` 执行 Git 命令，但 OpenSandbox 每次 `exec` 都需要重新 `connect`，N 条命令 = N 次连接，累积延迟导致超时。
+
+**解决**：合并多条命令到一次 `exec`，用 `set -e` + 分段标记：
+
+```bash
+set -e
+# --- segment: git_init ---
+git init && git remote add origin xxx
+# --- segment: git_fetch ---
+git fetch origin main
+# --- segment: git_checkout ---
+git checkout main
+```
+
+**代码位置**：`sandbox-tools.ts` + sandbox backend adapter 层（e2b 原生 SDK 有连接复用，OpenSandbox 自定义协议无连接池）
+
+---
+
+### 二、LLM 代码生成质量：Skill + 模板系统
+
+**Skill 定义**：`builtin-skills.ts` → Skills Creator 内置技能
+
+**流程**：
+1. LLM 调用 Skill → 识别用户意图 + 技术栈类型（React/Vue/Node.js 等）
+2. Skill 提供对应技术栈的**项目模板**（目录结构、配置文件、入口代码骨架）
+3. LLM 在模板约束下生成完整项目代码
+
+**Skill 加载**：`skills-loader.ts` 从 CDN 拉取 skill 文件，支持缓存和脚本检测
+
+---
+
+### 三、预览启动链路（三层兜底）
+
+> ⚠️ **常见面试误区**：容易把"工具参数修复重试 2 次"和"预览启动 LLM 兜底"搞混，它们是两个独立系统。
+
+**三层兜底架构**（`preview-runtime-orchestrator.service.ts`）：
+
+```
+① 复用检查：Redis 查运行时状态 → 健康检查端口 → 复用已有服务
+       ↓ 不可复用
+② 快路径：读 .qpilotcode manifest → executeDevStart()
+       ↓ manifest 不存在或快启动失败
+③ LLM 兜底：runPreviewStartFallback()
+     - 沙箱内启动 Claude Runner（maxTurns: 100, permissionMode: acceptEdits）
+     - prompt: "预览快速启动失败，失败原因：XXX，自动修复并启动服务"
+     - 成功后 → backfillPreviewManifestIfValid() 将 .qpilotcode 写回磁盘
+     - 超时 30 分钟
+     - 排除了 Skill/ToolSearch/mcp 写 manifest 等工具
+```
+
+**`.qpilotcode` manifest 结构**：
+```json
+{
+  "dev": {
+    "run": "npm run dev",
+    "install": "npm install",
+    "port": 3000,
+    "readinessPath": "/"
+  }
+}
+```
+
+**关键常量**：
+- 分布式锁 TTL: 10 分钟（Redis `SET NX EX`）
+- Claude Runner 超时: 30 分钟
+- maxTurns: 100
+- 使用的模型: `claude-sonnet-4-5`
+
+---
+
+### 四、工具参数修复（独立于预览启动）
+
+**代码位置**：`chat-main-agent-v2/route.ts` → `createRepairToolCall()`
+
+**场景**：LLM 生成的 tool call 参数 JSON 格式错误（代码作为字符串值时容易出问题）
+
+**机制**：
+1. `MAX_REPAIR_ATTEMPTS = 2`（连续失败 2 次后放弃）
+2. 用 `claude-sonnet-4-5` 模型修复参数
+3. 修复后用 Zod `safeParse` 验证
+4. 成功则替换 toolCall 继续执行；失败则返回 null 让 LLM 换方式
+
+**四个使用方**：CodeWriter Subagent / Code Subagent / Skill Subagent / 主 Orchestrator Agent
+
+---
+
+### 五、沙箱自动重连
+
+**代码位置**：`sandbox.ts` → `withAutoReconnect()`
+
+- `MAX_RECONNECTS = 2`
+- 沙箱被回收时（检测 `sandbox was not found` / `502` 等模式）
+- 自动重建沙箱，重新上传 Skills 文件，重新执行操作
+- 沙箱池 TTL 5 分钟，每次操作前续期
+
+---
+
+### 六、语法预检 + 退出码提示
+
+**代码位置**：`sandbox-tools.ts`
+
+- **语法预检**：写入 `.js`/`.py` 文件后自动 `node --check` / `python -m py_compile` 验证
+- **退出码提示**：
+  - 127 → "command not found，请安装对应包"
+  - 243 → "权限不足"
+  - timeout → "命令超时，请拆分执行"
+
+---
+
+### 七、可观测性体系（四层）
+
+> 面试高频追问："用户反馈项目启动不了，怎么快速定位？" —— 记住这四层 + 排查路径。
+
+#### 排查路径（一句话）
+
+> 先看 **业务阶段监控**定位卡在哪个环节（后台进程 vs LLM）→ 若是 LLM 问题去 **Langfuse** 捞 Trace → 若是基础设施问题去 **伽利略** 看日志/指标。
+
+#### 第一层：`sandboxChatMonitorService` — 业务级阶段监控
+
+**代码位置**：`qpilot-code-backagent/src/services/sandbox-chat-monitor.service.ts`
+
+自建生命周期埋点，覆盖 **60+ 阶段**，按模块分类：
+
+| 模块 | 阶段示例 |
+|------|----------|
+| `sandbox_chat` | request_received / conversation_created / runner_deploy / agent_run / finalization |
+| `sandbox` | sandbox_init / sandbox_create / sandbox_workspace_restore / cos_sync_* |
+| `preview_service` | service_fast_start / service_installing / service_launching / service_exposing / service_ready / service_failed |
+| `git` | git_commit_* / git_push_* / git_clone_* |
+| `version` | version_create / version_upload / version_sync / claude_context_sync |
+
+每个阶段记录：`sessionId`/`conversationId`/`userId`（业务标识）+ `stage`/`status`（started/success/failed/warn）+ `elapsedMs`（耗时）+ `reason`/`error`（失败原因）+ `eventCode`（标准化事件码）。
+
+- **超时检测**：每阶段有阈值 `DEFAULT_STAGE_TIMEOUTS_MS`（如 sandbox_init 120s、runner_deploy 180s）
+- **卡死检测**：`STALL_ALERT_DEBOUNCE_MS = 10 分钟`，流式卡死自动上报并恢复
+- **价值**：搜 sessionId → 看到完整阶段时间线 → 秒级定位卡在哪一步
+
+#### 第二层：Langfuse — LLM 行为全链路追踪
+
+**代码位置**：`qpilot-code-backagent/src/logger/langfuse.ts` + `langfuse-tracer.ts`
+
+自建 Trace 树（不是简单接入）：
+
+```
+sandbox-chat (根 trace, chain)
+├── sandbox-init (span)              沙箱初始化耗时
+├── runner-deploy (span)             Claude Runner 部署
+├── preview-service-start (span)     预览启动
+│   └── preview-service:{phase}      安装→启动→暴露→就绪/失败
+├── llm-turn-N (generation)          每轮 LLM（token 消耗 + 缓存命中率）
+│   └── tool:{name} (tool)           每个工具调用
+└── post-sync (span)                 后处理同步
+```
+
+**关键设计**：
+- **Trace 传播**：`propagateAttributes` + `startActiveObservation` 建 root trace，生成 W3C `traceparent` 传给 Claude Code 原生 OTLP，串联前后端
+- **Token 追踪**：累计 input/output tokens，记录 `cacheReadTokens`/`cacheCreationTokens`（缓存命中率）
+- **降级**：无 API key 自动 no-op；trace 初始化超时（`TRACE_READY_TIMEOUT_MS = 1s`）自动禁用，不阻塞主流程
+
+#### 第三层：伽利略 Galileo — 内部日志聚合 + 链路追踪
+
+**代码位置**：`qpilot-web-v2/apps/desktop/src/shared/utils/galileo-logger.ts` + `instrumentation.ts`
+
+- 服务端 `@tencent/galileo-node-sdk`，采样率 100%（`fraction: 1`）
+- 客户端 `@tencent/aegis-web-sdk-v2`，自动注入 W3C `traceparent` 请求头（仅对 qpilot.woa.com 域名）
+- 自建 4 个 OTel 指标：`api_request_duration`、`page_render_duration`、`chat_request_count`、`chat_error_count`
+
+#### 第四层：SSE 实时调试日志
+
+- `debugLogService`：按 sessionId 分组，实时推送调试日志到前端
+- `systemEventService`：推送沙箱/服务状态事件（preview_starting / preview_ready / preview_error）
+
+#### ⚠️ 易混淆点
+
+Langfuse **不在前端 web 仓库**，前端 web 用的是伽利略 + OTel（`@opentelemetry/api`）。Langfuse 只在 backagent（后台）里做 LLM 追踪。
+
+---
+
+### 八、看门狗（Watchdog）卡死检测与恢复
+
+**代码位置**：`qpilot-code-backagent/src/services/sandbox-chat-monitor.service.ts`（第 528-684 行）+ `resumableStreamService.ts`
+
+> 面试高频追问："怎么区分真卡死和正常的慢？会误杀吗？多实例并发怎么办？"
+
+#### 触发机制
+
+`start()` 启动定时器，每 **60s**（`STALE_RUNNING_SWEEP_INTERVAL_MS`）扫一次数据库里"还在 running 但超过 60s 没更新"的对话（`findRunningChatsUpdatedBefore`，LIMIT 100）。
+
+#### 判死逻辑（两个维度，防误判核心）
+
+```
+维度① hasActiveStream = probeActiveStream(streamKey)   ← 流还活着吗（关键）
+维度② conversationAgeMs                                ← 卡了多久
+判死条件：!hasActiveStream && conversationAgeMs >= 10 分钟
+```
+
+- **流还活着（哪怕很慢）→ 只发 warn 告警，绝不判死** → 不会误杀慢任务
+- **流断了 + 超过 10 分钟 → 才判死** → 这才是真卡死（进程崩、Runner 挂）
+- 分级阈值：每阶段有 `STAGE_STALL_THRESHOLDS_MS`（如 runner_deploy 180s），超过发 warn；恢复统一 `STALE_RUNNING_RECOVERY_MS = 10 分钟`；`STALL_ALERT_DEBOUNCE_MS = 10 分钟` 防告警刷屏
+
+#### 「流在进程里还在不在」怎么判断（核心考点）
+
+基于 `resumable-stream@2.2.12`（**Redis Pub/Sub** 实现），分两层：
+
+1. **浅层**：Redis 里有没有 streamId（key = `resume-stream:active:{streamKey}`，TTL 1 小时）。有 key 只说明"曾注册过"，不代表现在活着（进程崩了 key 因 TTL 还残留）。
+2. **深层（关键）**：`resumeExistingStream(streamId)` **主动向生产者进程发 ack 探针**：
+   - 生产者进程活着 → 响应 ack → 返回 stream 对象 → **活着**（哪怕在慢慢生成）
+   - 生产者已正常结束 → 返回 `null` → 判死，清 key
+   - 生产者进程崩溃/内存态丢失 → 抛 `"Timeout waiting for ack"` → 判死，清 key
+
+**本质**：不是靠"多久没更新"推测，而是**真实的存活探测（liveness probe）**——进程活着就能应答，死了就超时。避免僵死流被 TTL 锁住最多 1 小时。探测后 `getReader().cancel()`，因每次 resume 创建独立 subscriber，不影响真实读者（断线重连的前端）。
+
+| 情况 | Redis 有 key | 响应 ack | 结果 |
+|------|:---:|:---:|------|
+| LLM 慢慢生成 | ✅ | ✅ | 活着（不判死） |
+| 进程崩溃/OOM | ✅(残留) | ❌超时 | 判死 |
+| 流已正常结束 | ✅ | 返回 null | 判死 |
+| key 已过期 | ❌ | — | 判死 |
+
+#### 「恢复」做了什么
+
+`reportAndRecover`（第 639-684 行）**不是重试，是标记失败**：
+1. 上报 failed 日志（`failureSource: sandbox_chat_watchdog`，伽利略里可区分是看门狗判的）
+2. 补一条 `chat_completed / failed` 生命周期日志
+3. `ConversationRepository.update(id, { status: FAILED })` — 把 running 改成 failed
+
+**用户侧**：此时流已断（收不到 SSE），刷新后看到对话失败态，可重新发起。价值 = 避免对话永久挂 running 占资源。
+
+#### 多实例（多 Pod）并发
+
+- **单实例内**：有 `sweepRunning` 布尔锁防重入
+- **跨实例**：**没有分布式锁**，多 Pod 会各自扫描，理论上可能重复恢复同一对话
+- **为什么可接受**：恢复本质是幂等的状态更新（`UPDATE status='failed'`），多次执行结果一致，最多告警日志重复几条。对比预览启动（`preview-runtime-orchestrator`）有 Redis 分布式锁（TTL 10 分钟），看门狗因操作幂等、代价低，**有意不加锁**的权衡。
+
+---
+
 ## 环境清单
 
 完成一项打一个勾，**所有项打勾后再进簇 1**。
