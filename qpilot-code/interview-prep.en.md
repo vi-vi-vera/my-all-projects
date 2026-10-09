@@ -22,13 +22,13 @@ An enterprise AI coding platform that turns design drafts and natural-language r
 
 ### Standard (30–60 seconds)
 
-QPilot Code Agent is an enterprise AI coding platform. The backend is Express plus the Claude Agent SDK plus MCP, exposing SSE streaming endpoints; the frontend is React 18 plus Zustand plus Sandpack. Every session gets an isolated sandbox, either e2b or our in-house OpenSandbox. Cross-pod state has Redis as the source of truth and the database as fallback, with writes going to Redis synchronously and the DB asynchronously. For the preview path, the build artifact in the sandbox is mounted onto a subdomain by deploy-proxy, and vite base is rewritten by subpath at deploy time. For observability we use OpenTelemetry plus Langfuse, attaching SSE handlers, tool calls, and LLM prompt and token usage to the same trace with a shared trace_id.
+QPilot Code Agent is an enterprise AI coding platform. The backend is Express plus the Claude Agent SDK plus MCP, exposing SSE streaming endpoints; the frontend is React 18 plus Zustand plus Sandpack. Every session gets an isolated sandbox backed by the OpenSandbox SDK. The in-process warm pool is a no-op. Cross-pod state has Redis as the source of truth, and reads call OpenSandbox getInfo. For the preview path, the build artifact in the sandbox is mounted onto a subdomain by deploy-proxy, and vite base is rewritten by subpath at deploy time. For observability we use OpenTelemetry plus Langfuse, attaching SSE handlers, tool calls, and LLM prompt and token usage to the same trace with a shared trace_id.
 
 ### Deep dive (2–3 minutes)
 
 <details><summary>Expand</summary>
 
-QPilot Code Agent moves AI coding from demo to a graduated product. The frontend uses fetch-event-source for SSE and renders tool_use and tool_result as separate chunks; the nginx reverse proxy has proxy_buffering off and X-Accel-Buffering: no, otherwise first-byte gets buffered. The backend is built on the Claude Agent SDK plus MCP, with tools — git, sandbox commands, file IO, deploy — registered through an MCP catalog, each tool exposing a name, input schema, and handler. The sandbox layer abstracts two backends: e2b uses its own SDK, OpenSandbox uses a custom protocol, SandboxManager exposes a unified interface (start, exec, file IO, destroy), and a coordinator handles session routing. Two performance areas: first, sandbox-warm-pool keeps a set of idle instances that have completed common init, new sessions take one from the pool and only the differential init runs (a few hundred ms), with pool size scaled by time-of-day; second, the git endpoints fold multiple sandbox.exec calls into a single set -e composite command parsed back via delimiter markers, with seven endpoints sharing the same merge logic. SSE over WebSocket: almost all events are server-to-client, SSE is HTTP-compatible and Last-Event-ID resume is simpler; Redis primary plus DB fallback over a single DB: sandbox state has very high read/write frequency, a single DB cannot keep up, Redis hits in sub-millisecond and the DB carries load only on failure or rebuild. For observability we inject W3C Trace Context into LLM call sites, large fields like prompt text and token usage are written to Langfuse, while OTel only records scalars — model_name, prompt_tokens, completion_tokens, duration.
+QPilot Code Agent moves AI coding from demo to a graduated product. The frontend uses fetch-event-source for SSE and renders tool_use and tool_result as separate chunks; the nginx reverse proxy has proxy_buffering off and X-Accel-Buffering: no, otherwise first-byte gets buffered. The backend is built on the Claude Agent SDK plus MCP, with tools — git, sandbox commands, file IO, deploy — registered through an MCP catalog, each tool exposing a name, input schema, and handler. The sandbox runtime is the OpenSandbox SDK only. e2b remains in comments. sandbox-warm-pool.service.ts is a no-op and acquireWarmSandbox always returns null. The git endpoints fold multiple sandbox.exec calls into a single set -e composite command parsed back via delimiter markers, with seven endpoints sharing the same merge logic. SSE over WebSocket: almost all events are server-to-client, SSE is HTTP-compatible and Last-Event-ID resume is simpler; Redis primary plus DB fallback over a single DB: sandbox state has very high read/write frequency, a single DB cannot keep up, Redis hits in sub-millisecond and the DB carries load only on failure or rebuild. For observability we inject W3C Trace Context into LLM call sites, large fields like prompt text and token usage are written to Langfuse, while OTel only records scalars — model_name, prompt_tokens, completion_tokens, duration.
 
 </details>
 
@@ -38,16 +38,16 @@ QPilot Code Agent moves AI coding from demo to a graduated product. The frontend
   AI Agent UX depends on streaming. The backend exposes SSE backed by the Claude Agent SDK plus MCP, and the frontend consumes it with fetch-event-source, rendering tool_use and tool_result as separate chunks. The nginx reverse proxy buffers streams by default, so we turn off proxy_buffering and set X-Accel-Buffering: no. First-byte lands in the sub-second range, and tool expansion plus file diffs render incrementally.
   > Keywords: `SSE` · `MCP` · `Claude Agent SDK` · `fetch-event-source` · `nginx`
 - **用户级沙箱与跨 Pod 状态权威源（Redis + DB 兜底）** (reliability · backend)
-  Each session gets an isolated sandbox so users do not pollute each other. Pod drift can lose in-process state, so we put the source of truth in Redis with the database as fallback; writes go to Redis synchronously and the DB asynchronously. A coordinator does session-based affinity routing, and a warm pool lets first previews skip the common-init phase. Reconnects across pods restore the right workspace, and preview startup drops from over ten seconds to under one.
-  > Keywords: `sandbox` · `Redis` · `warm-pool` · `affinity` · `DB fallback`
+  Each session has an isolated sandbox backed by the OpenSandbox SDK. Redis is still the runtime source of truth, and reads call OpenSandbox getInfo to check the sandbox is actually alive. SandboxWarmPoolService is a no-op stub: acquireWarmSandbox always returns null.
+  > Keywords: `OpenSandbox` · `Redis` · `getInfo` · `warm-pool stub` · `DB fallback`
 - **Git 接口性能优化：合并沙箱命令减少 RTT** (performance · backend)
   Each git endpoint used to run multiple subcommands serially in the sandbox, paying one cross-network round-trip per step. After the rewrite we fold subcommands into one composite command using set -e plus delimiter markers, completed in a single sandbox.exec, with stdout sliced by markers and parsed back in the service layer. The seven git endpoints (including checkpoint) share the same merge logic. We also fixed a consistency bug along the way: untracked files used to make pull report false conflicts.
   > Keywords: `git` · `RTT` · `batch` · `sandbox` · `consistency`
 - **H5 预览生命周期与 console 协议演进** (reliability · frontend)
   The iframe preview used to poll 'is it up', with logic scattered across multiple setIntervals and useEffects; on refresh it occasionally hit a race where the old iframe was still alive and a new one had already started. We rewrote it as an explicit state machine: idle → starting → ready / error → refreshing → ready, with all transitions going through the store. Concurrent starts use an inflight token plus AbortController, with a new start aborting the old. postMessage strictly validates origin to block injection. Only when HMR fails do we escalate to a full reload.
   > Keywords: `iframe` · `state-machine` · `postMessage` · `HMR` · `console`
-- **白名单 feature flag 驱动的渐进式发布** (security · fullstack)
-  A high-risk knob like pod memory can prevent a user's app from starting if set wrong. We use a three-layer rollout: a backend whitelist file feature-whitelist.ts holds allowed accounts, the frontend adds a feature flag, and the final permission check sits in the backend API. In the UI, DeployTabPanel shows both the saved value (persisted in DB) and the running value (current value on the pod), which differ between save and deploy restart. The pattern was later reused for deploy, checkpoint, and similar high-risk surfaces.
+- **上传门禁与部署前易失存储确认** (security · fullstack)
+  The upload route checks Origin before parsing a JSON body of up to 1GB, so a disallowed origin cannot force the process to read a huge payload first. Before deploy, the panel reads isEphemeralStorage and opens a confirm dialog with ephemeralReason only when that flag is true. On 2026-09-02 the extra readError gate was removed. feature-whitelist.ts is gone from the current repo.
   > Keywords: `feature-flag` · `whitelist` · `gradual-rollout` · `blast-radius`
 - **可观测性：OpenTelemetry + Langfuse 串联 LLM 调用** (observability · backend)
   Debugging LLM flows used to be a black box. We use the OTel Node SDK to open spans on the Express handler, the SSE streamManager, and MCP tool calls, and propagate W3C Trace Context so the LLM-call span attaches to the main trace; Langfuse is the LLM-side backend recording prompt text, token usage, and cost, sharing the trace_id with OTel. OTel attributes only hold scalars like model_name, prompt_tokens, completion_tokens, and duration; large fields such as prompt text go to Langfuse to keep the exporter from being overloaded.
@@ -110,11 +110,11 @@ The core idea is to put resumability into the SSE protocol itself, not stack ano
 
 - `backagent/src/services/resumableStreamService.ts`
 - `backagent/src/services/streamManager.ts`
-- `backagent-web/src/hooks/useAgent.ts`
+- `web/src/hooks/useAgent.ts`
 
 ---
 
-### Q2. Your sandbox layer has both e2b and an in-house backend — how is it abstracted, and what changes when you switch backends?
+### Q2. What does the sandbox runtime call today, and is e2b still a selectable backend?
 
 > Source: `tp-003` · scope: backend · backagent · depth: 中级
 
@@ -128,15 +128,15 @@ The core idea is to put resumability into the SSE protocol itself, not stack ano
 
 #### Tiered answers
 
-**🟢 Elevator**: SandboxManager defines a unified interface (start, exec, file IO, destroy) with one adapter per backend; a coordinator handles session routing on top, and business code only depends on the interface.
+**🟢 Elevator**: The runtime uses only the OpenSandbox SDK. e2b remains in comments and is not a second backend.
 
 **🔵 Standard** (default):
 
-We abstracted the sandbox layer for two reasons: to isolate user workspaces and to avoid lock-in to any one vendor. SandboxManager defines a unified interface (start, exec, file IO, destroy); e2b uses its own SDK and our in-house OpenSandbox uses a custom protocol, with each backend implementing its own adapter. A coordinator handles session-to-instance routing on top, and business code — git, deploy, tool handlers — only depends on the SandboxManager interface. Switching backends only changes configuration and the injected implementation; business code is untouched. We also leverage this layer for mixed scheduling: routing different sessions to different backends based on cost and capability, which makes gradual rollouts easier.
+sandbox-manager builds its client from the OpenSandbox SDK. getSandboxInfo, listSandboxInfos, and renew are wrapped with timeouts. Metadata is sanitized before write. Redis still stores runtime state, and reads call OpenSandbox getInfo to correct expiry. There is no e2b SDK import left, only comments in error classification and an old port-map field. Describe the runtime as already consolidated, not as a two-backend switch.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-The point of this layer is to fold vendor differences into a minimal interface. SandboxManager exposes only four method classes: start, exec, file IO, destroy. The e2b adapter wraps their SDK, mapping their session concept to our session id; the OpenSandbox adapter speaks a custom HTTP protocol, wiring start, exec, and file ops to our internal endpoints. The coordinator on top does two things: session-to-instance routing (warm-pool hits, affinity retention, cross-pod forwarding) and graceful degradation when an instance disconnects or a request times out, switching to the backup backend. Business code — git-sandbox.service, sandbox-deploy.service, tool handlers — only sees a SandboxManager instance and does not know whether it is e2b or OpenSandbox underneath. Concrete benefits: first, adding a backend means writing one adapter class; second, A/B experiments can shift traffic per session; third, the same business code runs on both backends, so bugs are fixed once. The cost is that the thinner the abstraction, the more capabilities stay hidden — for instance, e2b has filesystem snapshot features we do not expose, and using them would require bypassing the abstraction. Interface evolution also requires care: adding a method means both backends must implement it. Docker cannot serve as the sandbox directly because it is a single-host concept and does not provide cross-host scheduling, warm pools, or affinity routing; e2b and OpenSandbox both ship those.
+The runtime calls only OpenSandbox. sandbox-manager creates the client from the SDK. getSandboxInfo, listSandboxInfos, and renew have timeouts. Metadata is sanitized before write. Redis expiry can lag the platform, so reads call getInfo and correct it. e2b appears only in a comment in sandbox-errors.ts and in a leftover e2b.dev port example. Neither means e2b is still selectable. acquireWarmSandbox always returns null, so the in-process pool is also out of this path. If asked why there used to be two backends, describe that as retired history.
 
 </details>
 
@@ -161,7 +161,7 @@ The point of this layer is to fold vendor differences into a minimal interface. 
 #### Follow-ups (interviewer deep probes)
 
 - ⚖️ **Why not just use Docker directly instead of building this layer?** (trade-off)
-  > Docker is single-node. We need cross-node scheduling, warm pools, and affinity routing — both e2b and OpenSandbox provide that with different protocols, so we abstract over them.
+  > Docker is single-node. The current runtime delegates cross-host sandboxes to OpenSandbox. This repo no longer wraps an e2b adapter, and this process no longer keeps a warm pool.
 
 
 #### Evidence
@@ -173,7 +173,7 @@ The point of this layer is to fold vendor differences into a minimal interface. 
 
 ### Q3. How do useAgent and useFileSync divide responsibility, and why split them into two hooks instead of one?
 
-> Source: `tp-010` · scope: frontend · backagent-web · depth: 中级
+> Source: `tp-010` · scope: frontend · web · depth: 中级
 
 #### Knowledge points
 
@@ -218,8 +218,8 @@ The key criterion for splitting is 'is the dependency direction one-way'. useAge
 
 #### Evidence
 
-- `backagent-web/src/hooks/useAgent.ts`
-- `backagent-web/src/hooks/useFileSync.ts`
+- `web/src/hooks/useAgent.ts`
+- `web/src/hooks/useFileSync.ts`
 
 ---
 
@@ -273,7 +273,7 @@ MCP acts as the unified registration bus between tools and the Agent. At startup
 #### Evidence
 
 - `backagent/src/services/mcp-catalog.service.ts`
-- `backagent-web/src/hooks/useAgent.ts`
+- `web/src/hooks/useAgent.ts`
 
 ---
 
@@ -326,7 +326,7 @@ The hard part on this path is cross-boundary state alignment — the sandbox, de
 
 - `backagent/src/services/build-preview/sandbox-deploy.service.ts`
 - `backagent/src/services/build-preview/deploy-proxy.service.ts`
-- `backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx`
+- `web/src/pages/Chat/components/deploy/DeployTabPanel.tsx`
 
 ---
 
@@ -383,7 +383,7 @@ SSE adds several details over plain REST in the routing layer. First, headers �
 
 ## ⚡ Performance (performance) — 2 Q&A
 
-### Q1. How did you cut first-preview cold start, and how is the warm pool sized so it doesn't burn money?
+### Q1. Does the in-process warm pool still cut cold start, and what does that class do now?
 
 > Source: `tp-004` · scope: backend · backagent · depth: 中级
 
@@ -397,15 +397,15 @@ SSE adds several details over plain REST in the routing layer. First, headers �
 
 #### Tiered answers
 
-**🟢 Elevator**: sandbox-warm-pool keeps a set of idle instances with common init done; new sessions take one from the pool, the differential init takes a few hundred ms, and pool size is scaled by time of day.
+**🟢 Elevator**: SandboxWarmPoolService is a no-op. acquireWarmSandbox always returns null, and pooling is handled by OpenSandbox.
 
 **🔵 Standard** (default):
 
-Cold-start time is dominated by image pull, dependency install, and service startup, typically over ten seconds combined. sandbox-warm-pool keeps a fixed set of idle instances; once started they finish the common init (image pull, starting common processes) and park in the pool. When a new session arrives, sandbox-proxy takes one from the pool first, and only the differential init (user files, specific config) runs, taking a few hundred ms. Pool size is scaled by time of day — larger during peak, smaller at night — with monitoring to avoid burning money on idle slots. A pool miss falls through to a full cold start and triggers refilling one instance, and the frontend shows an explicit waiting state. The result is first-preview going from over ten seconds to under one.
+The class comment in sandbox-warm-pool.service.ts says it is a no-op stub. initialize only logs that the pool is disabled, acquireWarmSandbox returns null, and getPoolStatus returns an empty pool. Callers still compile, but they never receive a local warm instance. sandbox-proxy.service.ts is gone. If first preview is slow, look at OpenSandbox create and getInfo. Do not reuse the old ten-seconds-to-one-second number.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-The core idea of the warm pool is to move pre-doable init ahead of session arrival. The startup flow splits into two parts: common init (image pull, runtime install, starting resident processes) and differential init (user workspace files, project config, entry command). Common init runs for nearly every session, so we move it to pool-instance startup and do it once; differential init can only be done once the session arrives and stays on the request path. The warm-pool state machine: instance created → common init → idle (in pool) → taken → entering business session → destroyed. Pool size is not fixed; it follows a simple time-of-day schedule — larger during work hours, scaled down at night to avoid idle burn. On miss, the request falls through to full cold start and immediately triggers refilling one instance; the frontend shows an explicit waiting state rather than pretending the session is ready, and miss events are recorded as a capacity-adjustment signal. One more detail is health checks on idle instances: a pooled instance must not silently die, so we send periodic heartbeats and replace any instance that fails twice in a row, to avoid handing out one that looks idle but is already dead. Trade-off: keeping N instances is a fixed N-cost, so we only run the pool during high-frequency session hours; in low-traffic windows direct cold start is cheaper. This is the classic 'spend money to buy UX' decision, and we used a week of real traffic data to calibrate N.
+The class comment says warm pooling is now handled server-side by OpenSandbox. This class only keeps the old API compiling. initialize logs and returns, acquireWarmSandbox creates nothing, and getPoolStatus reports enabled, poolSize, and available as empty, with hitRate 0. Do not describe daytime scale-up, nighttime scale-down, or a hit rate. sandbox-proxy.service.ts is deleted. If /health/warm-pool is still mounted, it reports this empty status. When cold start is slow, look at OpenSandbox create, getInfo timeouts, and Redis state. Do not invent a server-side pool hit rate.
 
 </details>
 
@@ -430,13 +430,12 @@ The core idea of the warm pool is to move pre-doable init ahead of session arriv
 #### Follow-ups (interviewer deep probes)
 
 - ⚖️ **If 99% of requests hit the pool, how do you handle the 1% that miss?** (reliability)
-  > On a miss, do the full cold start synchronously and immediately replenish the pool, show an explicit waiting state on the frontend instead of faking readiness, and log the miss as a scale-up signal.
+  > The in-process pool never hits. acquireWarmSandbox always returns null, and creation goes straight to OpenSandbox. Do not answer with the old hit-rate or refill story.
 
 
 #### Evidence
 
 - `backagent/src/services/sandbox-warm-pool.service.ts`
-- `backagent/src/services/sandbox-proxy.service.ts`
 
 ---
 
@@ -559,7 +558,7 @@ Our state model is 'hot path in Redis, truth in the DB'. sandbox-state.repositor
 
 ### Q2. When you rewrote the H5 preview from polling into a state machine, which edge cases did you nail down?
 
-> Source: `tp-009` · scope: frontend · backagent-web · depth: 中级
+> Source: `tp-009` · scope: frontend · web · depth: 中级
 
 #### Knowledge points
 
@@ -609,9 +608,9 @@ A state machine's value is turning implicit timing into explicit transitions. A 
 
 #### Evidence
 
-- `backagent-web/src/pages/Chat/components/preview/H5Preview.tsx`
-- `backagent-web/src/hooks/useH5PreviewRefresh.ts`
-- `backagent-web/src/stores/usePreviewStore.ts`
+- `web/src/pages/Chat/components/preview/H5Preview.tsx`
+- `web/src/hooks/useH5PreviewRefresh.ts`
+- `web/src/stores/usePreviewStore.ts`
 - `backagent/src/services/h5-preview.service.ts`
 
 ---
@@ -677,7 +676,7 @@ Hooking LLM into distributed tracing is hard for two reasons: which span does th
 
 ## 🔒 Security (security) — 1 Q&A
 
-### Q1. How do you gray-roll a high-risk knob like pod memory, and why does the UI show a dual state?
+### Q1. On upload and deploy, how do you stop a huge request from occupying memory, and stop an ephemeral project from being published without a warning?
 
 > Source: `tp-007` · scope: fullstack · depth: 中级
 
@@ -691,15 +690,15 @@ Hooking LLM into distributed tracing is hard for two reasons: which span does th
 
 #### Tiered answers
 
-**🟢 Elevator**: Three layers: a backend whitelist feature-whitelist.ts, a frontend feature flag, and dual-state UI showing both the saved value and the running value.
+**🟢 Elevator**: Upload checks Origin before parsing the body. Deploy asks for confirmation only when isEphemeralStorage is true.
 
 **🔵 Standard** (default):
 
-Gradual rollout is about shrinking the affected surface. We use three layers. First, a backend whitelist file feature-whitelist.ts hardcoded with a few internal accounts at launch; this layer is the final decider on who can see the capability, the frontend cannot go around it, and the final permission check sits in the backend API. Second, a frontend feature flag, used to render or hide the entry, so ops can flip it for a user group without redeploying. Third, dual-state UI: DeployTabPanel shows both 'saved (persisted in DB)' and 'running (what is actually live on the pod)', and the two visibly disagree before a deploy restart. The pattern is reused for deploy, checkpoint, and similar high-risk surfaces, with the cost of one whitelist key per new surface.
+user-upload.routes.ts runs the Origin check before express.json. The body limit is 1GB, so parsing first would let a disallowed origin occupy memory. A missing Origin is treated as an in-cluster call and allowed. DeployTabPanel opens the confirm dialog with ephemeralReason only when isEphemeralStorage is true. On 2026-09-02 the extra readError gate was removed. feature-whitelist.ts and the pod-memory dual-state UI are gone.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-The point of gradual rollout is shrinking the affected surface. We use three layers. First, a backend whitelist file feature-whitelist.ts hardcoded with a few internal accounts at launch; this layer is the final decider on who can see the capability, and the frontend cannot go around it. Second, a frontend feature flag the frontend uses to render or hide the entry, so ops can flip it for a user group without redeploying. Third, dual-state UI: DeployTabPanel shows both 'saved (persisted in DB)' and 'running (what is actually live on the pod)'; before a deploy restart these two visibly disagree. About the trade-off — dual-state takes more frontend work (two values to fetch, more UI to explain), but compared to 'I changed something and have no clue whether it took effect, let me try again', it is clearly worth it. Early on we had only the frontend feature flag and no backend whitelist; a user flipped the flag in dev tools and the entry showed up, which means without server-side gating the permission could have been bypassed. After that the final permission check moved entirely into the backend API, and the frontend only hides the entry; the feature flag is purely a rendering switch and no longer carries security semantics. In the UI, DeployTabPanel grays out the saved value and highlights the running value, so users can see the 'I changed it but have not deployed yet' intermediate state explicitly. The pattern was later reused on deploy, checkpoint, and other high-risk surfaces, with the cost of one whitelist key per new surface. A consistent pattern means users develop a stable expectation around risky buttons — saving is not the same as taking effect; restarting has to be explicit.
+Upload is rejected before the body is parsed. The comment in user-upload.routes.ts says the Origin check must run first, otherwise a disallowed origin can still force a huge JSON parse. The middleware calls assertUploadOriginAllowed, then express.json with a 1GB limit. A missing Origin is treated as an in-cluster call. On deploy, executeAgentDeploy calls getStoragePreflight. The dialog opens only when isEphemeralStorage === true and shows ephemeralReason. The comment still mentions readError, but the condition no longer does. feature-whitelist.ts is not in the current repo, and the pod-memory dual state should not be described as current.
 
 </details>
 
@@ -729,8 +728,8 @@ The point of gradual rollout is shrinking the affected surface. We use three lay
 
 #### Evidence
 
-- `backagent/src/config/feature-whitelist.ts`
-- `backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx`
+- `backagent/src/api/routes/user-upload.routes.ts`
+- `web/src/pages/Chat/components/deploy/DeployTabPanel.tsx`
 
 ---
 

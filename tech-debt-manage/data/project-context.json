@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "platform_name": "技术负债治理管理平台",
+  "one_liner": "从零搭建的内部运营平台，集中管理技术专项、安全工单和服务质量问题，并完成测试与正式环境发布。",
+  "domain": "内部技术治理",
+  "platform_tech_stack": {
+    "languages": ["TypeScript", "JavaScript"],
+    "frameworks": ["React 18", "Vite 2", "TDesign React", "Redux Toolkit", "React Router", "Axios"],
+    "infra": ["Nginx", "Docker", "Orange CI", "TKEx", "伽利略"]
+  },
+  "sub_projects": [
+    {
+      "name": "tech-debt-manage",
+      "path": "",
+      "scope": "fullstack",
+      "tech_stack": {
+        "languages": ["TypeScript"],
+        "frameworks": ["React 18", "Vite 2", "TDesign React", "Redux Toolkit", "Axios", "SheetJS"],
+        "infra": ["Nginx", "Docker", "Orange CI"]
+      },
+      "modules": [
+        {
+          "name": "动态路由",
+          "path": "src/router",
+          "responsibility": "启动时拉取专项列表，按模块类型生成菜单、首页、导入页和配置页。"
+        },
+        {
+          "name": "通用表格",
+          "path": "src/components/CommonTable",
+          "responsibility": "用查询、列、操作三组配置渲染分页、排序和多选表格。"
+        },
+        {
+          "name": "专项页面",
+          "path": "src/pages/Projects",
+          "responsibility": "承载扫描数据、通用专项、导入和页面配置等业务页面。"
+        },
+        {
+          "name": "请求与导出",
+          "path": "src/utils",
+          "responsibility": "统一处理接口错误、登录态失效、鉴权地址和 Excel 导入导出。"
+        },
+        {
+          "name": "接口层",
+          "path": "src/services",
+          "responsibility": "封装专项列表、仓库数据和用户信息请求。"
+        },
+        {
+          "name": "应用布局",
+          "path": "src/layouts",
+          "responsibility": "组织菜单、页头和内容区，承接动态路由渲染。"
+        }
+      ],
+      "active_areas": [
+        "src/router/modules/projects.ts",
+        "src/components/CommonTable/index.tsx",
+        "src/utils/request.ts",
+        "src/utils/handleExcel.ts",
+        "src/main.tsx",
+        "src/services/rapidjson.ts",
+        "Dockerfile",
+        "nginx.conf",
+        ".orange-ci.yml"
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "title": "从初始提交搭起可发布的管理端",
+      "scope": "fullstack",
+      "summary": "2025-02-14 由本人提交 Initial commit，同月完成页面、Nginx 和 Orange CI，测试环境可自动更新镜像。"
+    },
+    {
+      "title": "专项列表驱动动态菜单",
+      "scope": "frontend",
+      "summary": "路由模块顶层请求专项列表，按 moduleId 选择页面，通用模板额外生成导入和配置路由。"
+    },
+    {
+      "title": "配置化表格承接多个专项",
+      "scope": "frontend",
+      "summary": "CommonTable 接收查询项、列和操作配置，统一分页、排序、多选和自定义回调。"
+    },
+    {
+      "title": "Excel 批量导入导出",
+      "scope": "frontend",
+      "summary": "用 SheetJS 把表格导出为 xlsx，并把上传文件解析回 JSON，供通用专项批量导入。"
+    },
+    {
+      "title": "测试自动发布、正式手动确认",
+      "scope": "infra",
+      "summary": "test 分支推送后自动构建并更新测试负载，master 构建镜像后用企业微信提醒人工更新正式环境。"
+    }
+  ]
+}

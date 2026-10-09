@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "role": "全栈",
+  "level": "中级",
+  "points": [
+    {
+      "id": "tp-01",
+      "topic": "按专项列表生成动态路由",
+      "scope": "fullstack",
+      "primary_dimension": "architecture",
+      "sub_project": "tech-debt-manage",
+      "evidence": ["src/router/modules/projects.ts"],
+      "depth_tags": ["architecture", "dynamic-route", "lazy"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-02",
+      "topic": "配置驱动的通用表格",
+      "scope": "fullstack",
+      "primary_dimension": "architecture",
+      "sub_project": "tech-debt-manage",
+      "evidence": ["src/components/CommonTable/index.tsx"],
+      "depth_tags": ["architecture", "config-ui"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-03",
+      "topic": "通用专项的 Excel 导入导出",
+      "scope": "fullstack",
+      "primary_dimension": "feature",
+      "sub_project": "tech-debt-manage",
+      "evidence": ["src/utils/handleExcel.ts", "src/router/modules/projects.ts"],
+      "depth_tags": ["feature", "excel"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-04",
+      "topic": "tRPC 返回头驱动的错误分支",
+      "scope": "fullstack",
+      "primary_dimension": "reliability",
+      "sub_project": "tech-debt-manage",
+      "evidence": ["src/utils/request.ts"],
+      "depth_tags": ["reliability", "interceptor"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-05",
+      "topic": "伽利略前端监控按环境接入",
+      "scope": "fullstack",
+      "primary_dimension": "observability",
+      "sub_project": "tech-debt-manage",
+      "evidence": ["src/main.tsx"],
+      "depth_tags": ["observability", "aegis"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-06",
+      "topic": "Cookie 会话与鉴权地址回跳",
+      "scope": "fullstack",
+      "primary_dimension": "security",
+      "sub_project": "tech-debt-manage",
+      "evidence": ["src/utils/request.ts"],
+      "depth_tags": ["security", "cookie"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-07",
+      "topic": "分页查询与一次拉全量的选择",
+      "scope": "fullstack",
+      "primary_dimension": "performance",
+      "sub_project": "tech-debt-manage",
+      "evidence": ["src/components/CommonTable/index.tsx"],
+      "depth_tags": ["performance", "pagination"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-08",
+      "topic": "路由模块顶层等待专项接口",
+      "scope": "fullstack",
+      "primary_dimension": "trade-off",
+      "sub_project": "tech-debt-manage",
+      "evidence": ["src/router/modules/projects.ts"],
+      "depth_tags": ["trade-off", "top-level-await"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-09",
+      "topic": "测试自动更新与正式人工确认",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "sub_project": "tech-debt-manage",
+      "evidence": [".orange-ci.yml", "Dockerfile", "nginx.conf"],
+      "depth_tags": ["reliability", "ci", "nginx"],
+      "interview_value": "高"
+    }
+  ]
+}

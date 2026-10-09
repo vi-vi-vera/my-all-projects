@@ -22,13 +22,13 @@
 
 ### 标准（30–60 秒）
 
-QPilot Code Agent 是一个面向企业的 AI 编程平台。后端用 Express 加 Claude Agent SDK 加 MCP，对外暴露 SSE 流式接口；前端是 React 18 加 Zustand 加 Sandpack。每个 session 一个隔离沙箱，可以走 e2b，也可以走自研的 OpenSandbox。跨 Pod 的状态权威源放在 Redis，DB 做兜底，写入路径同步写 Redis、异步落 DB。预览这条路径，沙箱里 build 出来的产物由 deploy-proxy 挂到子域名，vite base 在 deploy 时按子路径 rewrite。可观测性用 OpenTelemetry 加 Langfuse，把 SSE handler、工具调用、LLM 的 prompt 和 token 用量挂在同一条 trace 上，trace_id 共享。
+QPilot Code Agent 是一个面向企业的 AI 编程平台，仓库已迁到 backagent 和 web。后端用 Express 加 Claude Agent SDK 加 MCP，对外暴露 SSE 流式接口；前端是 React 18 加 Zustand 加 Sandpack。每个 session 一个隔离沙箱，执行层使用 OpenSandbox SDK。进程内预热池已改成空实现，预热交给 OpenSandbox 服务端。跨 Pod 的状态权威源放在 Redis，DB 做兜底，读取时用 OpenSandbox getInfo 校准沙箱是否还活着。预览产物仍由 deploy-proxy 挂到子域名。上传在解析 body 前校验 Origin，部署前只在 isEphemeralStorage 为 true 时确认数据丢失风险。
 
 ### 深挖（2–3 分钟）
 
 <details><summary>展开</summary>
 
-QPilot Code Agent 把 AI 编程从 demo 推到可灰度运营的产品。前端用 fetch-event-source 订阅 SSE，按 tool_use 和 tool_result 分片渲染；nginx 反代关掉了 proxy_buffering 并设置 X-Accel-Buffering: no，否则首字节会被缓住。后端用 Claude Agent SDK 加 MCP，工具——git、沙箱命令、文件 IO、deploy——通过一个 MCP catalog 注册，每个工具自带名字、输入 schema 和 handler，启动时一次性注册，schema 也直接传给 LLM 做能力发现。沙箱层抽象了两个后端：e2b 用它自己的 SDK，OpenSandbox 走自定义协议，SandboxManager 暴露统一接口（启动、exec、文件 IO、销毁），Coordinator 在上层做 session 路由，包括预热池命中、Pod 亲和保留、跨 Pod 转发，单 session 故障会切到备用后端。性能上有两块：一是 sandbox-warm-pool 维护一组完成通用初始化的 idle 实例，新 session 进来从池里拿，差异化初始化几百毫秒完成，池大小按时段调度，命中失败时同步走完整冷启动并补一个池实例；二是 git 接口把多次 sandbox.exec 合并成一条 set -e 复合命令通过分隔标记切片解析，7 个端点共享同一套合并逻辑，每条 git 调用从多次 RTT 压到一次。SSE 而非 WebSocket：事件几乎都是 server→client，HTTP 兼容、Last-Event-ID 续接简单，nginx 和 k8s ingress 不需要特殊配置；Redis 主加 DB 兜底而非单 DB：sandbox 状态读写极高频，DB 单点撑不住，Redis 命中亚毫秒，DB 在故障或重建时承压，重启后状态可以从 DB 重建。可观测性把 W3C Trace Context 注入 LLM 调用层，prompt 文本和 token 用量这种大字段写 Langfuse，OTel 这边只记 model_name、prompt_tokens、completion_tokens、duration 这类标量，两边共享 trace_id，排查时一条链路串得起来。
+QPilot Code Agent 把 AI 编程从 demo 推到可灰度运营的产品。前端用 fetch-event-source 订阅 SSE，按 tool_use 和 tool_result 分片渲染；nginx 反代关掉了 proxy_buffering 并设置 X-Accel-Buffering: no，否则首字节会被缓住。后端用 Claude Agent SDK 加 MCP，工具——git、沙箱命令、文件 IO、deploy——通过一个 MCP catalog 注册，每个工具自带名字、输入 schema 和 handler，启动时一次性注册，schema 也直接传给 LLM 做能力发现。沙箱执行层已经收口到 OpenSandbox SDK。查询和续期带超时，元数据会先清洗长度和字符。e2b 只剩注释，不能再讲成可选后端。sandbox-warm-pool.service.ts 还在，但是空实现，acquireWarmSandbox 固定返回 null，预热交给 OpenSandbox 服务端，这份仓库不再按白天黑夜扩缩本地池。Git 接口仍把多次 sandbox.exec 合并成一条 set -e 复合命令，用分隔标记切片解析，减少跨沙箱往返。SSE 而非 WebSocket：事件几乎都是 server→client，HTTP 兼容、Last-Event-ID 续接简单，nginx 和 k8s ingress 不需要特殊配置；Redis 主加 DB 兜底而非单 DB：sandbox 状态读写极高频，DB 单点撑不住，Redis 命中亚毫秒，DB 在故障或重建时承压，重启后状态可以从 DB 重建。可观测性把 W3C Trace Context 注入 LLM 调用层，prompt 文本和 token 用量这种大字段写 Langfuse，OTel 这边只记 model_name、prompt_tokens、completion_tokens、duration 这类标量，两边共享 trace_id，排查时一条链路串得起来。
 
 </details>
 
@@ -38,17 +38,17 @@ QPilot Code Agent 把 AI 编程从 demo 推到可灰度运营的产品。前端�
   AI Agent 体验依赖流式响应。后端用 Claude Agent SDK 加 MCP 暴露 SSE，前端用 fetch-event-source 接收，按 tool_use 和 tool_result 分片渲染。nginx 反代默认会 buffer 流，所以关掉 proxy_buffering 并设置 X-Accel-Buffering: no。最终首字节稳定在亚秒级，工具调用展开和文件 diff 都是边出边渲染。
   > 关键词：`SSE` · `MCP` · `Claude Agent SDK` · `fetch-event-source` · `nginx`
 - **用户级沙箱与跨 Pod 状态权威源（Redis + DB 兜底）**（reliability · backend）
-  每个 session 一个隔离沙箱避免互相污染。Pod 漂移会让进程内状态丢失，所以状态权威源放 Redis、DB 做兜底；写入路径同步写 Redis、异步落 DB。Coordinator 按 session 做亲和路由，预热池让首次预览跳过通用初始化阶段。跨 Pod 重连后能恢复正确的工作区，预览启动从十几秒压到秒内。
-  > 关键词：`sandbox` · `Redis` · `warm-pool` · `affinity` · `DB fallback`
+  每个 session 一个隔离沙箱，执行层使用 OpenSandbox。Redis 仍是运行状态的权威源，读取时用 OpenSandbox getInfo 校准沙箱是否真的存活。进程内 SandboxWarmPoolService 已是空实现，acquireWarmSandbox 固定返回 null，预热不再发生在这个 Node 进程里。
+  > 关键词：`OpenSandbox` · `Redis` · `getInfo` · `warm-pool stub` · `DB fallback`
 - **Git 接口性能优化：合并沙箱命令减少 RTT**（performance · backend）
   原来 git 接口在沙箱内串行跑多个子命令，每步付一次跨网络 RTT。重构后用 set -e 加分隔标记把子命令拼成一条复合命令，一次 sandbox.exec 完成，stdout 按分隔标记切片解析回 service 层。7 个 git 端点（包括 checkpoint）共用同一套合并逻辑。中间修了一个一致性 bug：untracked 文件原来会让 pull 误报冲突。
   > 关键词：`git` · `RTT` · `batch` · `sandbox` · `consistency`
 - **H5 预览生命周期与 console 协议演进**（reliability · frontend）
   iframe 预览原来是轮询「能不能访问」，逻辑分散在多个 setInterval 和 useEffect 里，刷新时偶尔出现「老 iframe 未销毁、新 iframe 已启动」的并发问题。重写为显式状态机：idle → starting → ready / error → refreshing → ready，所有转移过 store。并发启动用 inflight token 加 AbortController，新启动 abort 老的。postMessage 严格校验 origin 防注入。HMR 失败才升级到 full reload。
   > 关键词：`iframe` · `state-machine` · `postMessage` · `HMR` · `console`
-- **白名单 feature flag 驱动的渐进式发布**（security · fullstack）
-  Pod 内存这种高风险配置一旦改错会让用户应用起不来。我们做了三层灰度：后端白名单 feature-whitelist.ts 维护允许试用的账号，前端再叠一层 feature flag，权限的最终判定在后端 API。展示上 DeployTabPanel 同时显示「已保存值」（DB 持久化）和「运行中值」（Pod 当前值），deploy 重启前两者会不一致。这套范式后来复用到部署、checkpoint 等高风险场景。
-  > 关键词：`feature-flag` · `whitelist` · `gradual-rollout` · `blast-radius`
+- **上传门禁与部署前易失存储确认**（security · fullstack）
+  上传路由在解析最大 1GB 的 JSON body 之前校验 Origin，避免不被允许的来源先把大请求读进内存。部署前读取 isEphemeralStorage，只有为 true 才弹出确认并展示 ephemeralReason。2026-09-02 去掉了 readError 也拦截的判断，预检读取失败不再单独挡住部署。旧的 feature-whitelist.ts 已不在当前仓库。
+  > 关键词：`Origin` · `上传` · `isEphemeralStorage` · `ephemeralReason`
 - **可观测性：OpenTelemetry + Langfuse 串联 LLM 调用**（observability · backend）
   排查 LLM 链路原来是黑箱。用 OTel Node SDK 在 Express handler、SSE streamManager、MCP 工具调用处都开 span，通过 W3C Trace Context 把 LLM 调用 span 挂到主 trace 上；Langfuse 作为 LLM 维度的后端记录 prompt 文本、token 用量、cost，与 OTel 共享 trace_id。OTel attribute 只记 model_name、prompt_tokens、completion_tokens、duration 等标量，prompt 这类大字段写 Langfuse 避免 exporter 流量过载。
   > 关键词：`OpenTelemetry` · `Langfuse` · `Trace Context` · `LLM trace`
@@ -110,11 +110,11 @@ LLM 流通常跑几十秒，中间网络抖一下连接就断了，所以需要�
 
 - `backagent/src/services/resumableStreamService.ts`
 - `backagent/src/services/streamManager.ts`
-- `backagent-web/src/hooks/useAgent.ts`
+- `web/src/hooks/useAgent.ts`
 
 ---
 
-### Q2. 你们沙箱有 e2b 和自研两个后端，是怎么抽象的？切换后端需要改什么？
+### Q2. 当前沙箱执行层接的是什么？e2b 还能不能当成一个可选后端？
 
 > 来源：`tp-003` · scope: backend · backagent · 难度: 中级
 
@@ -128,15 +128,15 @@ LLM 流通常跑几十秒，中间网络抖一下连接就断了，所以需要�
 
 #### 三档回答
 
-**🟢 一句话**：SandboxManager 定义统一接口（启动、exec、文件 IO、销毁），每个后端写一个适配；Coordinator 在上层做 session 路由，业务层只面向接口。
+**🟢 一句话**：执行层只接 OpenSandbox SDK。e2b 只剩历史注释，不能再讲成当前双后端。
 
 **🔵 标准**（默认）：
 
-做沙箱抽象有两个动机：一是隔离用户工作区，二是不被任何一家供应商绑死。SandboxManager 定义了统一接口（启动、exec、文件 IO、销毁），e2b 走它自己的 SDK，自研的 OpenSandbox 走自定义协议，两边各自实现适配。Coordinator 在上层做 session 到具体实例的路由，业务层——git、deploy、tool handler——只面向 SandboxManager 接口写代码。切换后端只改配置和注入的实现，业务层一行不动。我们也利用这层抽象做混合调度：按成本和能力把不同 session 路由到不同后端，灰度切换比较顺。
+sandbox-manager 从 OpenSandbox SDK 创建管理器。getSandboxInfo、listSandboxInfos 和 renew 都包了超时。写入元数据前会清洗长度和非法字符。Redis 仍保存运行状态，读取时调用 OpenSandbox getInfo，用平台返回的真实过期时间校正。仓库里已经没有 e2b SDK 导入，只有错误分类注释和旧端口字段说明。面试时我会说执行层已经收口，不再画两套后端切换图。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-这层抽象的关键是把「沙箱供应商的差异」收在一个最小接口里。SandboxManager 暴露的方法只有四类：启动、exec、文件 IO、销毁。e2b 这边封装它们的 SDK，把 e2b 的 session 概念映射到我们的 session id；OpenSandbox 这边走自定义 HTTP 协议，把启动请求、命令执行、文件读写各自对接到我们的内部 endpoint，错误码也要按照统一的形式翻译过来，免得业务层要 switch 两套错误。Coordinator 在上层做两件事：一是 session 到实例的路由（包括预热池命中、亲和保留、跨 Pod 转发），二是异常时的降级（实例失联或者请求超时切到备用后端，切换日志带上原因）。业务层——git-sandbox.service、sandbox-deploy.service、tool handler——拿到的只是一个 SandboxManager 实例，不知道底下是 e2b 还是 OpenSandbox。具体的好处：第一，新增后端只写一个适配类；第二，A/B 实验可以按 session 维度切流量，监控也按后端维度分别看；第三，同一份业务代码两边都跑，bug 修一次到位。代价：抽象层越薄，能力暴露越受限——比如 e2b 有一些独特的 fs snapshot 能力，我们没暴露，需要的时候只能绕开抽象走；接口的演进也要小心，加一个新方法两个后端都得实现，所以新方法上线一般会先在主用后端走一段时间，再在备用后端补齐。Docker 不能直接当沙箱，因为它是单机概念，不带跨机调度、热池、亲和路由这些能力，e2b 和 OpenSandbox 都自带这些。
+当前执行层只接 OpenSandbox。sandbox-manager 用 SDK 创建管理器，getSandboxInfo、listSandboxInfos 和 renew 都有超时，避免一次查询把请求挂死。写入前会清洗元数据的长度和字符。Redis 里的过期时间可能落后于平台，所以读取时用 getInfo 拿真实状态再校正。e2b 只出现在 sandbox-errors.ts 的注释里，以及 schema 里遗留的 e2b.dev 端口示例。这两处都不能当成现在还能切到 e2b。进程内预热也不再参与这条链路，acquireWarmSandbox 固定返回 null。如果被追问以前为什么抽象两个后端，把它讲成已经下线的历史。
 
 </details>
 
@@ -161,7 +161,7 @@ LLM 流通常跑几十秒，中间网络抖一下连接就断了，所以需要�
 #### 追问（面试官深挖向）
 
 - ⚖️ **为什么不直接用 Docker 而要做这层抽象？**（trade-off）
-  > Docker 是单机概念，沙箱要跨机调度、热池、亲和路由；e2b 和 OpenSandbox 都自带这些能力，但协议不一样，所以需要抽象层屏蔽差异。
+  > Docker 是单机概念，当前执行层交给 OpenSandbox 做跨机沙箱。这份仓库不再包一层 e2b 适配，也不再由本进程维护热池。
 
 
 #### Evidence
@@ -173,7 +173,7 @@ LLM 流通常跑几十秒，中间网络抖一下连接就断了，所以需要�
 
 ### Q3. useAgent 和 useFileSync 是怎么分工的？为什么要拆成两个 hook 而不是一个？
 
-> 来源：`tp-010` · scope: frontend · backagent-web · 难度: 中级
+> 来源：`tp-010` · scope: frontend · web · 难度: 中级
 
 #### 知识点
 
@@ -218,8 +218,8 @@ LLM 流通常跑几十秒，中间网络抖一下连接就断了，所以需要�
 
 #### Evidence
 
-- `backagent-web/src/hooks/useAgent.ts`
-- `backagent-web/src/hooks/useFileSync.ts`
+- `web/src/hooks/useAgent.ts`
+- `web/src/hooks/useFileSync.ts`
 
 ---
 
@@ -273,7 +273,7 @@ MCP 在这个链路里相当于工具与 Agent 之间的统一注册总线。mcp
 #### Evidence
 
 - `backagent/src/services/mcp-catalog.service.ts`
-- `backagent-web/src/hooks/useAgent.ts`
+- `web/src/hooks/useAgent.ts`
 
 ---
 
@@ -326,7 +326,7 @@ MCP 在这个链路里相当于工具与 Agent 之间的统一注册总线。mcp
 
 - `backagent/src/services/build-preview/sandbox-deploy.service.ts`
 - `backagent/src/services/build-preview/deploy-proxy.service.ts`
-- `backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx`
+- `web/src/pages/Chat/components/deploy/DeployTabPanel.tsx`
 
 ---
 
@@ -383,7 +383,7 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 ## ⚡ 性能（performance）— 2 题
 
-### Q1. 首次预览的冷启动是怎么压下来的？预热池怎么设计才不会烧成本？
+### Q1. 进程内预热池现在还负责冷启动吗？代码里那个 warm pool 类在做什么？
 
 > 来源：`tp-004` · scope: backend · backagent · 难度: 中级
 
@@ -397,15 +397,15 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 三档回答
 
-**🟢 一句话**：sandbox-warm-pool 维护一组完成通用初始化的 idle 实例，新 session 进来直接拿一个，差异化初始化几百毫秒完成，池大小按时段调度。
+**🟢 一句话**：SandboxWarmPoolService 已是空实现。acquireWarmSandbox 固定返回 null，预热改由 OpenSandbox 服务端负责。
 
 **🔵 标准**（默认）：
 
-冷启动里耗时最长的是启动镜像、装依赖、起服务，加起来通常十几秒。我们用 sandbox-warm-pool 维护一组固定数量的 idle 实例，启动后跑完通用初始化（拉镜像、起常用进程）就 park 在池里。新 session 进来 sandbox-proxy 优先从池里拿一个绑定，剩下的差异化初始化（用户文件、特定配置）几百毫秒就能搞完。池大小按时段调度——白天高峰拉高、夜里缩小，配合监控避免空转烧钱。命中失败的 session 走完整冷启动并补一个池实例，前端显示明确的等待状态。结果是首次预览从十几秒压到秒内出来。
+sandbox-warm-pool.service.ts 的类注释写明它是 no-op stub。initialize 只记录预热池已关闭，acquireWarmSandbox 直接返回 null，getPoolStatus 给出的是空池。调用方仍能编译，但拿不到本地热实例。旧的 sandbox-proxy.service.ts 已经不在仓库里。健康检查 /health/warm-pool 读到的也是这个空状态。首次预览如果慢，要去看 OpenSandbox 的创建和 getInfo，不要沿用旧稿里“十几秒变成一秒”的数字，那个数字不在当前仓库里。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-预热池的设计核心是「把可预先做的初始化提前到 session 到达之前」。把启动流程拆成两段：通用初始化（镜像拉取、运行时安装、常驻进程启动）和差异化初始化（用户工作区文件、项目配置、入口命令）。通用初始化几乎所有 session 都要做，提前到池实例启动时一次性完成；差异化初始化只能在 session 到达后才知道做什么，所以保留在请求路径上。sandbox-warm-pool 的状态机：实例创建 → 通用初始化 → idle（在池中）→ 被拿走 → 进入业务 session → 销毁。池大小不是固定的，按一个简单的时段调度：白天工作时间维持较大池，夜里缩到最小值，避免空转。命中失败时同步走完整冷启动并立刻补一个池实例，前端显示明确等待状态而不是假装已就绪；同时记录 miss 事件作为容量调整信号。还有一个细节是 idle 实例的健康检查：池里的实例不能无声死掉，所以定期发心跳，连续两次失败就替换，避免拿到一个看起来 idle 实际已经坏了的实例。trade-off：池保有 N 个实例就是 N 份固定成本，所以只对高频起 session 的时段开池；低频时段直接走冷启动更划算。这是「多花点钱换体验」的典型决策，前期我们用了一周的真实数据来标定 N。
+类注释写得很明确：Warm pooling is now handled server-side by OpenSandbox，这个类只是为了让旧调用方继续编译。initialize 打一行日志就返回，acquireWarmSandbox 不创建实例，getPoolStatus 的 enabled、poolSize、available 全是空值，hitRate 也是 0。所以不能再讲白天扩池、夜里缩池，也不能讲命中率。旧的 sandbox-proxy.service.ts 已删除。健康检查如果还挂着 /health/warm-pool，读到的就是这份空状态。冷启动慢的时候，只根据 OpenSandbox 的创建、getInfo 超时和 Redis 状态来查，不编造服务端池的命中率。
 
 </details>
 
@@ -436,7 +436,6 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 #### Evidence
 
 - `backagent/src/services/sandbox-warm-pool.service.ts`
-- `backagent/src/services/sandbox-proxy.service.ts`
 
 ---
 
@@ -559,7 +558,7 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 ### Q2. H5 预览从轮询重构成状态机，具体把哪些边界情况想清楚了？
 
-> 来源：`tp-009` · scope: frontend · backagent-web · 难度: 中级
+> 来源：`tp-009` · scope: frontend · web · 难度: 中级
 
 #### 知识点
 
@@ -609,9 +608,9 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### Evidence
 
-- `backagent-web/src/pages/Chat/components/preview/H5Preview.tsx`
-- `backagent-web/src/hooks/useH5PreviewRefresh.ts`
-- `backagent-web/src/stores/usePreviewStore.ts`
+- `web/src/pages/Chat/components/preview/H5Preview.tsx`
+- `web/src/hooks/useH5PreviewRefresh.ts`
+- `web/src/stores/usePreviewStore.ts`
 - `backagent/src/services/h5-preview.service.ts`
 
 ---
@@ -677,7 +676,7 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 ## 🔒 安全（security）— 1 题
 
-### Q1. Pod 内存配置这种高风险能力你们怎么灰度？为什么要做双态展示？
+### Q1. 上传和部署这两条入口，你怎么避免大请求白占内存，以及带易失数据的项目被直接发出去？
 
 > 来源：`tp-007` · scope: fullstack · 难度: 中级
 
@@ -691,15 +690,15 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 三档回答
 
-**🟢 一句话**：三层：后端白名单 feature-whitelist.ts、前端 feature flag、UI 双态展示「已保存值」和「运行中值」。
+**🟢 一句话**：上传先校验 Origin 再解析 body。部署只在 isEphemeralStorage 为 true 时要求确认丢失原因。
 
 **🔵 标准**（默认）：
 
-灰度的核心是缩小影响面。我们做了三层。第一层是后端白名单 feature-whitelist.ts，上线初期硬写一组内部账号；这层是「你到底能不能看到」的最终决定权，前端再花哨也绕不开，权限的最终判定在后端 API。第二层是前端 feature flag，按 flag 决定要不要渲染入口，运营想按用户群拨开关、不发版就上线，靠的就是这层。第三层是双态 UI：DeployTabPanel 同时显示「已保存（DB 持久化）」和「运行中（Pod 上真正跑的）」，deploy 重启之前两值会不一样。这套范式被复用到部署、checkpoint 等高风险场景，复制成本基本是拷一份白名单 key。
+user-upload.routes.ts 把 Origin 校验放在 express.json 前面。当前 body 上限是 1GB，如果先解析再拒绝，不被允许的来源也会先占内存。DeployTabPanel 在发起部署前调用存储预检，只有 isEphemeralStorage 为 true 才打开确认框并展示 ephemeralReason。2026-09-02 去掉了 readError 也拦截的判断，预检读取失败不再单独挡住部署。feature-whitelist.ts 和 Pod 内存双态展示已经不在当前仓库，不能再讲成现状。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-灰度的目的是缩小影响面。我们做了三层。第一层是后端白名单 feature-whitelist.ts，上线初期硬写一组内部账号——这层是「你到底能不能看到」的最终决定权，前端再花哨也绕不开。第二层是前端 feature flag，前端按 flag 决定要不要渲染入口，运营想按用户群拨开关、不发版就上线，靠的就是这层。第三层是双态 UI：DeployTabPanel 同时显示「已保存（DB 持久化）」和「运行中（Pod 上真正跑的）」，deploy 重启之前两值会不一样。代价方面，双态比单态多花点功夫，前端要拉两个值、UI 要解释清楚，但跟「改完不知道生没生效、用户反复试」比，这点成本完全值。早期一段时间我们只做了前端 feature flag，没做后端白名单，有用户在浏览器开发者工具里改了 flag 就把入口看到了，权限不在后端就有越权的可能。之后我们把权限的最终判断完全压到后端 API 上，前端只负责隐藏入口；feature flag 仅作为渲染开关，不再承担安全语义。展示上 DeployTabPanel 把「已保存值」标灰、「运行中值」高亮，用户能明确看出来「我改了但还没 deploy」这种中间态。这套范式后来被复用到部署、checkpoint 等一堆高风险场景，复制成本几乎是拷一份白名单 key。一致的范式让用户对高风险按钮的预期是稳定的——保存不等于生效，需要显式触发重启。
+上传这条要先挡住，再解析。user-upload.routes.ts 的注释写明 Origin 校验必须在 body 解析之前，否则任意不被允许的 Origin 也能先触发巨量 JSON 解析。中间件先调 assertUploadOriginAllowed，通过后才挂 express.json，limit 是 1GB。没有 Origin 头时按集群内网直连放行。部署这边，executeAgentDeploy 先调 getStoragePreflight。确认框只在 isEphemeralStorage === true 时打开，并把 ephemeralReason 放进提示。注释里还留着 readError 也要拦截的旧说法，但判断条件已经只剩这一条。feature-whitelist.ts 不在当前仓库，Pod 内存双态也不要再讲。
 
 </details>
 
@@ -723,14 +722,14 @@ SSE 在 Express 路由层有几个普通 REST 没有的细节。第一是 header
 
 #### 追问（面试官深挖向）
 
-- ⚖️ **为什么需要双态 UI 而不是改完直接显示新值？**（trade-off）
-  > Pod 内存这种配置只有 deploy 重启之后才真的生效，单态会让用户以为「我改了就好了」；双态明确显示「已保存 vs 运行中」，避免改了没生效但用户不知道的情况。
+- ⚖️ **为什么确认框只看 isEphemeralStorage，预检读取失败不再拦截？**（trade-off）
+  > 2026-09-02 的提交把拦截条件收成 isEphemeralStorage === true。读取失败不再单独弹框，避免预检异常把正常部署挡住。注释还留着旧说法，以判断条件为准。
 
 
 #### Evidence
 
-- `backagent/src/config/feature-whitelist.ts`
-- `backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx`
+- `backagent/src/api/routes/user-upload.routes.ts`
+- `web/src/pages/Chat/components/deploy/DeployTabPanel.tsx`
 
 ---
 

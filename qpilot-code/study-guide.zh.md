@@ -248,13 +248,13 @@
 ### 簇 8（q-03）：Linux 沙箱（容器隔离 + 适配器）
 
 **覆盖知识点**：Linux 容器隔离、适配器模式、供应商可替换性
-**真实场景**：用户给 AI 一段代码让它跑，你不能跑在自家服务器上 —— 要扔进沙箱。今天用 e2b，明天可能换 Cloudflare，怎么不锁死？
+**真实场景**：用户给 AI 一段代码让它跑，不能跑在自家服务器上。当前执行层只接 OpenSandbox。e2b 只剩注释，不要再讲成可选后端。
 
 #### 0-1 零基础前置
 - 用过一次 `docker run -it ubuntu bash`。没有的话先做 [Docker 官方 10 分钟入门](https://docs.docker.com/get-started/)。
 
 #### 必读材料
-1. [e2b 官方文档 — Sandbox 概念](https://e2b.dev/docs) — 重点看 lifecycle、filesystem、process 三类 API。
+1. 先读 `backagent/src/services/sandbox-manager.service.ts` 和 `sandbox-warm-pool.service.ts`。前者是 OpenSandbox 调用，后者是空实现。
 2. [Linux man-pages: namespaces(7)](https://man7.org/linux/man-pages/man7/namespaces.7.html) — 7 种 namespace。
 3. [Linux man-pages: cgroups(7)](https://man7.org/linux/man-pages/man7/cgroups.7.html) — CPU/内存配额。
 4. [Julia Evans — What even is a container?](https://jvns.ca/blog/2016/10/10/what-even-is-a-container/) — 用大白话解释容器。

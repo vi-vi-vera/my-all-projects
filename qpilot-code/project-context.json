@@ -18,7 +18,7 @@
       "Docker / docker-compose", "Kubernetes",
       "OpenTelemetry / Langfuse / Galileo",
       "Tencent COS",
-      "e2b / 自研沙箱（OpenSandbox）",
+      "OpenSandbox",
       "nginx 反向代理"
     ]
   },
@@ -31,14 +31,14 @@
         "language": "TypeScript",
         "runtime": "Node.js",
         "frameworks": ["Express", "Claude Agent SDK", "MCP SDK", "Drizzle ORM"],
-        "infra": ["PostgreSQL (drizzle-orm + pg)", "Redis", "Tencent COS", "e2b 沙箱", "OpenTelemetry + Langfuse"]
+        "infra": ["PostgreSQL (drizzle-orm + pg)", "Redis", "Tencent COS", "OpenSandbox", "OpenTelemetry + Langfuse"]
       },
       "modules": [
         { "name": "api",        "path": "src/api",        "responsibility": "Express 路由层，承载 SSE 流式接口、会话管理、沙箱、git、部署等 REST 端点。" },
         { "name": "services",   "path": "src/services",   "responsibility": "核心业务服务层：AgentExecutor、SandboxManager、Git（Sandbox/WOA）、build-preview 部署代理、用户配置等。" },
         { "name": "bootstrap",  "path": "src/bootstrap",  "responsibility": "进程启动装配：依赖注入、OpenTelemetry/Langfuse 初始化、健康检查、优雅退出。" },
         { "name": "database",   "path": "src/database",   "responsibility": "Drizzle ORM 模型与迁移；会话、消息、工件、用户配置表的持久化。" },
-        { "name": "config",     "path": "src/config",     "responsibility": "运行时配置中心（feature flag 白名单、沙箱池、k8s 集群凭证、域名）。" },
+        { "name": "config",     "path": "src/config",     "responsibility": "运行时配置与系统提示词，包含预览域名和部署约束。" },
         { "name": "logger",     "path": "src/logger",     "responsibility": "结构化日志 + W3C Trace Context 注入，串联 SSE 与 LLM 调用链。" },
         { "name": "utils",      "path": "src/utils",      "responsibility": "通用工具：错误归一化、密钥脱敏、限流/合并请求、SSE 编解码辅助。" }
       ],
@@ -48,12 +48,13 @@
         "src/services/git-write.types.ts",
         "src/services/build-preview/sandbox-deploy.service.ts",
         "src/services/build-preview/deploy-proxy.service.ts",
-        "src/config/feature-whitelist.ts"
+        "src/services/sandbox-warm-pool.service.ts",
+        "src/api/routes/user-upload.routes.ts"
       ]
     },
     {
-      "name": "backagent-web",
-      "path": "backagent-web",
+      "name": "web",
+      "path": "web",
       "scope": "frontend",
       "tech_stack": {
         "language": "TypeScript",
@@ -67,7 +68,7 @@
       "modules": [
         { "name": "pages/Chat",            "path": "src/pages/Chat",         "responsibility": "Chat 主页：消息流、ToolDetail、Preview 与 Deploy Tab 协调，是产品主战场。" },
         { "name": "components/preview",    "path": "src/pages/Chat/components/preview", "responsibility": "Sandpack 预览面板与 H5 预览生命周期管理（启动/HMR/postMessage origin 校验）。" },
-        { "name": "components/deploy",     "path": "src/pages/Chat/components/deploy",  "responsibility": "部署 Tab：白名单 Pod 内存配置双态展示、子域名 vite base 修正、运行时错误面板。" },
+        { "name": "components/deploy",     "path": "src/pages/Chat/components/deploy",  "responsibility": "部署 Tab：存储易失风险确认、环境变量、域名绑定和部署记录。" },
         { "name": "stores",                "path": "src/stores",             "responsibility": "Zustand 全局状态：登录、主题、Agent 记录、Editor/Preview store。" },
         { "name": "hooks",                 "path": "src/hooks",              "responsibility": "useAgent / useEditorFileStore / usePreviewStore 等业务 hook，封装 SSE 订阅与文件同步。" },
         { "name": "services",              "path": "src/services",           "responsibility": "前端 API 层：与 backagent SSE 接口对接，含错误归一化与 fetch-event-source 配置。" },
@@ -92,7 +93,7 @@
     {
       "title": "用户级沙箱与跨 Pod 状态权威源（Redis + DB 兜底）",
       "scope": "backend",
-      "summary": "每个 session 一个隔离工作区，支持 e2b / 自研 OpenSandbox 双后端；跨 Pod 共享状态以 Redis 为权威源、DB 兜底，沙箱预热 + 亲和性路由把首字节预览启动从冷启动改为秒级。"
+      "summary": "每个 session 一个隔离工作区，执行层使用 OpenSandbox SDK。跨 Pod 状态仍以 Redis 为权威源，并用 OpenSandbox getInfo 校准沙箱是否存活。进程内预热池已改成空实现，预热交给 OpenSandbox 服务端。"
     },
     {
       "title": "Git 接口性能优化：合并沙箱命令减少 RTT",
@@ -105,9 +106,9 @@
       "summary": "iframe 预览从轮询式重构为状态机驱动；postMessage origin 校验、并发启动保护、HMR 感知刷新、运行时错误面板与一键修复，覆盖了真实的端侧观测难点。"
     },
     {
-      "title": "白名单 feature flag 驱动的渐进式发布",
+      "title": "上传门禁与部署前易失存储确认",
       "scope": "fullstack",
-      "summary": "Pod 内存配置等高风险能力以白名单 + per-user feature flag 灰度，前端做双态（已保存值 vs 运行中值）展示防止用户配置错乱；blast radius 可控，是常态化能力发布的范式。"
+      "summary": "上传接口在解析 body 之前校验 Origin，避免不被允许的大请求先占满内存。部署前读取 isEphemeralStorage，数据有丢失风险时展示 ephemeralReason，确认后才继续。"
     },
     {
       "title": "可观测性：OpenTelemetry + Langfuse 串联 LLM 调用",

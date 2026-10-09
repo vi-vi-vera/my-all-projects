@@ -1,0 +1,440 @@
+{
+  "schema_version": "1.0",
+  "mode": "knowledge",
+  "platform_name": "技术负债治理管理平台",
+  "knowledge_map": {
+    "topics": [
+      {
+        "name": "动态路由",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-01"
+        ],
+        "must_read": [
+          "React Router 嵌套路由",
+          "React.lazy 与 Suspense"
+        ],
+        "hands_on": [
+          "用一份 JSON 菜单生成两级路由，并给未知类型一个兜底页"
+        ]
+      },
+      {
+        "name": "React.lazy",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-01"
+        ],
+        "must_read": [
+          "React Router 嵌套路由",
+          "React.lazy 与 Suspense"
+        ],
+        "hands_on": [
+          "用一份 JSON 菜单生成两级路由，并给未知类型一个兜底页"
+        ]
+      },
+      {
+        "name": "顶层 await",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture",
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-01",
+          "q-08"
+        ],
+        "must_read": [
+          "React Router 嵌套路由",
+          "React.lazy 与 Suspense",
+          "ES modules 顶层 await"
+        ],
+        "hands_on": [
+          "用一份 JSON 菜单生成两级路由，并给未知类型一个兜底页",
+          "把等待改到组件内，比较空菜单闪动和首屏时间"
+        ]
+      },
+      {
+        "name": "配置驱动界面",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "TDesign Table 分页与排序",
+          "受控组件和状态提升"
+        ],
+        "hands_on": [
+          "做一个三列配置表，支持服务端分页和返回详情后恢复筛选"
+        ]
+      },
+      {
+        "name": "受控分页",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "TDesign Table 分页与排序",
+          "受控组件和状态提升"
+        ],
+        "hands_on": [
+          "做一个三列配置表，支持服务端分页和返回详情后恢复筛选"
+        ]
+      },
+      {
+        "name": "Redux Toolkit",
+        "level": "加分项",
+        "related_dimensions": [
+          "architecture"
+        ],
+        "questions_using": [
+          "q-02"
+        ],
+        "must_read": [
+          "TDesign Table 分页与排序",
+          "受控组件和状态提升"
+        ],
+        "hands_on": [
+          "做一个三列配置表，支持服务端分页和返回详情后恢复筛选"
+        ]
+      },
+      {
+        "name": "SheetJS",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "SheetJS 读取与写出",
+          "Blob 下载"
+        ],
+        "hands_on": [
+          "上传一个三列表格，校验缺列并导出当前页"
+        ]
+      },
+      {
+        "name": "文件校验",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "SheetJS 读取与写出",
+          "Blob 下载"
+        ],
+        "hands_on": [
+          "上传一个三列表格，校验缺列并导出当前页"
+        ]
+      },
+      {
+        "name": "上传体积",
+        "level": "加分项",
+        "related_dimensions": [
+          "feature"
+        ],
+        "questions_using": [
+          "q-03"
+        ],
+        "must_read": [
+          "SheetJS 读取与写出",
+          "Blob 下载"
+        ],
+        "hands_on": [
+          "上传一个三列表格，校验缺列并导出当前页"
+        ]
+      },
+      {
+        "name": "Axios 拦截器",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "Axios interceptors",
+          "tRPC HTTP 映射"
+        ],
+        "hands_on": [
+          "模拟 100001 和 100002 两个响应头，确认页面行为不同"
+        ]
+      },
+      {
+        "name": "登录态失效",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "Axios interceptors",
+          "tRPC HTTP 映射"
+        ],
+        "hands_on": [
+          "模拟 100001 和 100002 两个响应头，确认页面行为不同"
+        ]
+      },
+      {
+        "name": "错误码映射",
+        "level": "加分项",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-04"
+        ],
+        "must_read": [
+          "Axios interceptors",
+          "tRPC HTTP 映射"
+        ],
+        "hands_on": [
+          "模拟 100001 和 100002 两个响应头，确认页面行为不同"
+        ]
+      },
+      {
+        "name": "伽利略",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "前端监控接入",
+          "区分脚本错误和接口错误"
+        ],
+        "hands_on": [
+          "在测试环境触发一次接口失败，并在监控里找到这条记录"
+        ]
+      },
+      {
+        "name": "环境隔离",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "前端监控接入",
+          "区分脚本错误和接口错误"
+        ],
+        "hands_on": [
+          "在测试环境触发一次接口失败，并在监控里找到这条记录"
+        ]
+      },
+      {
+        "name": "Aegis",
+        "level": "加分项",
+        "related_dimensions": [
+          "observability"
+        ],
+        "questions_using": [
+          "q-05"
+        ],
+        "must_read": [
+          "前端监控接入",
+          "区分脚本错误和接口错误"
+        ],
+        "hands_on": [
+          "在测试环境触发一次接口失败，并在监控里找到这条记录"
+        ]
+      },
+      {
+        "name": "Cookie 会话",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "Cookie 与 withCredentials",
+          "开放重定向"
+        ],
+        "hands_on": [
+          "构造一条非 https 的错误头，确认页面不会跳走"
+        ]
+      },
+      {
+        "name": "开放重定向",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "Cookie 与 withCredentials",
+          "开放重定向"
+        ],
+        "hands_on": [
+          "构造一条非 https 的错误头，确认页面不会跳走"
+        ]
+      },
+      {
+        "name": "权限与登录分离",
+        "level": "加分项",
+        "related_dimensions": [
+          "security"
+        ],
+        "questions_using": [
+          "q-06"
+        ],
+        "must_read": [
+          "Cookie 与 withCredentials",
+          "开放重定向"
+        ],
+        "hands_on": [
+          "构造一条非 https 的错误头，确认页面不会跳走"
+        ]
+      },
+      {
+        "name": "服务端分页",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "分页参数设计",
+          "前端聚合与后端聚合"
+        ],
+        "hands_on": [
+          "同一张表分别按页和全量请求，比较返回体积"
+        ]
+      },
+      {
+        "name": "一次拉全量",
+        "level": "加分项",
+        "related_dimensions": [
+          "performance"
+        ],
+        "questions_using": [
+          "q-07"
+        ],
+        "must_read": [
+          "分页参数设计",
+          "前端聚合与后端聚合"
+        ],
+        "hands_on": [
+          "同一张表分别按页和全量请求，比较返回体积"
+        ]
+      },
+      {
+        "name": "路由稳定性",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "ES modules 顶层 await",
+          "React Router 动态路由"
+        ],
+        "hands_on": [
+          "把等待改到组件内，比较空菜单闪动和首屏时间"
+        ]
+      },
+      {
+        "name": "渐进渲染",
+        "level": "加分项",
+        "related_dimensions": [
+          "trade-off"
+        ],
+        "questions_using": [
+          "q-08"
+        ],
+        "must_read": [
+          "ES modules 顶层 await",
+          "React Router 动态路由"
+        ],
+        "hands_on": [
+          "把等待改到组件内，比较空菜单闪动和首屏时间"
+        ]
+      },
+      {
+        "name": "Orange CI",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-09"
+        ],
+        "must_read": [
+          "Docker 多阶段与静态站点镜像",
+          "Nginx try_files"
+        ],
+        "hands_on": [
+          "把一次测试分支推送跟到镜像标签和负载更新"
+        ]
+      },
+      {
+        "name": "Nginx SPA",
+        "level": "必须掌握",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-09"
+        ],
+        "must_read": [
+          "Docker 多阶段与静态站点镜像",
+          "Nginx try_files"
+        ],
+        "hands_on": [
+          "把一次测试分支推送跟到镜像标签和负载更新"
+        ]
+      },
+      {
+        "name": "镜像发布",
+        "level": "加分项",
+        "related_dimensions": [
+          "reliability"
+        ],
+        "questions_using": [
+          "q-09"
+        ],
+        "must_read": [
+          "Docker 多阶段与静态站点镜像",
+          "Nginx try_files"
+        ],
+        "hands_on": [
+          "把一次测试分支推送跟到镜像标签和负载更新"
+        ]
+      }
+    ]
+  },
+  "role": "全栈",
+  "level": "中级"
+}

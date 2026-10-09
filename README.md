@@ -6,7 +6,8 @@
 
 | 项目 | 说明 |
 |---|---|
-| [`qpilot-code/`](./qpilot-code) | QPilot Code Agent（企业级 AI 编程平台，backagent + backagent-web 全栈）的面试材料与知识图谱 |
+| [`面试案例.md`](./面试案例.md) | 可直接口述的面试案例。QPilot 按 2026-09 的 backagent / web 核对，频道与技术债项目按提交记录写 |
+| [`qpilot-code/`](./qpilot-code) | QPilot Code Agent（企业级 AI 编程平台，backagent + web）的面试材料。仓库已迁到 g2，沙箱以 OpenSandbox 为准 |
 | [`code-agent/`](./code-agent) | LightApp Code Agent（基于 Claude Code 的云端应用生成后台，Express + Drizzle + Rainbow + COS + 模板系统 + 验证部署流水线）的项目沉淀、面试材料、知识图谱与学习指引 |
 | [`qpilot-web/`](./qpilot-web) | QPilot Web LLMOps 工作台 `qpilot-web-v2`（pnpm + lerna monorepo · Next.js 16 App Router · Vercel AI SDK 5 ToolLoopAgent · 桌面端/移动端双轨）的面试材料与知识图谱 |
 | [`projects-management/qq-project/`](./projects-management/qq-project) | QQ 客户端项目管理门户 `qq-project`（Next.js 14 Pages Router · NoSSR SPA · Zustand 9 store · TDesign React · OpenSpec · Orange CI + TKE）的面试材料与知识图谱 |
@@ -15,6 +16,7 @@
 | [`guild_web/`](./guild_web) | QQ 频道 Web 平台 `guild_web`（pnpm + lerna monorepo · Nuxt 3 SSR/CSR · 5 宿主适配 · exeditor3 富文本）的面试材料与知识图谱 |
 | [`yuheng-monorepo/`](./yuheng-monorepo) | QQ 运营管理系统 `yuheng-monorepo`（pnpm workspace Monorepo · 微前端 Nginx 路由分发 · Vue 3 + React 17 双框架 · TDesign · Vite 4 · tsup · Docker + OrangeCI 增量构建）的面试材料、知识图谱与学习指引 |
 | [`guild_h5/`](./guild_h5) | QQ 频道 H5 静态页面仓库 `guild_h5`（Vue 3 + Vite 2.7 MPA · 63 个独立业务页面 · mqq JSBridge Hybrid · TailwindCSS + Less · 四通道监控 · Docker + STKE + OrangeCI 四环境）的面试材料、知识图谱与学习指引 |
+| [`tech-debt-manage/`](./tech-debt-manage) | 技术负债治理管理平台 `tech-debt-manage`（React 18 · Vite 2 · TDesign · 动态专项菜单 · Excel 导入导出 · Nginx + Docker + Orange CI）的面试材料、知识图谱与学习指引 |
 
 ## 每个项目的标准产物
 
@@ -56,24 +58,24 @@
 | `tech-points.json` | Stage 2：面试技术点（按 architecture / performance / reliability / security / observability / feature 维度覆盖） |
 | `raw-bundle.json` | 原始扫描结果（git 历史、依赖、文件结构） |
 
-> 说明：`guild-mp/`、`guild_web/` 目录仅归档渲染后的双语 Markdown 与 `knowledge-data.json`；其 stage 0–3 中间 JSON 存放在原始工作区对应的 `<项目>/.codebuddy/interview-coach/` 目录下。`qpilot-web/`、`projects-management/qq-project/`、`next-guild/`、`yuheng-monorepo/`、`guild_h5/` 完整归档了三阶段全部 JSON，统一放在子目录 `data/` 下；其中 knowledge 模式数据使用 skill 标准命名 `interview-data.knowledge.json`（与 `knowledge-data.json` 等价）。`next-guild/`、`yuheng-monorepo/` 和 `guild_h5/` 额外跑了 stage 3.5 产出 study-guide 学习指引。
+> 说明：`guild-mp/`、`guild_web/` 目录仅归档渲染后的双语 Markdown 与 `knowledge-data.json`；其 stage 0–3 中间 JSON 存放在原始工作区对应的 `<项目>/.codebuddy/interview-coach/` 目录下。`qpilot-web/`、`projects-management/qq-project/`、`next-guild/`、`yuheng-monorepo/`、`guild_h5/`、`tech-debt-manage/` 完整归档了三阶段全部 JSON，统一放在子目录 `data/` 下；其中 knowledge 模式数据使用 skill 标准命名 `interview-data.knowledge.json`（与 `knowledge-data.json` 等价）。`next-guild/`、`yuheng-monorepo/`、`guild_h5/` 和 `tech-debt-manage/` 额外跑了 stage 3.5 产出 study-guide 学习指引。
 
 ## 目录文件矩阵
 
-| 文件 | qpilot-code | code-agent | qpilot-web | qq-project | next-guild | yuheng-monorepo | guild_h5 | guild-mp | guild_web |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `project-context.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `tech-points.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `raw-bundle.json` | ✅ | — | — | — | — | — | — | — | — |
-| `interview-data.json` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `interview-data.interviewer.json` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `interview-data.knowledge.json` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| `study-guide-data.json` | — | — | — | — | ✅ | ✅ | — | — | — |
-| `interview-prep.{zh,en}.md` | ✅ | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `interviewer-pack.{zh,en}.md` | — | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `knowledge-data.json` | ✅ | — | — | — | — | — | — | ✅ | ✅ |
-| `knowledge-map.{zh,en}.md` | — | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `study-guide.{zh,en}.md` | — | zh | — | — | ✅ | ✅ | ✅ | — | — |
+| 文件 | qpilot-code | code-agent | qpilot-web | qq-project | next-guild | yuheng-monorepo | guild_h5 | guild-mp | guild_web | tech-debt-manage |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `project-context.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | ✅ |
+| `tech-points.json` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | ✅ |
+| `raw-bundle.json` | ✅ | — | — | — | — | — | — | — | — | — |
+| `interview-data.json` | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | ✅ |
+| `interview-data.interviewer.json` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | ✅ |
+| `interview-data.knowledge.json` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | ✅ |
+| `study-guide-data.json` | — | — | — | — | ✅ | ✅ | — | — | — | ✅ |
+| `interview-prep.{zh,en}.md` | ✅ | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `interviewer-pack.{zh,en}.md` | — | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `knowledge-data.json` | ✅ | — | — | — | — | — | — | ✅ | ✅ | — |
+| `knowledge-map.{zh,en}.md` | — | zh | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `study-guide.{zh,en}.md` | — | zh | — | — | ✅ | ✅ | ✅ | — | — | ✅ |
 
 ## 复现方式
 

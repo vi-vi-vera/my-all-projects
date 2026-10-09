@@ -1,0 +1,761 @@
+{
+  "schema_version": "1.0",
+  "mode": "interviewer",
+  "platform_name": "技术负债治理管理平台",
+  "role": "全栈",
+  "level": "中级",
+  "question_bank": [
+    {
+      "id": "iq-01",
+      "primary_dimension": "architecture",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-01",
+      "question": {
+        "zh": "菜单为什么不写死，专项列表是在什么时候变成路由的？",
+        "en": "Why is the menu not hard-coded, and when does the project list become routes?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "如果专项接口超时，使用者会看到什么？",
+            "en": "What does the user see if the project API times out?"
+          },
+          "primary_dimension": "reliability"
+        }
+      ],
+      "evidence": [
+        "src/router/modules/projects.ts"
+      ]
+    },
+    {
+      "id": "iq-02",
+      "primary_dimension": "architecture",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-02",
+      "question": {
+        "zh": "多个专项的列表为什么可以共用一张表？",
+        "en": "Why can several projects share one table component?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "某个按钮不能配出来时，你是改通用表格还是加回调？",
+            "en": "If a button cannot be expressed in config, do you change the shared table or add a callback?"
+          },
+          "primary_dimension": "trade-off"
+        }
+      ],
+      "evidence": [
+        "src/components/CommonTable/index.tsx"
+      ]
+    },
+    {
+      "id": "iq-03",
+      "primary_dimension": "feature",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-03",
+      "question": {
+        "zh": "批量导入导出是怎么接进通用专项的？",
+        "en": "How do bulk import and export connect to the generic project?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "上传文件只有说明页、没有数据页时怎么处理？",
+            "en": "What happens when the workbook has an instruction sheet but no data sheet?"
+          },
+          "primary_dimension": "reliability"
+        }
+      ],
+      "evidence": [
+        "src/utils/handleExcel.ts",
+        "src/router/modules/projects.ts"
+      ]
+    },
+    {
+      "id": "iq-04",
+      "primary_dimension": "reliability",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-04",
+      "question": {
+        "zh": "接口没有走 HTTP 错误码时，你怎么判断登录过期和业务失败？",
+        "en": "How do you detect expired login and business failure when HTTP status stays successful?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "响应头缺失时，拦截器还会不会抛第二次异常？",
+            "en": "If the response header is missing, can the interceptor throw a second exception?"
+          },
+          "primary_dimension": "reliability"
+        }
+      ],
+      "evidence": [
+        "src/utils/request.ts"
+      ]
+    },
+    {
+      "id": "iq-05",
+      "primary_dimension": "observability",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-05",
+      "question": {
+        "zh": "页面报错和接口失败你在哪里看？",
+        "en": "Where do you look when a page or API call fails?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "测试流量混进正式大盘时，你怎么确认看错了环境？",
+            "en": "How do you confirm that you are looking at the wrong environment when test traffic enters production?"
+          },
+          "primary_dimension": "observability"
+        }
+      ],
+      "evidence": [
+        "src/main.tsx"
+      ]
+    },
+    {
+      "id": "iq-06",
+      "primary_dimension": "security",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-06",
+      "question": {
+        "zh": "登录态放在哪里，过期和没权限为什么不是同一种处理？",
+        "en": "Where does the session live, and why do expiry and missing permission take different paths?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "错误头里是一段普通文本，页面会不会跳走？",
+            "en": "If the error header is plain text, will the page navigate away?"
+          },
+          "primary_dimension": "security"
+        }
+      ],
+      "evidence": [
+        "src/utils/request.ts"
+      ]
+    },
+    {
+      "id": "iq-07",
+      "primary_dimension": "performance",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-07",
+      "question": {
+        "zh": "列表为什么有的按页请求，有的一次拉完？",
+        "en": "Why do some lists request one page while others fetch everything?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "统计数据变大以后，一次拉全量还成立吗？",
+            "en": "Does a full fetch still hold after the statistics payload grows?"
+          },
+          "primary_dimension": "trade-off"
+        }
+      ],
+      "evidence": [
+        "src/components/CommonTable/index.tsx"
+      ]
+    },
+    {
+      "id": "iq-08",
+      "primary_dimension": "trade-off",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-08",
+      "question": {
+        "zh": "为什么在路由模块顶层等待接口，而不是先渲染再补菜单？",
+        "en": "Why await the API at the top of the route module instead of rendering first and filling the menu later?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "深链在菜单返回前打开，会不会先变成 404？",
+            "en": "If a deep link opens before the menu returns, can it become a 404 first?"
+          },
+          "primary_dimension": "trade-off"
+        }
+      ],
+      "evidence": [
+        "src/router/modules/projects.ts"
+      ]
+    },
+    {
+      "id": "iq-09",
+      "primary_dimension": "reliability",
+      "scope": "infra",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-09",
+      "question": {
+        "zh": "测试环境和正式环境的发布为什么不一样？",
+        "en": "Why do test and production releases differ?"
+      },
+      "depth": "中级",
+      "stress_probes": [
+        {
+          "question": {
+            "zh": "镜像已经推送成功，正式页面却还是旧的，第一步查什么？",
+            "en": "The image push succeeded but production is still old. What do you check first?"
+          },
+          "primary_dimension": "reliability"
+        }
+      ],
+      "evidence": [
+        ".orange-ci.yml",
+        "Dockerfile",
+        "nginx.conf"
+      ]
+    }
+  ],
+  "rubrics": [
+    {
+      "qa_id": "iq-01",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "说出 moduleId、懒加载和失败跳到 /project/error。",
+              "en": "Names moduleId, lazy loading, and the redirect to /project/error."
+            },
+            "合格": {
+              "zh": "只说菜单是接口返回的。",
+              "en": "Only says the menu comes from an API."
+            },
+            "不合格": {
+              "zh": "把路由说成写死的配置文件。",
+              "en": "Describes the routes as a hard-coded config file."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-02",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "区分配置、回调和搜索状态恢复。",
+              "en": "Separates config, callbacks, and restored search state."
+            },
+            "合格": {
+              "zh": "说出分页参数由表格统一发送。",
+              "en": "Says the table sends paging params."
+            },
+            "不合格": {
+              "zh": "说每个专项复制一张表。",
+              "en": "Says every project copies its own table."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-03",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "提到 SheetJS、表头校验和网关体积只是上限。",
+              "en": "Mentions SheetJS, header validation, and that the gateway size is only a ceiling."
+            },
+            "合格": {
+              "zh": "说出导入导出方向不同。",
+              "en": "Separates import from export."
+            },
+            "不合格": {
+              "zh": "说直接把文件传给表格组件展示。",
+              "en": "Says the file is passed straight to the table for display."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-04",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "区分 100001、100002 和可读错误码。",
+              "en": "Distinguishes 100001, 100002, and readable business codes."
+            },
+            "合格": {
+              "zh": "知道业务码在响应头。",
+              "en": "Knows the business code is in a response header."
+            },
+            "不合格": {
+              "zh": "认为 HTTP 200 就是成功。",
+              "en": "Treats HTTP 200 as success."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-05",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "说明正式和测试标识分开，且监控不能代替后端 trace。",
+              "en": "Explains separate production and test identifiers and that monitoring does not replace a backend trace."
+            },
+            "合格": {
+              "zh": "知道应用启动时初始化上报。",
+              "en": "Knows reporting starts with the app."
+            },
+            "不合格": {
+              "zh": "说没有监控，只看浏览器弹窗。",
+              "en": "Says there is no monitoring and only browser alerts are used."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-06",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "说明 Cookie 清理、https 限制和隐藏菜单不是鉴权。",
+              "en": "Explains cookie cleanup, the https restriction, and that hiding a menu is not authorization."
+            },
+            "合格": {
+              "zh": "知道会话在 Cookie，不在 localStorage。",
+              "en": "Knows the session is a cookie, not localStorage."
+            },
+            "不合格": {
+              "zh": "说前端保存 token 并自行判断权限。",
+              "en": "Says the frontend stores a token and decides permission itself."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-07",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "说明全量只用于有边界的统计，并指出超时仍是 5 秒。",
+              "en": "Says full fetch is only for bounded statistics and notes the 5-second timeout."
+            },
+            "合格": {
+              "zh": "知道默认按页请求。",
+              "en": "Knows the default is paging."
+            },
+            "不合格": {
+              "zh": "说所有列表都一次返回更快。",
+              "en": "Says returning every list at once is faster."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-08",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "讲清顶层等待避免空菜单，也承认慢请求会堵住整站。",
+              "en": "Explains that waiting avoids an empty menu and admits a slow request blocks the whole app."
+            },
+            "合格": {
+              "zh": "能说出另一种先渲染再补菜单的做法。",
+              "en": "Names the render-first alternative."
+            },
+            "不合格": {
+              "zh": "说等待接口没有任何代价。",
+              "en": "Says waiting for the API has no cost."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "qa_id": "iq-09",
+      "criteria": [
+        {
+          "name": "技术正确性",
+          "weight": 0.4,
+          "indicators": {
+            "优秀": {
+              "zh": "区分测试自动更新和正式人工确认，并提到 SPA 回退。",
+              "en": "Separates automatic test update from manual production confirmation and mentions SPA fallback."
+            },
+            "合格": {
+              "zh": "知道产物是 Nginx 里的静态文件。",
+              "en": "Knows the output is static files served by Nginx."
+            },
+            "不合格": {
+              "zh": "说前端仓库里还有后端服务进程。",
+              "en": "Says the frontend repo also runs a backend server process."
+            }
+          }
+        },
+        {
+          "name": "取舍意识",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "主动说出没选的方案和当前代价。",
+              "en": "Volunteers the rejected option and the current cost."
+            },
+            "合格": {
+              "zh": "被追问后能说出一个替代做法。",
+              "en": "Names one alternative after a follow-up."
+            },
+            "不合格": {
+              "zh": "只重复当前实现，说不出为什么这样选。",
+              "en": "Repeats the current implementation and cannot say why it was chosen."
+            }
+          }
+        },
+        {
+          "name": "失败教训复盘能力",
+          "weight": 0.3,
+          "indicators": {
+            "优秀": {
+              "zh": "能指出一个真实边界，例如超时、重复菜单或正式环境未自动切换。",
+              "en": "Names a real edge such as timeout, duplicate menu values, or production not switching automatically."
+            },
+            "合格": {
+              "zh": "能描述失败时使用者看到什么。",
+              "en": "Describes what the user sees on failure."
+            },
+            "不合格": {
+              "zh": "声称没有失败分支，或把同事的移动端改动说成自己的。",
+              "en": "Claims there is no failure path, or claims a teammate's mobile changes."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

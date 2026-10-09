@@ -11,7 +11,7 @@
       "evidence": [
         "backagent/src/services/resumableStreamService.ts",
         "backagent/src/services/streamManager.ts",
-        "backagent-web/src/hooks/useAgent.ts"
+        "web/src/hooks/useAgent.ts"
       ],
       "depth_tags": ["architecture", "sse", "stream", "resumable"],
       "interview_value": "高"
@@ -23,14 +23,14 @@
       "primary_dimension": "feature",
       "evidence": [
         "backagent/src/services/mcp-catalog.service.ts",
-        "backagent-web/src/hooks/useAgent.ts"
+        "web/src/hooks/useAgent.ts"
       ],
       "depth_tags": ["feature", "mcp", "tool-use", "agent"],
       "interview_value": "高"
     },
     {
       "id": "tp-003",
-      "topic": "用户级沙箱：双后端（e2b / OpenSandbox）抽象与生命周期管理",
+      "topic": "用户级沙箱：OpenSandbox SDK、超时与 Redis 状态校准",
       "scope": "backend",
       "sub_project": "backagent",
       "primary_dimension": "architecture",
@@ -43,13 +43,12 @@
     },
     {
       "id": "tp-004",
-      "topic": "沙箱预热池与亲和性路由：把冷启动转为秒级首字节",
+      "topic": "进程内预热池下线，预热改由 OpenSandbox 服务端负责",
       "scope": "backend",
       "sub_project": "backagent",
       "primary_dimension": "performance",
       "evidence": [
-        "backagent/src/services/sandbox-warm-pool.service.ts",
-        "backagent/src/services/sandbox-proxy.service.ts"
+        "backagent/src/services/sandbox-warm-pool.service.ts"
       ],
       "depth_tags": ["performance", "warm-pool", "affinity"],
       "interview_value": "高"
@@ -76,19 +75,19 @@
       "evidence": [
         "backagent/src/services/git-sandbox.service.ts",
         "backagent/src/services/git-woa.service.ts",
-        "backagent/src/services/checkpoint-git.service.ts"
+        "backagent/src/services/sandbox-checkpoint-git.service.ts"
       ],
       "depth_tags": ["performance", "rtt", "git", "batch"],
       "interview_value": "高"
     },
     {
       "id": "tp-007",
-      "topic": "白名单 feature flag 驱动的高风险能力灰度",
+      "topic": "上传 Origin 门禁与部署前易失存储确认",
       "scope": "fullstack",
       "primary_dimension": "security",
       "evidence": [
-        "backagent/src/config/feature-whitelist.ts",
-        "backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx"
+        "backagent/src/api/routes/user-upload.routes.ts",
+        "web/src/pages/Chat/components/deploy/DeployTabPanel.tsx"
       ],
       "depth_tags": ["security", "feature-flag", "gradual-rollout"],
       "interview_value": "高"
@@ -101,7 +100,7 @@
       "evidence": [
         "backagent/src/services/build-preview/sandbox-deploy.service.ts",
         "backagent/src/services/build-preview/deploy-proxy.service.ts",
-        "backagent-web/src/pages/Chat/components/deploy/DeployTabPanel.tsx"
+        "web/src/pages/Chat/components/deploy/DeployTabPanel.tsx"
       ],
       "depth_tags": ["feature", "deploy", "subdomain", "vite-base"],
       "interview_value": "高"
@@ -110,12 +109,12 @@
       "id": "tp-009",
       "topic": "H5 预览生命周期：从轮询到状态机 + postMessage origin 校验",
       "scope": "frontend",
-      "sub_project": "backagent-web",
+      "sub_project": "web",
       "primary_dimension": "reliability",
       "evidence": [
-        "backagent-web/src/pages/Chat/components/preview/H5Preview.tsx",
-        "backagent-web/src/hooks/useH5PreviewRefresh.ts",
-        "backagent-web/src/stores/usePreviewStore.ts",
+        "web/src/pages/Chat/components/preview/H5Preview.tsx",
+        "web/src/hooks/useH5PreviewRefresh.ts",
+        "web/src/stores/usePreviewStore.ts",
         "backagent/src/services/h5-preview.service.ts"
       ],
       "depth_tags": ["reliability", "state-machine", "postmessage"],
@@ -125,11 +124,11 @@
       "id": "tp-010",
       "topic": "前端文件同步与 SSE 订阅：useAgent / useFileSync 的边界划分",
       "scope": "frontend",
-      "sub_project": "backagent-web",
+      "sub_project": "web",
       "primary_dimension": "architecture",
       "evidence": [
-        "backagent-web/src/hooks/useAgent.ts",
-        "backagent-web/src/hooks/useFileSync.ts"
+        "web/src/hooks/useAgent.ts",
+        "web/src/hooks/useFileSync.ts"
       ],
       "depth_tags": ["architecture", "hooks", "sse-subscription"],
       "interview_value": "中"

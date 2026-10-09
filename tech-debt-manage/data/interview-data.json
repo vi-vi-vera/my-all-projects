@@ -1,0 +1,787 @@
+{
+  "schema_version": "1.0",
+  "mode": "candidate",
+  "platform_name": "技术负债治理管理平台",
+  "role": "全栈",
+  "level": "中级",
+  "project_pitch": {
+    "elevator": {
+      "zh": "我从初始提交搭了一个技术债治理后台，用专项接口生成菜单，并配好测试自动发布。",
+      "en": "I built an internal tech-debt console from the initial commit, with menus from a project API and automatic test deploys."
+    },
+    "standard": {
+      "zh": "这是 QQ 管理线的技术负债治理平台。我在 2025 年 2 月提交了初始版本，用 React、Vite 和 TDesign 做管理端。专项列表决定菜单，通用表格承接查询和操作，Excel 负责批量导入导出。请求层认 tRPC 返回头，区分登录过期和鉴权失败。测试分支推送后 Orange CI 构建镜像并更新测试负载，正式分支只构建并提醒人工更新。我负责页面、请求约定和从构建到测试环境更新的发布链路。",
+      "en": "This is the tech-debt console for an internal QQ management line. I made the initial commit in February 2025 and built the admin app with React, Vite, and TDesign. The project list drives the menu, a shared table handles query and row actions, and Excel covers bulk import and export. The request layer reads tRPC response headers to separate expired login from authorization failure. A push to the test branch makes Orange CI build an image and update the test workload. The production branch builds the image and asks a person to update the workload. I owned the pages, the request contract, and the path from build through the test update."
+    },
+    "deep_dive": {
+      "zh": "平台要集中处理技术专项和安全工单。后台会持续增加专项，所以我没有把菜单写死。src/router/modules/projects.ts 在加载时请求专项列表，再按 moduleId 选择页面。通用模板还会挂出导入页和配置页。接口失败时跳到加载失败页，避免空白菜单。列表页集中用 CommonTable。页面只传查询项、列和按钮，表格自己处理分页、排序和多选。批量数据走 SheetJS，导出生成 xlsx，导入把文件解析成 JSON。Axios 打开 withCredentials，并读取 trpc-func-ret。100001 清掉 Cookie 后刷新，100002 从错误信息里取出鉴权地址。监控用 Aegis 上报到伽利略，正式和测试使用不同上报标识。发布也是这条链路的一部分。镜像基于 Nginx，try_files 回到 index.html。测试环境自动更新，正式环境构建成功后发企业微信，由人确认再更新。仓库提交也能对上这条时间线。2025 年 2 月 14 日是我的 Initial commit，随后几天补了表格、弹窗、Nginx 和测试环境构建。到 10 月，我继续加了导出、批量校验、进展字段和定时任务入口。2026 年的移动端适配是同事提交的，我不会把它讲成自己的改动。面试时我把范围限制在菜单、表格、导入导出、登录态和发布节奏。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。",
+      "en": "The console collects technical projects and security tickets. New projects keep appearing, so I did not hard-code the menu. The route module requests the project list while it loads, then picks a page by moduleId. The generic template also exposes import and settings routes. A failed request redirects to an error page instead of leaving a blank menu. List pages share CommonTable. A page passes query fields, columns, and buttons, and the table handles paging, sorting, and multi-select. Bulk data uses SheetJS: export writes xlsx, and import parses a file into JSON. Axios sends cookies and reads trpc-func-ret. Code 100001 clears cookies and reloads. Code 100002 extracts an authorization URL from the error header. Aegis reports to Galileo, with different identifiers for production and test. Delivery is part of the same work. The image runs Nginx and falls back to index.html. Test updates itself, while production sends a WeCom message after the image is built so a person confirms the rollout. The git history matches that timeline. My initial commit is dated 14 February 2025, and the next few days added the table, dialogs, Nginx, and the test build. By October I had added export, batch validation, a progress field, and the scheduled-task entry. The 2026 mobile adaptation was committed by a teammate, so I do not claim it. In an interview I keep the scope to the menu, table, import and export, session handling, and release cadence. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate."
+    }
+  },
+  "highlights": [
+    {
+      "title": "从初始提交搭起可发布的管理端",
+      "scope": "fullstack",
+      "primary_dimension": "architecture",
+      "story": {
+        "zh": "2025 年 2 月我提交初始版本，当月补上页面、Nginx 和流水线，测试环境可以构建并更新镜像。",
+        "en": "In February 2025 I made the initial commit and, the same month, added pages, Nginx, and the pipeline so test could build and update its image."
+      },
+      "tech_keywords": [
+        "React",
+        "Vite",
+        "Orange CI",
+        "Nginx"
+      ]
+    },
+    {
+      "title": "专项列表驱动动态菜单",
+      "scope": "frontend",
+      "primary_dimension": "architecture",
+      "story": {
+        "zh": "路由模块等待专项接口，按 moduleId 选择页面。通用模板额外生成导入和配置两条路由。",
+        "en": "The route module waits for the project API and selects a page by moduleId. The generic template adds import and settings routes."
+      },
+      "tech_keywords": [
+        "动态路由",
+        "React.lazy",
+        "moduleId"
+      ]
+    },
+    {
+      "title": "配置化表格承接多个专项",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "story": {
+        "zh": "各专项传入查询、列和操作配置。表格统一处理分页、排序、多选和自定义回调。",
+        "en": "Each project passes query, column, and action config. The table owns paging, sorting, multi-select, and custom callbacks."
+      },
+      "tech_keywords": [
+        "CommonTable",
+        "TDesign",
+        "分页"
+      ]
+    },
+    {
+      "title": "Excel 批量导入导出",
+      "scope": "frontend",
+      "primary_dimension": "feature",
+      "story": {
+        "zh": "导出把当前数据写成 xlsx。导入读取上传文件并转成 JSON，再交给通用专项校验。",
+        "en": "Export writes the current rows to xlsx. Import reads the uploaded file into JSON for the generic project to validate."
+      },
+      "tech_keywords": [
+        "SheetJS",
+        "xlsx",
+        "批量导入"
+      ]
+    },
+    {
+      "title": "测试自动发布、正式手动确认",
+      "scope": "infra",
+      "primary_dimension": "reliability",
+      "story": {
+        "zh": "test 推送后自动更新测试负载。master 只推镜像并用企业微信提醒，正式环境由人确认。",
+        "en": "A test push updates the test workload automatically. Master only pushes the image and sends WeCom, so production stays manual."
+      },
+      "tech_keywords": [
+        "Docker",
+        "TKEx",
+        "Orange CI"
+      ]
+    }
+  ],
+  "qa": [
+    {
+      "id": "q-01",
+      "primary_dimension": "architecture",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-01",
+      "question": {
+        "zh": "菜单为什么不写死，专项列表是在什么时候变成路由的？",
+        "en": "Why is the menu not hard-coded, and when does the project list become routes?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "菜单来自专项接口。路由模块加载时请求列表，再按 moduleId 懒加载页面。",
+          "en": "The menu comes from the project API. The route module fetches it on load and lazy-loads a page by moduleId."
+        },
+        "standard": {
+          "zh": "专项是后台配置的，前端写死菜单会漏掉新专项。projects.ts 在模块顶层请求 getProjectListNew。返回的 projectInfos 进入 createRouter。moduleId 1 到 5 对应扫描、管理、认证、算力和容灾页面，99 走通用模板。通用模板除了首页，还有导入页和配置页。没有权限的项不会放进菜单。页面组件用 React.lazy，避免把所有专项打进首屏。列表请求失败不会生成空菜单，而是切到加载失败页。",
+          "en": "Projects are configured on the server, so a hard-coded menu would miss new ones. projects.ts calls getProjectListNew at module scope. The returned projectInfos go through createRouter. Module ids 1 through 5 map to scan, management, certification, compute, and disaster-recovery pages. Id 99 uses the generic template. That template adds import and settings routes beside the home page. Unauthorized items stay out of the menu. Pages use React.lazy so every project is not in the first bundle. A failed list request does not create an empty menu. It switches to the load-failure page."
+        },
+        "deep_dive": {
+          "zh": "我接到的需求是一个后台管很多专项，而且专项还会增加。如果每个专项写一条静态路由，发布菜单就要改前端。所以路由表改成接口结果。文件顶部用 await 取列表，是为了菜单和路由在应用渲染前就定下来。createRouter 按分类数组决定是一级菜单还是子菜单。只有一层名字时，直接生成 home 路由。通用模板再追加 importing 和 setting 两条隐藏路由，导入和配置不出现在侧栏。componentMap 找不到类型时落到 More 页面，避免未知 moduleId 直接白屏。isAuthed 为假的专项不生成可访问路由。列表为空或请求抛错时，我改成错误路由，并把地址切到 /project/error。这样使用者看到的是加载失败，而不是一个空壳菜单。懒加载放在路由对象上，用户点开某个专项才下载对应页面。分类数组决定菜单层级。一层名字生成叶子路由，多层名字生成可展开的父级。子菜单的 value 必须唯一，我修过重复 value 让两项同时展开的问题。未知 moduleId 进 More 页面，这样后台先加类型时前端不会直接崩溃。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。",
+          "en": "The requirement was one console for many projects, with more projects added later. A static route per project would need a frontend release for every menu change. The route table therefore comes from the API. The file awaits the list at the top so the menu exists before the app renders. createRouter uses the category array to decide between a top-level item and a nested menu. A single name becomes a home route. The generic template also appends hidden importing and settings routes, so those actions stay out of the sidebar. An unknown moduleId falls through to the More page instead of a blank screen. A project with isAuthed false does not get a usable route. An empty list or a thrown request becomes an error route and the browser moves to /project/error. The user sees a load failure rather than an empty shell. Lazy components sit on the route objects, so a page downloads when that project is opened. The category array decides menu depth. One name becomes a leaf route, and several names become an expandable parent. Child values must be unique. I fixed a bug where duplicate values expanded two items together. An unknown moduleId lands on the More page, so a new backend type does not crash the frontend. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "动态路由",
+          "level": "必须掌握",
+          "why": "菜单必须和后台专项列表一致。"
+        },
+        {
+          "name": "React.lazy",
+          "level": "必须掌握",
+          "why": "专项页面按访问再加载。"
+        },
+        {
+          "name": "顶层 await",
+          "level": "加分项",
+          "why": "它决定菜单何时就绪，也决定失败时页面能否渲染。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "React Router 嵌套路由",
+          "React.lazy 与 Suspense"
+        ],
+        "hands_on": [
+          "用一份 JSON 菜单生成两级路由，并给未知类型一个兜底页"
+        ],
+        "common_pitfalls": [
+          "接口失败时路由模块抛错，整站没有菜单",
+          "隐藏路由忘记标记，导入页出现在侧栏"
+        ],
+        "mock_questions": [
+          "如果专项从 10 个变成 100 个，这段路由还要改什么？"
+        ],
+        "time_estimate": "1 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "没有权限的专项你怎么处理？",
+            "en": "What happens to a project the user cannot access?"
+          },
+          "primary_dimension": "security",
+          "expected_answer": {
+            "zh": "isAuthed 为假时不生成可访问菜单。鉴权失败还会在请求层拿到单独的授权地址。",
+            "en": "If isAuthed is false, I do not create a usable menu entry. Authorization failure is also handled in the request layer with a separate URL."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        "src/router/modules/projects.ts"
+      ]
+    },
+    {
+      "id": "q-02",
+      "primary_dimension": "architecture",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-02",
+      "question": {
+        "zh": "多个专项的列表为什么可以共用一张表？",
+        "en": "Why can several projects share one table component?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "差异放在配置里。CommonTable 统一管查询、分页、排序和行操作。",
+          "en": "Differences stay in config. CommonTable owns query, paging, sorting, and row actions."
+        },
+        "standard": {
+          "zh": "每个专项的列和筛选项不一样，但列表交互差不多。我把查询项、列和按钮收成 querySet、tableSet、operationSet。页面传入 getListApi。表格内部维护页码、页大小、排序和选中行，请求时带上 page、page_size 和筛选条件。handleQuery 可以在发出请求前改参数。行点击、双击和按钮都有自定义回调，专项自己的弹窗不用复制表格状态。查询条件还会进搜索 store，从详情返回时可以恢复。",
+          "en": "Columns and filters differ, but list interaction is similar. I put query fields, columns, and buttons into querySet, tableSet, and operationSet. The page passes getListApi. The table keeps page, page size, sort, and selected rows, then sends page, page_size, and filters. handleQuery can rewrite params before the request. Row click, double-click, and buttons have callbacks, so a project dialog does not copy table state. Search state also goes into the search store and can be restored after returning from a detail page."
+        },
+        "deep_dive": {
+          "zh": "一开始每个专项都有自己的表格，分页和重置逻辑很快重复。我把稳定的交互收进 SelectTable，把业务留在配置和回调里。查询区用 SearchForm 渲染配置，不在表格里写死字段。getListData 组装分页参数。页面如果传入 handleQuery，就用它处理筛选项，否则直接展开 filter。排序走表格自己的 sort 状态，翻页时带上当前排序。多选由 isMultiple 打开，checkValid 让页面拒绝不合法的行。fetchAllAtOnce 留给需要一次拿完整结果再在前端处理的统计场景，普通列表仍按页请求。选中行通过 onSelectChange 交出去，父页面做批量操作。这样新增一个专项时，主要工作是写列配置和接口函数，而不是再做一套分页。代价是配置对象变大，字段含义必须在 types 里说清楚。重置按钮会清空 SearchForm，并把页码放回第一页，否则旧筛选会留在下一次请求里。列宽变化通过 handleResizable 交回页面，页面可以记住运营同学拖过的宽度。rowKey 由调用方指定，避免不同专项的主键名字不一样时选中状态串行。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。搜索条件存在 store 里，详情页返回后还要用同一份条件重新请求。",
+          "en": "Each project first had its own table, and paging and reset logic were copied. I moved the stable interaction into SelectTable and left business rules in config and callbacks. SearchForm renders the query config, so field names are not hard-coded in the table. getListData builds paging params. If the page passes handleQuery, that function shapes the filters; otherwise the filter object is spread. Sort lives in table state and is included when the page changes. isMultiple turns on selection, and checkValid lets the page reject illegal rows. fetchAllAtOnce is for statistics that need the full result before client processing. Normal lists still request one page. Selected rows leave through onSelectChange for bulk actions. Adding a project then means writing column config and an API function, not another pager. The cost is a large config object, so field meanings have to stay explicit in the types. Reset clears SearchForm and returns to page one. Otherwise the old filter stays on the next request. Column width changes go back through handleResizable, so a page can remember the width an operator dragged. The caller supplies rowKey, which keeps selection stable when projects use different primary-key names. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate. Search values live in the store, and returning from detail must request again with that same filter."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "配置驱动界面",
+          "level": "必须掌握",
+          "why": "新专项复用交互，只替换列和接口。"
+        },
+        {
+          "name": "受控分页",
+          "level": "必须掌握",
+          "why": "页码和筛选必须一起进入请求。"
+        },
+        {
+          "name": "Redux Toolkit",
+          "level": "加分项",
+          "why": "查询条件跨页面保留。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "TDesign Table 分页与排序",
+          "受控组件和状态提升"
+        ],
+        "hands_on": [
+          "做一个三列配置表，支持服务端分页和返回详情后恢复筛选"
+        ],
+        "common_pitfalls": [
+          "页码和筛选各存一份，重置后请求仍带旧条件",
+          "把业务判断写进通用表格，下一个专项无法复用"
+        ],
+        "mock_questions": [
+          "配置化表格和每个页面各写一张表，你怎么选？"
+        ],
+        "time_estimate": "1 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "如果某个专项的操作不能用配置表达呢？",
+            "en": "What if one project action cannot be expressed as config?"
+          },
+          "primary_dimension": "trade-off",
+          "expected_answer": {
+            "zh": "保留 customBtnCallback 和 customOptCallback。配置覆盖共性，回调处理弹窗、导入这种专项逻辑。",
+            "en": "I keep customBtnCallback and customOptCallback. Config covers the common path, and callbacks handle dialogs or imports."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        "src/components/CommonTable/index.tsx"
+      ]
+    },
+    {
+      "id": "q-03",
+      "primary_dimension": "feature",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-03",
+      "question": {
+        "zh": "批量导入导出是怎么接进通用专项的？",
+        "en": "How do bulk import and export connect to the generic project?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "导出用 SheetJS 生成 xlsx。导入把文件读成 JSON，通用专项再校验后提交。",
+          "en": "Export uses SheetJS to build xlsx. Import reads the file into JSON, then the generic project validates and submits it."
+        },
+        "standard": {
+          "zh": "通用专项的 moduleId 是 99，路由里单独有 importing 页面。导出调用 downloadJsonToXlsx 或 downloadArrayToXlsx，把当前数据写进工作簿，再转成 Blob 下载。导入用 transformXlSXFileToJson 读取第一个工作表。validateFileFormat 先看扩展名和表头，不通过就不发请求。Nginx 把 client_max_body_size 放到 5000m，避免较大的表格在网关被直接拒绝。导入页是隐藏路由，从列表按钮进入。导入页带专项 id，同一个页面可以服务不同的通用专项。",
+          "en": "The generic project uses moduleId 99 and has its own importing route. Export calls downloadJsonToXlsx or downloadArrayToXlsx, writes the rows into a workbook, and downloads a Blob. Import uses transformXlSXFileToJson and reads the first sheet. validateFileFormat checks the extension and header before any request. Nginx sets client_max_body_size to 5000m so a larger workbook is not rejected at the gateway. The import page is a hidden route opened from a list button. The import route carries the project id, so one page can serve different generic projects."
+        },
+        "deep_dive": {
+          "zh": "运营同学要批量改工单，逐行编辑太慢。我把 Excel 收成两个方向。导出时 XLSX.utils 把 JSON 或二维数组转成 sheet，bookSST 关闭，优先生成速度。workbook2blob 用 binary 写出，再包一层 Blob。openDownloadDialog 创建对象 URL，用 a 标签触发下载。导入时 FileReader 读成二进制，XLSX.read 解析，sheet_to_json 得到行数组，回调交给页面。校验放在上传之后、提交之前。格式不对就停在前端，并提示缺少哪些列。通用模板的导入路由带 idInfo，这样同一个导入页可以服务不同专项。列表页只负责跳转，不把解析逻辑写进 CommonTable。大文件还有两个边界。接口超时现在是 5 秒，超大表可能在浏览器解析完、请求还没返回时被 Axios 取消。另外 5000m 是网关上限，不代表后端和浏览器都适合传这么大的文件。真正的批量导入仍要限制行数。downloadMultiArrayToXlsx 可以一次写多个 sheet，统计和明细不用分成两次下载。导入只读第一个表，避免使用者把说明页也提交进去。解析在浏览器完成，大文件会卡住主线程。所以导入页单独存在，不把这个耗时放进列表页的第一次渲染。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。",
+          "en": "Operators needed to update many tickets, and row-by-row editing was too slow. I split Excel into two directions. For export, XLSX utilities turn JSON or a two-dimensional array into a sheet. bookSST stays off to favor speed. workbook2blob writes binary output and wraps it in a Blob. openDownloadDialog creates an object URL and clicks an anchor. For import, FileReader reads binary data, XLSX.read parses it, and sheet_to_json returns rows to the page callback. Validation sits after upload and before submit. A bad format stops in the browser and names the missing columns. The generic import route carries idInfo, so one page serves different projects. The list page only navigates there. Parsing does not live inside CommonTable. Large files have two edges. The request timeout is 5 seconds, so a huge sheet can be parsed locally and still be cancelled before the response returns. The 5000m gateway limit does not mean the browser or backend should accept that size. Bulk import still needs a row limit. downloadMultiArrayToXlsx can write several sheets, so statistics and detail do not require two downloads. Import reads only the first sheet, which keeps an instruction sheet from being submitted. Parsing happens in the browser, and a large file blocks the main thread. The import page is therefore separate and does not put that cost on the list page first render. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "SheetJS",
+          "level": "必须掌握",
+          "why": "导入和导出都经过工作簿，而不是手写 csv。"
+        },
+        {
+          "name": "文件校验",
+          "level": "必须掌握",
+          "why": "错误文件不应进入提交接口。"
+        },
+        {
+          "name": "上传体积",
+          "level": "加分项",
+          "why": "网关上限和接口超时不是一回事。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "SheetJS 读取与写出",
+          "Blob 下载"
+        ],
+        "hands_on": [
+          "上传一个三列表格，校验缺列并导出当前页"
+        ],
+        "common_pitfalls": [
+          "只校验扩展名，不校验表头",
+          "对象 URL 创建后从不释放"
+        ],
+        "mock_questions": [
+          "为什么不把解析函数放进 CommonTable？"
+        ],
+        "time_estimate": "1 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "导入到一半失败，已写入的数据怎么办？",
+            "en": "If import fails halfway, what happens to rows already written?"
+          },
+          "primary_dimension": "reliability",
+          "expected_answer": {
+            "zh": "前端先整表校验，通过后一次提交。接口失败就整批提示重试，不做浏览器里的半成功状态。",
+            "en": "The browser validates the whole sheet first and then submits once. A failed request shows a retry message. I do not keep a partial-success state in the browser."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        "src/utils/handleExcel.ts",
+        "src/router/modules/projects.ts"
+      ]
+    },
+    {
+      "id": "q-04",
+      "primary_dimension": "reliability",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-04",
+      "question": {
+        "zh": "接口没有走 HTTP 错误码时，你怎么判断登录过期和业务失败？",
+        "en": "How do you detect expired login and business failure when HTTP status stays successful?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "看响应头 trpc-func-ret。100001 刷新登录，100002 取出鉴权地址，其他码映射成提示。",
+          "en": "I read trpc-func-ret. Code 100001 reloads login, 100002 extracts an auth URL, and other codes map to a message."
+        },
+        "standard": {
+          "zh": "后端用 tRPC，业务码放在响应头，HTTP 仍可能是 200。拦截器先取 trpc-func-ret。100001 表示登录态过期，我遍历 document.cookie，把每条设成过期，然后刷新页面，让网关重新走登录。100002 表示鉴权失败，我用正则从 trpc-error-msg 里取 https 地址，连同 data 返回给路由层。其他码进 errorMap。能识别的给固定文案，例如记录已存在、记录未找到。识别不了的统一说系统繁忙。网络错误走第二个回调，同样尽量映射成可读消息。",
+          "en": "The backend uses tRPC and puts the business code in a response header, while HTTP can still be 200. The interceptor reads trpc-func-ret first. Code 100001 means the login expired. I expire each document.cookie entry and reload, so the gateway can start login again. Code 100002 means authorization failed. A regular expression takes the https URL from trpc-error-msg and returns it with the data to the route layer. Other codes enter errorMap. Known ones get a fixed message, such as duplicate or missing record. Unknown ones say the system is busy. Network errors use the second callback and follow the same mapping."
+        },
+        "deep_dive": {
+          "zh": "如果只看 HTTP 状态，登录过期会被当成普通成功或普通失败。使用者停在旧页面上继续点，请求会连续失败。所以成功拦截器里先处理两个特殊码。清 Cookie 时只改 expires 和 path，不把 Cookie 值打进上报。刷新后页面重新加载，路由会再次请求专项列表。鉴权失败不能直接刷新，因为使用者可能只是缺某个专项的权限。我把授权地址传出去，由路由模块记到 window.authUrl，无权限页再用它引导申请。errorMap 故意把大量内部码收成系统繁忙。这些码对使用者没有操作意义，原样展示只会暴露内部编号。记录冲突和记录不存在是使用者能处理的，所以保留具体文案。超时设成 5 秒。管理端查询通常够用，但导出或大批量提交可能偏短。这个问题我知道，批量接口如果继续加，应该单独放宽超时，而不是把全局超时调大。成功回调里如果 data 为空，我会按错误处理，而不是把空响应交给页面渲染。网络错误回调要先判断 err.response 是否存在。超时没有 response，直接读 headers 会再抛一次异常。映射文案用 MessagePlugin 之外的 Promise.reject 传出，由页面决定是否弹出。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。",
+          "en": "Looking only at HTTP status treats an expired login as an ordinary success or failure. The user stays on the stale page and clicks keep failing. The success interceptor therefore handles two special codes first. Cookie clearing changes expires and path only. Cookie values are not sent to monitoring. After reload, the route module requests the project list again. Authorization failure should not reload, because the user may simply lack one project. I pass the authorization URL out. The route module stores it on window.authUrl, and the no-access page uses it to guide an application. errorMap collapses many internal codes into a busy message. Those codes do not help the user, and showing them exposes internal numbers. Duplicate and missing records are actionable, so they keep specific copy. The timeout is 5 seconds. That fits normal admin queries, but export or a large submit can be short. If more bulk APIs appear, they should get their own timeout instead of raising the global one. In the success callback I treat an empty data payload as an error instead of rendering it. The network callback first checks that err.response exists. A timeout has no response, and reading headers immediately would throw again. Mapped copy leaves through Promise.reject rather than a hardcoded toast, so the page decides whether to show it. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "Axios 拦截器",
+          "level": "必须掌握",
+          "why": "业务码不在 HTTP body 的固定位置。"
+        },
+        {
+          "name": "登录态失效",
+          "level": "必须掌握",
+          "why": "过期后要终止旧页面，而不是只弹一句错误。"
+        },
+        {
+          "name": "错误码映射",
+          "level": "加分项",
+          "why": "使用者只看能行动的文案。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Axios interceptors",
+          "tRPC HTTP 映射"
+        ],
+        "hands_on": [
+          "模拟 100001 和 100002 两个响应头，确认页面行为不同"
+        ],
+        "common_pitfalls": [
+          "鉴权失败也整页刷新，使用者不知道去哪里申请",
+          "把内部错误码直接展示出来"
+        ],
+        "mock_questions": [
+          "HTTP 200 就代表业务成功吗？"
+        ],
+        "time_estimate": "半天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "错误头缺失时会怎样？",
+            "en": "What happens when the error header is missing?"
+          },
+          "primary_dimension": "reliability",
+          "expected_answer": {
+            "zh": "拦截器会退回到 data.message、err.message 或统一的联系管理员文案，不假设每个响应都有 trpc-func-ret。",
+            "en": "The interceptor falls back to data.message, err.message, or a generic contact-admin message. It does not assume every response has trpc-func-ret."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        "src/utils/request.ts"
+      ]
+    },
+    {
+      "id": "q-05",
+      "primary_dimension": "observability",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-05",
+      "question": {
+        "zh": "页面报错和接口失败你在哪里看？",
+        "en": "Where do you look when a page or API call fails?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "应用启动时初始化 Aegis，上报到伽利略。正式和测试使用不同标识，并打开接口明细。",
+          "en": "Aegis starts with the app and reports to Galileo. Production and test use different identifiers, and API detail is enabled."
+        },
+        "standard": {
+          "zh": "main.tsx 在渲染前创建 Aegis。hostUrl 指向伽利略采集地址。上报 id 按 import.meta.env.MODE 切换，release 用正式标识，其他环境用测试标识。plugin.api.apiDetail 打开后，接口的 URL、状态和耗时会进监控。页面脚本错误也会由 SDK 采集。我查问题时先分环境，避免测试流量混进正式大盘。标识本身不写进面试材料，它只放在环境配置里。业务事件另外走 reportEventFunc，页面不必直接依赖监控 SDK。",
+          "en": "main.tsx creates Aegis before rendering. hostUrl points at the Galileo collector. The report id switches on import.meta.env.MODE: release uses production, and other modes use test. With plugin.api.apiDetail, URL, status, and timing reach the dashboard. Script errors are collected by the SDK too. I separate environments first so test traffic does not enter the production board. The identifier stays in environment configuration and out of interview notes. Business events go through reportEventFunc, so pages do not depend on the monitoring SDK directly."
+        },
+        "deep_dive": {
+          "zh": "这个后台没有独立的前端日志服务，出问题首先靠监控。我把初始化放在 React 渲染之前。这样首屏脚本错误和最早的专项列表请求也能被包住。正式和测试分开标识，是因为测试环境会反复导入和刷新，混在一起会把错误率抬高。apiDetail 能看到失败接口，但看不到请求体里的业务数据，这个粒度够定位是哪一个接口。它不能替代后端 trace。前端只能证明浏览器发出了请求、返回了什么状态。登录过期造成的连续失败，要结合 trpc-func-ret 一起看。监控里如果短时间大量刷新，我先怀疑 100001 的重载，而不是接口本身变慢。上报地址是固定采集域名。项目标识按环境切换，避免把测试数据写进正式应用。window.AegisV2 挂在全局，是为了少数不经过 Axios 的上报还能调用 reportEvent。业务埋点放在 utils 的 reportEventFunc，不把监控 SDK 散落到每个页面。查正式问题时，我先确认 MODE 是 release，否则会看错测试应用。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。上报标识按 MODE 切换，我在正式环境只看正式应用的接口明细。我先分环境再下结论。",
+          "en": "This admin app has no separate frontend log service, so monitoring is the first place I look. Initialization happens before React renders, which covers first-screen script errors and the earliest project-list request. Production and test have different identifiers because test repeatedly imports and reloads. Mixing them inflates the error rate. apiDetail shows the failing API, but not business data from the request body. That is enough to identify the endpoint. It does not replace a backend trace. The browser evidence only shows that a request was sent and which status returned. Repeated failures caused by expired login need trpc-func-ret beside the chart. A burst of reloads makes me check the 100001 path before assuming the API became slow. The collector host stays fixed. Only the project identifier changes by environment, so test data is not written into the production app. window.AegisV2 is global so a few reports that do not pass through Axios can still call reportEvent. Business events go through reportEventFunc in utils, which keeps the monitoring SDK out of every page. When I inspect production, I first confirm MODE is release. Otherwise I am looking at the test application. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate. The report identifier follows MODE, and in production I only read API detail for the production application."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "伽利略",
+          "level": "必须掌握",
+          "why": "前端错误和接口明细都看这里。"
+        },
+        {
+          "name": "环境隔离",
+          "level": "必须掌握",
+          "why": "测试流量不能进正式大盘。"
+        },
+        {
+          "name": "Aegis",
+          "level": "加分项",
+          "why": "SDK 负责采集，业务代码只做初始化。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "前端监控接入",
+          "区分脚本错误和接口错误"
+        ],
+        "hands_on": [
+          "在测试环境触发一次接口失败，并在监控里找到这条记录"
+        ],
+        "common_pitfalls": [
+          "正式和测试共用一个上报标识",
+          "在监控里记录 Cookie 或请求体"
+        ],
+        "mock_questions": [
+          "前端监控能证明后端根因吗？"
+        ],
+        "time_estimate": "半天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "监控里没有堆栈时你下一步看什么？",
+            "en": "What do you inspect when monitoring has no stack?"
+          },
+          "primary_dimension": "observability",
+          "expected_answer": {
+            "zh": "先看失败接口、状态码和响应头里的业务码，再回到对应页面的请求参数。前端监控只定位到调用点。",
+            "en": "I check the failed API, status, and business code in the response header, then return to that page's request params. Frontend monitoring only localizes the call."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        "src/main.tsx"
+      ]
+    },
+    {
+      "id": "q-06",
+      "primary_dimension": "security",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-06",
+      "question": {
+        "zh": "登录态放在哪里，过期和没权限为什么不是同一种处理？",
+        "en": "Where does the session live, and why do expiry and missing permission take different paths?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "请求带 Cookie。登录过期就清掉并刷新。没权限则保留页面，只拿出申请地址。",
+          "en": "Requests send cookies. Expiry clears them and reloads. Missing permission keeps the page and only exposes an application URL."
+        },
+        "standard": {
+          "zh": "Axios 设置 withCredentials，会话由网关写在 Cookie 里，前端不保存 token。过期码是 100001。旧 Cookie 继续带上只会重复失败，所以先过期本地 Cookie，再刷新。没权限是 100002。这时人已经登录，只是缺专项权限。我从 trpc-error-msg 提取 https 地址，交给无权限页。两种情况如果都刷新，使用者看不到申请入口。正则只接受 https，避免错误头里的任意字符串变成跳转地址。",
+          "en": "Axios sets withCredentials. The gateway writes the session cookie, and the frontend does not store a token. Expiry is code 100001. Keeping the old cookie only repeats failures, so I expire the local cookies and reload. Missing permission is code 100002. The person is already logged in and only lacks a project. I extract an https URL from trpc-error-msg and give it to the no-access page. Reloading both cases would hide the application entry. The regular expression accepts only https, so an arbitrary string in the error header cannot become a redirect."
+        },
+        "deep_dive": {
+          "zh": "管理端位于内网网关后面，我没有自己做账号密码登录。浏览器只负责带上 Cookie。这样前端不接触长期凭证，也不把身份放进 localStorage。过期时的风险是死循环。如果清得不干净，刷新后仍带旧 Cookie，页面会再次收到 100001。所以删除时指定 path=/，并使用过去的 expires。我没有在日志里打印 Cookie 值。没权限的处理要保守。错误头是服务端拼出来的，理论上可能包含意外文本。正则限定 https URL，取第一个匹配。匹配不到就不跳转，只保留数据和无权限状态。window.authUrl 是路由模块和请求层之间的一个简单交接。它不是权限系统本身。真正的授权仍然在网关和后台。前端只决定展示菜单、失败页还是申请入口。Cookie 清理不能只删已知名字。网关可能追加会话字段，所以按当前 document.cookie 逐条过期更稳。刷新使用 location.reload，让路由模块重新执行顶层请求。无权限地址只保存，不在拦截器里直接跳转，避免一次列表请求把使用者突然带离当前页。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。鉴权地址来自响应头，页面用它引导申请，拦截器本身不负责跳转。",
+          "en": "The admin app sits behind an internal gateway, so I did not build a password login. The browser only attaches the cookie. The frontend never handles a long-lived credential or puts identity in localStorage. The expiry risk is a loop. If cleanup is incomplete, reload still sends the old cookie and the page receives 100001 again. Deletion therefore sets path=/ and a past expires. I do not print cookie values in logs. Missing permission needs a conservative path. The error header is assembled by the server and may contain unexpected text. The expression requires an https URL and takes the first match. Without a match, there is no redirect, only the data and the unauthorized state. window.authUrl is a small handoff between the route module and the request layer. It is not the authorization system. The gateway and backend still decide access. The frontend only chooses a menu, an error page, or an application entry. Cookie cleanup cannot delete only known names. The gateway may add session fields, so expiring every current cookie is safer. location.reload makes the route module run its top-level request again. The no-access URL is stored but not followed inside the interceptor, so one list request does not suddenly navigate away. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate. The authorization URL comes from the response header. The page uses it for the access request, and the interceptor does not navigate."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "Cookie 会话",
+          "level": "必须掌握",
+          "why": "身份在网关，不在前端存储。"
+        },
+        {
+          "name": "开放重定向",
+          "level": "必须掌握",
+          "why": "鉴权地址必须限制协议。"
+        },
+        {
+          "name": "权限与登录分离",
+          "level": "加分项",
+          "why": "两种失败对使用者的下一步不同。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Cookie 与 withCredentials",
+          "开放重定向"
+        ],
+        "hands_on": [
+          "构造一条非 https 的错误头，确认页面不会跳走"
+        ],
+        "common_pitfalls": [
+          "把鉴权地址直接赋给 location.href",
+          "登录过期后只弹提示，不清理 Cookie"
+        ],
+        "mock_questions": [
+          "为什么没权限不能和登录过期一样刷新？"
+        ],
+        "time_estimate": "半天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "前端能不能靠隐藏菜单实现权限？",
+            "en": "Can hiding a menu item enforce permission?"
+          },
+          "primary_dimension": "security",
+          "expected_answer": {
+            "zh": "不能。隐藏菜单只改善界面。接口仍要由网关和后台拒绝，前端只处理 100002 的展示。",
+            "en": "No. Hiding a menu only changes the interface. The gateway and backend must still reject the API. The frontend only renders the 100002 result."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        "src/utils/request.ts"
+      ]
+    },
+    {
+      "id": "q-07",
+      "primary_dimension": "performance",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-07",
+      "question": {
+        "zh": "列表为什么有的按页请求，有的一次拉完？",
+        "en": "Why do some lists request one page while others fetch everything?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "普通列表按页请求。需要前端统计或自定义校验的场景才一次拉全量。",
+          "en": "Normal lists request one page. Full fetch is only for client statistics or custom validation."
+        },
+        "standard": {
+          "zh": "CommonTable 默认带 page 和 page_size。筛选和排序变化时回到服务端查询，浏览器只渲染当前页。fetchAllAtOnce 打开后，一次拿回更大的结果，再在前端做统计或批量校验。统计弹窗需要一组完整数据时用这条路径。普通工单列表不用。一次拉全量会让首屏等待变长，也会让表格排序失去服务端顺序。超时仍是全局 5 秒，所以全量接口必须本身足够小。默认每页 10 条，页面可以用 pageSizeOPtions 调整。",
+          "en": "CommonTable sends page and page_size by default. Filter and sort changes query the server again, and the browser renders the current page. When fetchAllAtOnce is on, a larger result returns once for client statistics or bulk validation. The statistics dialog uses that path. Ordinary ticket lists do not. A full fetch lengthens the first wait and drops server sort order. The timeout is still the global 5 seconds, so a full-fetch API has to stay small. The default page size is 10, and a page can change it through pageSizeOPtions."
+        },
+        "deep_dive": {
+          "zh": "我没有把所有表格都一次拉完。工单列表会随专项增长，一次返回全部行，首屏和内存都没有必要。服务端分页还能让筛选条件生效，避免前端再过滤一遍旧数据。全量拉取只放在结果集有边界的地方。比如统计需要同一批数据计算占比，分页会把计算拆散。checkValid 也需要看到当前可选集合，而不是只看到这一页。实现上这是表格的一个开关，不是另一个组件。请求参数仍从 getListData 出去，页面决定接口是否忽略页码。这里的取舍是组件少一个、调用方多一个明确参数。如果以后统计数据变大，应该把聚合放到后端，前端只拿结果。不要把 fetchAllAtOnce 当成默认优化。它减少的是请求次数，增加的是单次响应体积。pageSizeOPtions 允许页面把每页条数改成更适合扫描结果的值，但默认仍是 10。服务端排序和前端排序不能混用。打开 fetchAllAtOnce 后，表格排序只代表当前这次返回的顺序，我不会再声称它是全库顺序。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。统计弹窗需要完整一批数据，所以只有这种场景打开一次拉全量。",
+          "en": "I did not make every table fetch all rows. Ticket lists grow with each project, and returning every row helps neither the first screen nor memory. Server paging also makes filters effective, so the client does not filter stale rows again. Full fetch stays where the result has a bound. Statistics need one batch to calculate a ratio, and paging would split that calculation. checkValid also needs the current selectable set, not only the visible page. This is a switch on the same table, not a second component. Params still leave through getListData, and the page decides whether the API ignores page number. The trade is one less component and one explicit parameter for the caller. If statistics later grow, aggregation should move to the backend and the client should receive the result. fetchAllAtOnce is not a default optimization. It reduces request count and increases the size of one response. pageSizeOPtions lets a page choose a size that fits scan results, while the default stays 10. Server sort and client sort must not be mixed. After fetchAllAtOnce is on, table sort only describes the returned batch. I do not describe it as the order of the whole dataset. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate. The statistics dialog needs one complete batch, so only that case turns on a single full fetch."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "服务端分页",
+          "level": "必须掌握",
+          "why": "列表规模不受前端内存限制。"
+        },
+        {
+          "name": "一次拉全量",
+          "level": "加分项",
+          "why": "只用于有边界的统计和校验。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "分页参数设计",
+          "前端聚合与后端聚合"
+        ],
+        "hands_on": [
+          "同一张表分别按页和全量请求，比较返回体积"
+        ],
+        "common_pitfalls": [
+          "统计接口也按页求和，结果随翻页变化",
+          "默认打开全量开关"
+        ],
+        "mock_questions": [
+          "减少请求次数就等于更快吗？"
+        ],
+        "time_estimate": "半天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "全量数据超过超时时间怎么办？",
+            "en": "What if the full result exceeds the timeout?"
+          },
+          "primary_dimension": "reliability",
+          "expected_answer": {
+            "zh": "不加大全局超时。统计改成后端聚合，或者给这个接口单独的超时和行数上限。",
+            "en": "I would not raise the global timeout. The statistic should be aggregated by the backend, or that API should get its own timeout and row cap."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        "src/components/CommonTable/index.tsx"
+      ]
+    },
+    {
+      "id": "q-08",
+      "primary_dimension": "trade-off",
+      "scope": "fullstack",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-08",
+      "question": {
+        "zh": "为什么在路由模块顶层等待接口，而不是先渲染再补菜单？",
+        "en": "Why await the API at the top of the route module instead of rendering first and filling the menu later?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "先等到菜单，是为了避免先闪出空菜单。代价是接口慢时整次进入都被堵住。",
+          "en": "Waiting for the menu avoids flashing an empty one. The cost is that a slow API blocks the whole entry."
+        },
+        "standard": {
+          "zh": "另一种做法是先用静态骨架渲染，再请求专项列表并更新路由。那样首屏快，但菜单会从空变满，深链也可能先落到 404。我选顶层 await，让路由表在 BrowserRouter 使用前准备好。失败则立刻进入 /project/error，不渲染半套菜单。坏处是 getProjectListNew 的耗时直接加到可交互时间上，而且模块失败会影响整站路由。这个后台的首个动作就是选专项，空菜单没有价值，所以我接受这次等待。",
+          "en": "The alternative renders a static shell first, then fetches projects and updates routes. That is faster, but the menu grows from empty and a deep link can hit 404 first. I chose a top-level await so the route table exists before BrowserRouter uses it. Failure goes straight to /project/error and does not render half a menu. The drawback is that getProjectListNew adds directly to time to interactive, and a module failure affects every route. The first action in this console is choosing a project, so an empty menu has no value. I accept the wait."
+        },
+        "deep_dive": {
+          "zh": "这个选择发生在项目早期。专项数量不大，接口通常很快，顶层等待最容易保证菜单和地址匹配。如果先渲染，我还要处理三件事。第一，初始路由不能把未知地址判成 404。第二，列表返回后要替换路由且不打断当前地址。第三，请求失败时要把已经渲染的骨架改成失败页。这些都能做，但当时没有必要。现在的代价我可以明确说。网络慢时，使用者看到的是浏览器加载，而不是应用内的骨架屏。模块级错误也不容易被 React 错误边界单独接住。如果以后专项接口变慢，我会改成壳子先渲染，菜单区单独进入加载态，深链先保留路径，列表返回后再校验。现在不改，是因为还没有这个耗时问题，而空菜单闪动已经能避免。面试里我会把这个决定说成阶段性取舍，不说成永远正确的结构。顶层 await 还依赖构建目标。Vite 的 build.target 设成 esnext，旧目标可能直接不支持这种模块语法。失败跳转写了 pathname 判断，已经在 /project/error 时不再跳，避免无限刷新。这个保护是实际踩过加载失败后补上的。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。",
+          "en": "This choice was made early. There were few projects, the API was usually fast, and waiting made the menu match the URL with the least code. Rendering first would add three jobs. Unknown URLs must not become 404 during startup. Returned routes must replace the table without dropping the current URL. A failed request must turn an already rendered shell into an error page. All of that is possible, but it was not needed then. The current cost is clear. On a slow network the user sees the browser loading instead of an in-app skeleton. A module-level error is also harder for a React error boundary to catch alone. If the project API becomes slow, I would render the shell first, give the menu its own loading state, keep the deep-link path, and validate it after the list returns. I am not changing it now because that latency problem has not appeared, while the empty-menu flash is already avoided. In an interview I describe this as a staged trade-off, not a structure that is right forever. The top-level await also depends on the build target. Vite build.target is esnext, because an older target may reject the module syntax. The failure redirect checks pathname and does not redirect again when it is already /project/error, which prevents a reload loop. I added that guard after seeing the load-failure path refresh repeatedly. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "顶层 await",
+          "level": "必须掌握",
+          "why": "它把接口耗时放进应用启动。"
+        },
+        {
+          "name": "路由稳定性",
+          "level": "必须掌握",
+          "why": "菜单未返回时不能误判 404。"
+        },
+        {
+          "name": "渐进渲染",
+          "level": "加分项",
+          "why": "接口变慢后再把等待从整站缩小到菜单区。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "ES modules 顶层 await",
+          "React Router 动态路由"
+        ],
+        "hands_on": [
+          "把等待改到组件内，比较空菜单闪动和首屏时间"
+        ],
+        "common_pitfalls": [
+          "接口未返回就注册通配 404",
+          "失败后没有任何错误页"
+        ],
+        "mock_questions": [
+          "启动时请求菜单，还有哪些做法？"
+        ],
+        "time_estimate": "半天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "这个等待以后什么信号出现就该改？",
+            "en": "What signal would justify changing this wait later?"
+          },
+          "primary_dimension": "performance",
+          "expected_answer": {
+            "zh": "专项列表接口稳定超过一次普通查询，或者使用者已经能感知白屏。那时再把骨架和菜单加载拆开。",
+            "en": "I would change it when the project-list API regularly exceeds a normal query, or when users can perceive the blank wait. Then I would split the shell from menu loading."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        "src/router/modules/projects.ts"
+      ]
+    },
+    {
+      "id": "q-09",
+      "primary_dimension": "reliability",
+      "scope": "infra",
+      "sub_project": "tech-debt-manage",
+      "source_tech_point": "tp-09",
+      "question": {
+        "zh": "测试环境和正式环境的发布为什么不一样？",
+        "en": "Why do test and production releases differ?"
+      },
+      "answers": {
+        "elevator": {
+          "zh": "测试推送后自动构建并更新负载。正式只构建镜像，企业微信提醒后由人更新。",
+          "en": "Test builds and updates the workload on push. Production only builds the image, then WeCom asks a person to update it."
+        },
+        "standard": {
+          "zh": "应用是 Vite 构建出的静态文件。Dockerfile 使用 Nginx 基础镜像，把 dist 和 nginx.conf 拷进去。Nginx 对前端路由执行 try_files，找不到文件就回 index.html。Orange CI 里 test 分支执行 build:test，推送镜像后调用 stke:update 更新测试负载。master 执行正式构建和推送，然后把镜像标签写进企业微信消息，正式负载由人打开页面更新。测试可以自动，是因为失败影响面小。正式自动更新一次错误构建会直接影响使用者。",
+          "en": "The app is static output from Vite. The Dockerfile starts from an Nginx image and copies dist plus nginx.conf. Nginx uses try_files and falls back to index.html for frontend routes. In Orange CI, the test branch runs build:test, pushes the image, and calls stke:update on the test workload. Master runs the production build and push, then writes the image tag into a WeCom message. A person updates the production workload. Test can be automatic because the blast radius is small. Automatically rolling a bad production build would affect users immediately."
+        },
+        "deep_dive": {
+          "zh": "项目从 2 月的初始提交开始，发布链路是同月补上的，不是后来另接的一套平台。流水线使用 Node 20 安装依赖并构建。依赖走内部 npm 镜像。镜像仓库和负载更新都在流水线里。测试环境我愿意自动更新，因为每天会多次验证导入、查询和登录。自动更新让测试地址始终接近最新提交。正式环境我留了人工确认。构建成功只说明镜像推上去了，不说明这批前端资源该立刻给全部使用者。消息里带镜像标签，更新的人不会选错标签。Nginx 还有两个和业务相关的设置。SPA 回退保证刷新深层路由不会 404。client_max_body_size 放到 5000m，是为了 Excel 上传不被网关提前拒绝。gzip 压缩文本资源。这个体积上限不是性能优化，只是上传约束。容器本身没有后端进程，接口仍由独立服务提供。所以这次部署解决的是静态资源和发布节奏，不是把管理端做成服务端渲染。正式和测试的镜像标签带分支、时间和短提交号，回滚时能从标签回到某一次提交。Dockerfile 不做 Node 运行，只拷贝构建产物。所以运行时没有 npm 进程，机器上要看的是 Nginx 是否把 dist 挂到了 /etc/nginx/html。这一点我能在仓库里指到具体文件，不会把同事后来的移动端适配算进自己的范围。",
+          "en": "The project starts from the February initial commit, and the release path was added the same month. It was not attached to another platform later. The pipeline uses Node 20 to install and build. Dependencies come from the internal npm mirror. The image registry and workload update are both in the pipeline. I let test update automatically because import, query, and login are verified many times a day. The test address stays close to the latest commit. Production keeps a person in the loop. A successful build only proves that the image was pushed, not that every user should receive those assets immediately. The message includes the image tag, so the person does not pick the wrong one. Two Nginx settings are tied to the product. SPA fallback keeps a refresh on a deep route from returning 404. client_max_body_size is 5000m so an Excel upload is not rejected early by the gateway. Gzip compresses text assets. That size limit is an upload constraint, not a performance optimization. The container has no backend process. APIs still come from a separate service. This deployment therefore handles static assets and release cadence, not server rendering. Production and test image tags include the branch, time, and short commit, so a rollback can return from a tag to a commit. The Dockerfile does not run Node. It only copies build output. There is no npm process at runtime. On the machine I check whether Nginx serves dist from /etc/nginx/html. I can point to the file for this behavior, and I do not include the later mobile work committed by a teammate."
+        }
+      },
+      "knowledge_points": [
+        {
+          "name": "Orange CI",
+          "level": "必须掌握",
+          "why": "测试和正式使用不同的构建与更新步骤。"
+        },
+        {
+          "name": "Nginx SPA",
+          "level": "必须掌握",
+          "why": "前端路由刷新要回到 index.html。"
+        },
+        {
+          "name": "镜像发布",
+          "level": "加分项",
+          "why": "构建成功和正式生效是两步。"
+        }
+      ],
+      "learning_plan": {
+        "must_read": [
+          "Docker 多阶段与静态站点镜像",
+          "Nginx try_files"
+        ],
+        "hands_on": [
+          "把一次测试分支推送跟到镜像标签和负载更新"
+        ],
+        "common_pitfalls": [
+          "正式环境也自动更新，错误构建直接生效",
+          "忘记 SPA 回退，刷新子路由 404"
+        ],
+        "mock_questions": [
+          "为什么测试可以自动更新，正式不行？"
+        ],
+        "time_estimate": "1 天"
+      },
+      "follow_ups": [
+        {
+          "question": {
+            "zh": "构建成功但页面仍是旧的，你先查哪里？",
+            "en": "If the build succeeds but the page is old, where do you look first?"
+          },
+          "primary_dimension": "reliability",
+          "expected_answer": {
+            "zh": "先核对负载使用的镜像标签是不是这次推送的标签。正式环境不会因为镜像推送成功就自动切换。",
+            "en": "I first compare the workload image tag with the tag pushed by this pipeline. Production does not switch merely because the push succeeded."
+          }
+        }
+      ],
+      "depth": "中级",
+      "evidence": [
+        ".orange-ci.yml",
+        "Dockerfile",
+        "nginx.conf"
+      ]
+    }
+  ],
+  "dimension_coverage": {
+    "feature": 1,
+    "architecture": 2,
+    "performance": 1,
+    "reliability": 2,
+    "observability": 1,
+    "trade-off": 1,
+    "security": 1
+  }
+}
