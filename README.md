@@ -7,6 +7,7 @@
 | 项目 | 说明 |
 |---|---|
 | [`面试案例.md`](./面试案例.md) | 可直接口述的面试案例。QPilot 按 2026-09 的 backagent / web 核对，频道与技术债项目按提交记录写 |
+| [`job-search/`](./job-search) | 求职材料：职业档案、两份简历、岗位筛选、投递台账、自我介绍和模拟面试问答 |
 | [`qpilot-code/`](./qpilot-code) | QPilot Code Agent（企业级 AI 编程平台，backagent + web）的面试材料。仓库已迁到 g2，沙箱以 OpenSandbox 为准 |
 | [`code-agent/`](./code-agent) | LightApp Code Agent（基于 Claude Code 的云端应用生成后台，Express + Drizzle + Rainbow + COS + 模板系统 + 验证部署流水线）的项目沉淀、面试材料、知识图谱与学习指引 |
 | [`qpilot-web/`](./qpilot-web) | QPilot Web LLMOps 工作台 `qpilot-web-v2`（pnpm + lerna monorepo · Next.js 16 App Router · Vercel AI SDK 5 ToolLoopAgent · 桌面端/移动端双轨）的面试材料与知识图谱 |
