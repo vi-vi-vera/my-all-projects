@@ -1,0 +1,181 @@
+{
+  "schema_version": "1.0",
+  "role": "全栈",
+  "level": "中级",
+  "points": [
+    {
+      "id": "tp-01",
+      "topic": "与伽利略共用同一个 TracerProvider：两条上报分支天然同 trace_id",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "apps/server/src/main.ts",
+        "apps/server/src/start-server.ts"
+      ],
+      "depth_tags": ["OpenTelemetry", "TracerProvider", "SpanProcessor"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-02",
+      "topic": "ESM 环境下手动插桩 Claude Agent SDK（manuallyInstrument 返回值不能丢）",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "apps/server/src/modules/sandbox/services/local-runner.service.ts"
+      ],
+      "depth_tags": ["OpenInference", "ESM monkeypatch", "instrumentation"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-03",
+      "topic": "OTel v1/v2 字段差异兼容层（instrumentationScope / parentSpanContext）",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "apps/server/package.json（sdk-trace-base@1.30.1 vs @langfuse/otel v5）"
+      ],
+      "depth_tags": ["OTel 版本兼容", "Proxy", "app root 判定"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-04",
+      "topic": "业务拦截（canUseTool deny）span 的中性化：Abandoned → WARNING 而非 ERROR",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "apps/server/src/modules/sandbox/controllers/okr-direct-chat.controller.ts",
+        "docs/Langfuse 上报接入说明.md"
+      ],
+      "depth_tags": ["span status", "错误率口径", "level 映射优先级"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-05",
+      "topic": "trace 属性注入：user.id 与 langfuse.trace.metadata.projectId（AsyncLocalStorage）",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "apps/server/src/common/logger/request-log-context.storage.ts"
+      ],
+      "depth_tags": ["AsyncLocalStorage", "trace vs observation 级别", "维度聚合"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-06",
+      "topic": "cache token 补报与成本拆分：口径换算 + 删掉 llm.cost.total",
+      "scope": "backend",
+      "primary_dimension": "observability",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "apps/server/src/modules/sandbox/services/local-runner.service.ts"
+      ],
+      "depth_tags": ["prompt caching", "token 口径", "cost attribution"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-07",
+      "topic": "启动时序与插桩边界：initGalileo → initLangfuse → 动态 import startServer",
+      "scope": "backend",
+      "primary_dimension": "architecture",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/main.ts",
+        "apps/server/src/start-server.ts"
+      ],
+      "depth_tags": ["初始化顺序", "dotenv 时机", "动态 import"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-08",
+      "topic": "shouldExportSpan 过滤：只把 OpenInference 的 AI span 发往 Langfuse",
+      "scope": "backend",
+      "primary_dimension": "architecture",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "docs/Langfuse 上报接入说明.md"
+      ],
+      "depth_tags": ["scope 过滤", "职责边界", "environment 分环境"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-09",
+      "topic": "可观测旁路的降级设计：初始化容错 + 优雅退出 forceFlush/shutdown",
+      "scope": "backend",
+      "primary_dimension": "reliability",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/main.ts",
+        "apps/server/src/start-server.ts",
+        "apps/server/src/config/env.schema.ts"
+      ],
+      "depth_tags": ["降级", "优雅退出", "批量处理器 flush"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-10",
+      "topic": "worker 场景必须显式传 projectId：无 HTTP 上下文时补建 AsyncLocalStorage",
+      "scope": "backend",
+      "primary_dimension": "reliability",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/modules/sandbox/services/local-runner.service.ts",
+        "apps/server/src/modules/report-scheduler/weekly-report.worker.ts",
+        "docs/Langfuse 上报接入说明.md"
+      ],
+      "depth_tags": ["上下文传递", "BullMQ worker", "默认值陷阱"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-11",
+      "topic": "trade-off：复用 OTel 生态寄生上报 vs 自建埋点 SDK（含不受官方 peer 支持的风险）",
+      "scope": "backend",
+      "primary_dimension": "trade-off",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "apps/server/package.json"
+      ],
+      "depth_tags": ["依赖风险", "冒烟验证", "侵入式埋点对比"],
+      "interview_value": "高"
+    },
+    {
+      "id": "tp-12",
+      "topic": "上报链路的性能影响：批量异步导出 + span 处理开销 + 主链路零阻塞",
+      "scope": "backend",
+      "primary_dimension": "performance",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/integrations/langfuse/index.ts",
+        "docs/Langfuse 上报接入说明.md"
+      ],
+      "depth_tags": ["BatchSpanProcessor", "onEnd 开销", "失败不 throw"],
+      "interview_value": "中"
+    },
+    {
+      "id": "tp-13",
+      "topic": "上报的数据与密钥边界：env 管理、不配置即关闭、prompt/输出出网",
+      "scope": "backend",
+      "primary_dimension": "security",
+      "sub_project": "server",
+      "evidence": [
+        "apps/server/src/config/env.schema.ts",
+        "apps/server/src/integrations/langfuse/index.ts",
+        "docs/Langfuse 上报接入说明.md"
+      ],
+      "depth_tags": ["密钥管理", "数据出网", "最小必要上报"],
+      "interview_value": "中"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0",
+  "platform_name": "QQ OKR（qq-okr）",
+  "one_liner": "腾讯内部 OKR / 绩效协作平台（qqx.woa.com），NestJS + Next.js monorepo，内置基于 Claude Agent SDK 的 AI Agent 执行引擎；本人负责其中 AI 调用链的可观测接入（Langfuse）。",
+  "domain": "企业内部 OKR / 目标管理与绩效协作，含 AI Agent 自动写周报、阶段回顾草稿、OKR 顾问对话",
+  "platform_tech_stack": {
+    "languages": ["TypeScript", "Node.js (engines: >=20.19.0 <21)"],
+    "frameworks": ["NestJS 11 + Express 5", "Next.js + Shadcn", "Prisma 7 (MySQL)", "BullMQ + Redis (ioredis)", "zod (env schema)", "Claude Agent SDK"],
+    "infra": ["pnpm workspace (apps/* + packages/*)", "MySQL 双库（业务库 + 埋点库）", "Redis / BullMQ", "伽利略 @tencent/galileo-node-sdk (OpenTelemetry)", "Langfuse (内网自建, v4 events_only)", "TKE / 智研 CI（test / release 双分支）"]
+  },
+  "sub_projects": [
+    {
+      "name": "server",
+      "path": "apps/server",
+      "scope": "backend",
+      "tech_stack": {
+        "runtime": "Node.js 20 / TypeScript",
+        "framework": "NestJS 11 + Express 5",
+        "orm": "Prisma 7 + @prisma/adapter-mariadb（业务库 prisma/schema.prisma、埋点库 prisma-analytics/schema.prisma）",
+        "queue": "BullMQ ^5.76 + @nestjs/bullmq + @nestjs/schedule（cron）",
+        "ai": "@anthropic-ai/claude-agent-sdk 0.3.251（精确锁版本）、@anthropic-ai/sdk、ai(Vercel AI SDK 6)",
+        "observability": "@tencent/galileo-node-sdk ^0.3.8、@opentelemetry/api ^1.9.0、@langfuse/otel ^5.13.1、@arizeai/openinference-instrumentation-claude-agent-sdk ^0.3.4",
+        "dir_convention": "common/ 基建 · config/ env schema · core/ 全局 Guard·Filter · integrations/ 第三方封装 · modules/ 业务模块 · generated/ Prisma 产物"
+      },
+      "modules": [
+        {
+          "name": "integrations/langfuse",
+          "path": "apps/server/src/integrations/langfuse/index.ts",
+          "responsibility": "本人负责的核心：初始化 LangfuseSpanProcessor 并挂到伽利略的全局 TracerProvider，手动插桩 Claude Agent SDK，做 OTel v1/v2 字段兼容、span 属性注入（user.id / metadata.projectId / cache token）与业务拦截中性化，提供 getInstrumentedClaudeAgentSDK() 与 shutdownLangfuse()"
+        },
+        {
+          "name": "integrations/galileo",
+          "path": "apps/server/src/integrations/galileo",
+          "responsibility": "建立全局 TracerProvider（锁定 OTel sdk-trace-base@1.30，即 v1 字段），是服务级链路/日志平台；Langfuse processor 寄生在它的 provider 上"
+        },
+        {
+          "name": "main.ts / start-server.ts",
+          "path": "apps/server/src/main.ts",
+          "responsibility": "启动时序：bootstrap-timezone → dotenv(.env.local/.env) → initGalileo() → try{initLangfuse()} → 动态 import startServer()；start-server 注册 installGracefulShutdown(app, logger, { beforeClose: shutdownLangfuse })"
+        },
+        {
+          "name": "modules/sandbox",
+          "path": "apps/server/src/modules/sandbox/services/local-runner.service.ts",
+          "responsibility": "在服务端进程内执行 Claude Agent SDK query()，把流式事件转成 UI chunks；runQuery() 负责补建/合并 requestLogContext（projectId、cache token），并通过 getInstrumentedClaudeAgentSDK() 拿插桩后的 SDK"
+        },
+        {
+          "name": "modules/sandbox/controllers/okr-direct-chat.controller",
+          "path": "apps/server/src/modules/sandbox/controllers/okr-direct-chat.controller.ts",
+          "responsibility": "OKR 顾问对话入口，调 localRunner.runQuery({ projectId: dto.projectId, ... })；用 canUseTool 返回 behavior:'deny' 实现发布确认、用户追问、工蜂事件代理等业务拦截"
+        },
+        {
+          "name": "modules/report-scheduler",
+          "path": "apps/server/src/modules/report-scheduler/weekly-report.worker.ts",
+          "responsibility": "周报生成 worker（无 HTTP 上下文），用 job.data.projectId 显式调用 runQuery，使 Langfuse trace 带上项目维度"
+        },
+        {
+          "name": "common/logger",
+          "path": "apps/server/src/common/logger/request-log-context.storage.ts",
+          "responsibility": "请求级 AsyncLocalStorage（userId / userName / projectId / cacheReadTokens / cacheCreationTokens），是上报层取业务属性的唯一来源"
+        },
+        {
+          "name": "config/env.schema.ts",
+          "path": "apps/server/src/config/env.schema.ts",
+          "responsibility": "zod 校验环境变量，LANGFUSE_PUBLIC_KEY / SECRET_KEY / BASE_URL 三个均为 optional，缺失即关闭上报"
+        }
+      ],
+      "active_areas": [
+        "Langfuse 可观测接入与打磨（2026-10-13 ~ 2026-10-22，本人提交）",
+        "Claude Agent SDK 本地执行引擎（sandbox / local-runner）",
+        "周报与阶段回顾的 AI 草稿 worker",
+        "伽利略服务级链路"
+      ]
+    },
+    {
+      "name": "web",
+      "path": "apps/web",
+      "scope": "frontend",
+      "tech_stack": {
+        "framework": "Next.js + Shadcn UI",
+        "note": "本轮材料不涉及本人改动，仅作为 Agent 能力的消费端（对话、周报、阶段回顾页面）"
+      },
+      "modules": [
+        {
+          "name": "OKR 工作台与 AI 对话界面",
+          "path": "apps/web",
+          "responsibility": "OKR 管理、周报、阶段回顾、AI 顾问对话的前端界面"
+        }
+      ],
+      "active_areas": ["团队管理页与访问轨迹上报（他人负责）"]
+    },
+    {
+      "name": "platform-server / hr-export",
+      "path": "apps/platform-server, apps/hr-export",
+      "scope": "infra",
+      "tech_stack": {
+        "framework": "NestJS",
+        "note": "运维辅助服务：日志捞取、HR DOS 导出 fallback-staff.json；与 Langfuse 接入无关"
+      },
+      "modules": [],
+      "active_areas": []
+    }
+  ],
+  "highlights": [
+    {
+      "title": "与伽利略共用同一 trace_id 的双平台可观测",
+      "scope": "backend",
+      "summary": "不新建 TracerProvider，把 LangfuseSpanProcessor 挂在伽利略已建立的 provider 上，AI span 一份两发，伽利略与 Langfuse 用同一个 trace_id 关联，零透传逻辑。"
+    },
+    {
+      "title": "ESM Agent SDK 的手动插桩",
+      "scope": "backend",
+      "summary": "ESM 命名空间对象只读，先浅拷贝再 manuallyInstrument()，并接住返回的 patched 对象经 getInstrumentedClaudeAgentSDK() 暴露给 runner，漏接返回值会导致一条 span 都没有。"
+    },
+    {
+      "title": "OTel v1/v2 字段兼容层",
+      "scope": "backend",
+      "summary": "伽利略锁 OTel v1（instrumentationLibrary / parentSpanId），@langfuse/otel 按 v2 写（instrumentationScope / parentSpanContext），用 Proxy 映射补平，否则每个 span 都被误判成 app root。"
+    },
+    {
+      "title": "业务拦截不再污染错误率",
+      "scope": "backend",
+      "summary": "canUseTool deny 的工具从未执行，插桩包兜底关 span 打 status=ERROR/Abandoned，导致正常流程整条 trace 标红；改为按 Abandoned 判据识别并降级成 WARNING + status=UNSET。"
+    },
+    {
+      "title": "trace 维度：userId 与 projectId",
+      "scope": "backend",
+      "summary": "从请求级 AsyncLocalStorage 注入 user.id 与 langfuse.trace.metadata.projectId，HTTP 场景由 controller 补 projectId，worker 场景必须显式传，否则后台搜不到项目。"
+    },
+    {
+      "title": "cache token 口径与成本拆分",
+      "scope": "backend",
+      "summary": "插桩包 v0.3.4 不映射 cache token，且 Anthropic 与 OpenInference 的 input 口径不同导致倒推负数；在 AGENT span 上补回 cache 读写并换算 prompt/total，同时删掉 SDK 透传的 llm.cost.total 让 Langfuse 按模型价目重算。"
+    },
+    {
+      "title": "可观测旁路的降级与优雅退出",
+      "scope": "backend",
+      "summary": "initLangfuse 包 try/catch 降级为不上报、未配置直接跳过；SIGTERM 时先 forceFlush 再 shutdown，运行期导出失败只 catch 不崩进程。"
+    }
+  ]
+}
