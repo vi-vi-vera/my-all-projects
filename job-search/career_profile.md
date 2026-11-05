@@ -52,7 +52,9 @@
 1. **沙箱 Git 集成**
    - 做了冲突处理（含 AI 辅助解决冲突）、按需 AI 生成提交信息、推送前预检和远程领先预警。
    - 清理预览产生的临时文件，修正 untracked 文件触发的假冲突。
-   - 受控写入：模型不再在沙箱里直接 push。后端签发 30 分钟有效、带签名和载荷哈希的令牌，模型只能拿令牌调后端接口，后端先做冲突和分叉检查。工蜂凭证不进沙箱。
+   - 受控写入（**准确口径**，2026-11-05 按代码与对话 trace 核对）：仓库凭证**在沙箱里**——克隆项目时把带凭证的地址写进沙箱 `.git/config` 的 remote，写操作前还会补一次。实际在用的有两条链路：① **Git 面板**：页面点按钮 → 后端接口 → 后端取当前用户凭证，先做冲突/分叉预检再提交推送；② **LLM 对话**：普通聊天里模型用 Bash 跑原生 git 命令，因为沙箱 remote 已带凭证，提交和推送都能成功，靠提示词约束「不要自作主张提交」，不经过面板那套预检。
+   - 为 AI 写入场景**设计并实现过受控令牌工作流**（`git-write`）：后端签发 30 分钟、带签名和载荷哈希的令牌，注入 `QPILOT_GIT_*`，专用提示词要求模型不许直接跑 commit/push、只能调 `/api/git/agent/write`，后端验签后做预检再执行。但当前前端工作流只有 chat / deploy-preflight / service-start，**没有 git-write 入口**，这套方案没有从界面接进去，不能说成线上所有 Git 操作的现状。
+   - 面试口径：不讲「凭证不进沙箱 / 模型不再直接 push」；讲「面板链路做了预检和权限收口，对话链路靠提示词约束，受控令牌是设计实现过但没接入界面的方案」。部署的受控 MCP 工具是真实落地的，不受影响。
    - 沙箱从 e2b 换成 OpenSandbox 后，每条命令都是一次独立往返。我把同一接口要跑的命令合成一段脚本，7 个 Git 接口都降到一次往返：状态检查从十多次降到 1 次，提交推送 6→1，拉取前检查 5→1，与远程 diff 4→1，分支列表 4→1。
 2. **预览启动与状态判断**
    - 失败进程一直占着 3000 端口，下一轮服务就改用别的端口，后端却还在检查 3000。改成启动前和失败时都清理目标端口；日志已经出现致命错误时提前结束健康检查。缺文件这个复现场景从约 60 秒降到约 6 秒。
@@ -202,7 +204,7 @@
 - 语言：TypeScript、JavaScript、少量 Python（项目模板、venv 处理）
 - 前端：React、Vue 3、Next.js、Nuxt 3、微信小程序（分包、Skyline）、TDesign、Element UI、Vant、Electron
 - 后端：Node.js、Express、PostgreSQL、REST、SSE
-- AI / Agent：Claude Agent SDK、DeepAgents、OpenAI Agents SDK、MCP 工具、Skills 渐进式加载、OpenSandbox 沙箱、模型写操作的受控令牌
+- AI / Agent：Claude Agent SDK、DeepAgents、OpenAI Agents SDK、MCP 工具、Skills 渐进式加载、OpenSandbox 沙箱、模型写操作的受控通道（面板预检 / 设计实现过的受控令牌工作流）
 - 可观测：OpenTelemetry（SpanProcessor / 语义约定）、Langfuse、OpenInference 插桩、伽利略结构化上报
 - 基础设施：Docker、TKE / K8s 部署、Nginx、腾讯云 COS、Orange CI、统一发布平台（审批流）、伽利略监控
 - 工具：Git、Vite、Webpack、SheetJS
@@ -242,7 +244,7 @@
 按岗位挑，括号里是证据来源。
 
 1. 沙箱 Git 7 个接口合并为一次往返；状态检查十多次→1，提交推送 6→1（backagent `e101587`）
-2. 模型 Git 写入改为后端签发令牌、受控执行，工蜂凭证不进沙箱（`add controlled AI git write workflow`）
+2. 设计并实现 AI Git 写入的受控令牌工作流（后端签发令牌 + 验签 + 预检；该 `git-write` 工作流未从界面接入）
 3. 预览缺文件复现场景约 60 秒→约 6 秒（端口清理和致命错误提前终止）
 4. 修复三处预览误判：出站连接被当成端口占用、沙箱回收后判成无项目、重试时状态跳变（2026-08-10 提交）
 5. 部署前存储预检，只在数据易失时弹确认（前后端 2026-08-31—09-01）
