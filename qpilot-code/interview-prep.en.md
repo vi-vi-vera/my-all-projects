@@ -574,11 +574,11 @@ Our state model is 'hot path in Redis, truth in the DB'. sandbox-state.repositor
 
 **🔵 Standard** (default):
 
-The original problem was not timing but scattered decisions: polling, the chat stream, the start-service stream and the sandbox phase each wrote UI state, and whichever came back last won. The startup phase flickered, and a previous failure could overwrite the current "starting" state.
+The original problem was not timing but scattered decisions: polling, the chat stream, the start-service stream and the sandbox phase each wrote UI state, and whichever came back last won. The startup phase flickered, and a previous failure could overwrite the current "starting" state. (That was the state before April. Once the backend started returning a single decision in May, there was only one writer left; later flicker came from incomplete decision inputs, not from multiple writers.)
 
 We split it into two layers. The backend computes one of nine states from four facts: whether the sandbox is alive, whether a file and version snapshot exists, whether the start stream reported a fatal error, and a LISTEN port check probed twice with one second between attempts. It returns the state together with the reason, so debugging does not rely on guessing. The client keeps a single pure function: backend state plus three local contexts (whether the chat is streaming, which entry opened the preview, whether auto-start already ran this round) in, one action out. Async sources only supply inputs and no longer write state themselves.
 
-Stale failures are separated by time: every run records a start time, each failure carries its own timestamp, and anything older than the current run start is discarded. We do not use an "is the start stream still active" boolean, because during stream finalisation the current failure is already persisted while the stream is still active; the boolean would swallow a real error and leave the user watching a spinner.
+Stale failures are separated by time: every run records a start time, each failure carries its own timestamp, and anything older than the current run start is discarded. We do not use an "is the start stream still active" boolean, because during stream finalisation the current failure is already persisted while the stream is still active; the boolean would swallow a real error and leave the user watching a spinner. That comparison has known limits — same-millisecond starts, clock rollback and cross-replica skew all affect it; the sturdier design is a per-run id on the failure record compared by equality, a backend-only change.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
