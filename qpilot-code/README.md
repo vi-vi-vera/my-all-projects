@@ -33,6 +33,15 @@ QPilot Code Agent 面向企业 AI 编程场景，把设计稿和自然语言需�
 2. `sandbox-warm-pool.service.ts` 仍在，但是空实现。`acquireWarmSandbox` 固定返回 `null`，预热交给 OpenSandbox 服务端。不要再讲进程内按时间段扩缩池，也不要讲十几秒变成一秒。
 3. `feature-whitelist.ts` 和 Pod 内存双态灰度已经不在当前仓库。高风险入口改看两处：上传在解析 body 前校验 Origin；部署前仅当 `isEphemeralStorage` 为 true 时确认 `ephemeralReason`。
 
+## 2026-11-05 预览口径修订
+
+按 backagent / web 的当前代码重新核对后，预览部分改了两处口径：
+
+1. **不是「前端显式状态机」**。现在是后端算九态并回传原因，前端一个纯函数合并三份本地上下文做单点决策。`interview-prep` 里原来的「idle → starting → ready / error / refreshing + inflight token」描述的是更早的版本，已替换。
+2. **新增两个追问点**：预览面板常驻挂载（`hidden` 收起、工作区宽度折叠，不卸载）；后端「是否在对话」在多副本下有盲区（内存流表 + 数据库只做校验，靠 Redis 幂等和数据库会话锁兜底）。
+
+完整原理和五个高频追问见 `../job-search/面试问答合集/QPilot大功能原理笔记.md` 第 1 节，面试前以那份为准。
+
 ## 2026-08 至 2026-09 本人提交里可以讲的新增内容
 
 - 工蜂仓库导入，以及多实例下导入成功后同步文件树。

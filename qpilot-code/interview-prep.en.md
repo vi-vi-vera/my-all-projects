@@ -43,9 +43,9 @@ QPilot Code Agent moves AI coding from demo to a graduated product. The frontend
 - **Git 接口性能优化：合并沙箱命令减少 RTT** (performance · backend)
   Each git endpoint used to run multiple subcommands serially in the sandbox, paying one cross-network round-trip per step. After the rewrite we fold subcommands into one composite command using set -e plus delimiter markers, completed in a single sandbox.exec, with stdout sliced by markers and parsed back in the service layer. The seven git endpoints (including checkpoint) share the same merge logic. We also fixed a consistency bug along the way: untracked files used to make pull report false conflicts.
   > Keywords: `git` · `RTT` · `batch` · `sandbox` · `consistency`
-- **H5 预览生命周期与 console 协议演进** (reliability · frontend)
-  The iframe preview used to poll 'is it up', with logic scattered across multiple setIntervals and useEffects; on refresh it occasionally hit a race where the old iframe was still alive and a new one had already started. We rewrote it as an explicit state machine: idle → starting → ready / error → refreshing → ready, with all transitions going through the store. Concurrent starts use an inflight token plus AbortController, with a new start aborting the old. postMessage strictly validates origin to block injection. Only when HMR fails do we escalate to a full reload.
-  > Keywords: `iframe` · `state-machine` · `postMessage` · `HMR` · `console`
+- **H5 预览的状态收敛与竞态治理** (reliability · fullstack)
+  Preview state used to be written by four async sources — polling, the chat stream, the start-service stream and the sandbox phase — with whichever arrived last winning, so the startup phase flickered. It is now split in two: the backend computes one of nine states from sandbox liveness, the version snapshot, fatal errors in the start stream and a twice-with-one-second-gap LISTEN port check, and returns the reason with the state; the client keeps only a pure function that merges the backend state with three local contexts (chat streaming, entry source, whether auto-start already ran) into a single action. Stale failures are told apart by the current run start time. The preview panel stays mounted, so switching tabs does not rebuild the iframe.
+  > Keywords: `state-reduction` · `race` · `preview` · `SSE`
 - **上传门禁与部署前易失存储确认** (security · fullstack)
   The upload route checks Origin before parsing a JSON body of up to 1GB, so a disallowed origin cannot force the process to read a huge payload first. Before deploy, the panel reads isEphemeralStorage and opens a confirm dialog with ephemeralReason only when that flag is true. On 2026-09-02 the extra readError gate was removed. feature-whitelist.ts is gone from the current repo.
   > Keywords: `feature-flag` · `whitelist` · `gradual-rollout` · `blast-radius`
@@ -566,19 +566,29 @@ Our state model is 'hot path in Redis, truth in the DB'. sandbox-state.repositor
 |---|---|---|
 | 状态机/有限状态自动机 | 必须掌握 | 讲不清状态与转移就讲不清重构动机 |
 | postMessage origin 校验 | 必须掌握 | iframe 通信安全的第一道关 |
-| AbortController 取消语义 | 加分项 | 并发保护的标准答案 |
+| 状态收敛 / 单点决策 | 加分项 | 说清为什么把判断收口到一个函数，比会写状态机更能体现判断力 |
 
 #### Tiered answers
 
-**🟢 Elevator**: Split start, ready, error, refresh, and destroy into explicit states; protect concurrent starts; strictly check postMessage origin.
+**🟢 Elevator**: The root cause was not timing but scattered decision points: the four async sources now only supply inputs, the backend computes one of nine states, and a pure function on the client makes the single decision. Stale failures are separated by the start time of the current run.
 
 **🔵 Standard** (default):
 
-The old iframe preview was basically polling 'is it up'. State was scattered across setInterval and useEffect, and on refresh you'd sometimes hit a race where the old iframe was still alive and a new one had already started. After the rewrite, usePreviewStore is an explicit state machine — idle → starting → ready / error → refreshing → ready — and every transition goes through the store. Concurrent starts are protected by an inflight token plus AbortController, with a new start aborting the old. The postMessage listener strictly checks origin to block injection. For HMR, useH5PreviewRefresh reacts to file changes and updates incrementally rather than forcing a full reload; full reload only happens when HMR fails. After the rewrite the preview-startup races stopped showing up.
+The original problem was not timing but scattered decisions: polling, the chat stream, the start-service stream and the sandbox phase each wrote UI state, and whichever came back last won. The startup phase flickered, and a previous failure could overwrite the current "starting" state.
+
+We split it into two layers. The backend computes one of nine states from four facts: whether the sandbox is alive, whether a file and version snapshot exists, whether the start stream reported a fatal error, and a LISTEN port check probed twice with one second between attempts. It returns the state together with the reason, so debugging does not rely on guessing. The client keeps a single pure function: backend state plus three local contexts (whether the chat is streaming, which entry opened the preview, whether auto-start already ran this round) in, one action out. Async sources only supply inputs and no longer write state themselves.
+
+Stale failures are separated by time: every run records a start time, each failure carries its own timestamp, and anything older than the current run start is discarded. We do not use an "is the start stream still active" boolean, because during stream finalisation the current failure is already persisted while the stream is still active; the boolean would swallow a real error and leave the user watching a spinner.
 
 <details><summary>🔴 Deep dive (click to expand)</summary>
 
-A state machine's value is turning implicit timing into explicit transitions. A few edge cases worth calling out. First, concurrent starts: a user double-clicking refresh, or rapid code changes triggering multiple starts — the old starting promise has not resolved when a new one arrives. usePreviewStore uses an inflight token plus AbortController, so a new start aborts the old one, and ready events do not land on the wrong iframe. Second, origin checks: the preview URL loaded into the iframe is on the user's subdomain, and postMessage's source must match that subdomain exactly — not `*` and not `parent.origin` style loose config — otherwise a hostile page could forge preview events. Third, HMR awareness: the backend h5-preview.service pushes file changes, and the frontend useH5PreviewRefresh maps them onto the iframe's HMR channel; we update incrementally when possible, and escalate to full reload only when HMR fails (for example, the entry file structure changed). Fourth, error flow-back: runtime errors inside the iframe come back over postMessage, carrying frame id and origin so errors from different sessions do not get mixed up. Trade-off — a state machine adds code, but debugging cost drops; you read the store's current state rather than reverse-engineering it from a pile of setIntervals. Without the inflight guard early on, double-clicking 'restart' could leave 'displayed as ready but actually still the old iframe' in an inconsistent state, so all async interactions now follow a 'latest-wins' semantic uniformly. The state machine also makes unit tests cleaner — test cases enumerate transitions, which gives better coverage than the original logic spread across useEffects.
+Four boundaries are worth spelling out. First, the preview panel must not be unmounted: switching workspace tabs conditionally renders and destroys the other pages, but the preview page always renders and is hidden with CSS; collapsing the whole side panel changes its width rather than unmounting it. The point is to avoid rebuilding the iframe and re-sending a start request on every tab switch, which would start the service twice.
+
+Second, the backend has a blind spot on "is a chat running". It first filters the in-process active stream table and then validates candidates against the database RUNNING status — the database is a check on candidates, not an independent source, so when the in-memory table is empty the database is never queried. A request routed to another replica can therefore report "not chatting". That is tolerable because the fallbacks are hard: auto-start has an entry whitelist (polling cannot trigger it), start-stream idempotency is checked in Redis and works across replicas, and a database session lock runs before any executor is created, returning 423 which the client renders as "a conversation is already running". The worst case is one rejected request, not two concurrent tasks.
+
+Third, the failure fields must be returned as a group, because the client short-circuits to the retry state as soon as it sees any failure reason.
+
+Fourth, the cost: the nine states grew one bug at a time rather than being designed up front, so every new state means going back to the same function — but that is also why the decisions can be unit-tested and replayed. None of the three local contexts is persisted; a refresh clears them and the backend idempotency check covers it.
 
 </details>
 
@@ -589,7 +599,7 @@ A state machine's value is turning implicit timing into explicit transitions. A 
   - [ ] XState 文档 - Statecharts in 15 Minutes（状态机思维入门）
 - 🛠️ Hands-on
   - [ ] 把一个含三个 setInterval + 多 useEffect 的小组件重构成 useReducer 状态机
-  - [ ] 写一个 iframe 预览 demo，加 origin 校验和 inflight token 保护
+  - [ ] 给一个预览状态写 3 条单测：单点决策、旧失败丢弃、常驻挂载不重建
 - ⚠️ Common pitfalls
   - postMessage 用 `*` 或不校验 origin，等于把 iframe 当不可信源
   - 并发启动没有取消老任务，老的 ready 事件覆盖新状态

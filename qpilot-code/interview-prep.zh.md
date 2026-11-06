@@ -43,9 +43,9 @@ QPilot Code Agent 把 AI 编程从 demo 推到可灰度运营的产品。前端�
 - **Git 接口性能优化：合并沙箱命令减少 RTT**（performance · backend）
   原来 git 接口在沙箱内串行跑多个子命令，每步付一次跨网络 RTT。重构后用 set -e 加分隔标记把子命令拼成一条复合命令，一次 sandbox.exec 完成，stdout 按分隔标记切片解析回 service 层。7 个 git 端点（包括 checkpoint）共用同一套合并逻辑。中间修了一个一致性 bug：untracked 文件原来会让 pull 误报冲突。
   > 关键词：`git` · `RTT` · `batch` · `sandbox` · `consistency`
-- **H5 预览生命周期与 console 协议演进**（reliability · frontend）
-  iframe 预览原来是轮询「能不能访问」，逻辑分散在多个 setInterval 和 useEffect 里，刷新时偶尔出现「老 iframe 未销毁、新 iframe 已启动」的并发问题。重写为显式状态机：idle → starting → ready / error → refreshing → ready，所有转移过 store。并发启动用 inflight token 加 AbortController，新启动 abort 老的。postMessage 严格校验 origin 防注入。HMR 失败才升级到 full reload。
-  > 关键词：`iframe` · `state-machine` · `postMessage` · `HMR` · `console`
+- **H5 预览的状态收敛与竞态治理**（reliability · fullstack）
+  预览原来由轮询、聊天流、启动流、沙箱阶段四个异步源各自改状态，谁晚到谁覆盖，启动阶段反复闪动。改成两层：后端综合沙箱存活、版本快照、启动流致命错误和「探两次间隔一秒」的 LISTEN 端口检查，算出九态并带原因回传；前端只留一个纯函数合并三份本地上下文（是否在对话、入口来源、本轮是否已自动启动），输出唯一动作。新旧失败用「本轮启动时间」区分。预览面板常驻挂载，切 Tab 不重建 iframe。
+  > 关键词：`state-reduction` · `race` · `preview` · `SSE`
 - **上传门禁与部署前易失存储确认**（security · fullstack）
   上传路由在解析最大 1GB 的 JSON body 之前校验 Origin，避免不被允许的来源先把大请求读进内存。部署前读取 isEphemeralStorage，只有为 true 才弹出确认并展示 ephemeralReason。2026-09-02 去掉了 readError 也拦截的判断，预检读取失败不再单独挡住部署。旧的 feature-whitelist.ts 已不在当前仓库。
   > 关键词：`Origin` · `上传` · `isEphemeralStorage` · `ephemeralReason`
@@ -566,19 +566,29 @@ sandbox-warm-pool.service.ts 的类注释写明它是 no-op stub。initialize �
 |---|---|---|
 | 状态机/有限状态自动机 | 必须掌握 | 讲不清状态与转移就讲不清重构动机 |
 | postMessage origin 校验 | 必须掌握 | iframe 通信安全的第一道关 |
-| AbortController 取消语义 | 加分项 | 并发保护的标准答案 |
+| 状态收敛 / 单点决策 | 加分项 | 说清为什么把判断收口到一个函数，比会写状态机更能体现判断力 |
 
 #### 三档回答
 
-**🟢 一句话**：把启动、就绪、出错、刷新、销毁拆成显式状态；并发启动有保护；postMessage 严格校验 origin。
+**🟢 一句话**：竞态的根因不是时序，是决策点分散；把四个异步源改成只提供输入，后端算九态、前端一个纯函数做单点决策，新旧失败用本轮启动时间划代次。
 
 **🔵 标准**（默认）：
 
-原来的 iframe 预览基本上就是「轮询能不能访问」，状态散在多个 setInterval 和 useEffect 里，刷新时偶尔会撞上「老 iframe 还没销毁、新 iframe 已经起来」的并发问题。重构之后 usePreviewStore 维护一个显式状态机：idle → starting → ready 或 error → refreshing → ready，所有转移都过 store。并发启动靠 inflight token 加 AbortController，新启动直接 abort 老的。postMessage 监听加了严格的 origin 校验防注入。HMR 这块 useH5PreviewRefresh 监听文件变化，能局部更新就不全量刷新；HMR 失败才升级到 full reload。改完之后预览启动的几类竞态基本不再出现。
+原来的问题不是时序没控制好，是决策点分散——定时轮询、聊天流、启动流、沙箱阶段四个来源各自往界面上写状态，谁最后回来听谁的。于是启动阶段反复闪动，上一轮的失败还会盖掉这一轮的「启动中」。
+
+重构拆成两层。后端综合四件事算状态：沙箱是否存活、文件与版本快照是否存在、启动流有没有致命错误、以及探两次间隔一秒的 LISTEN 端口检查；输出九种状态之一，并把判断原因一起回传，排障时不用猜。前端只留一个纯函数：输入是后端状态加三份本地上下文（前端认为的对话是否在输出、这次从哪个入口打开、本轮是否已经自动启动过），输出唯一动作。所有异步源都只提供输入，不再自己改状态。
+
+旧失败靠时间划代次：每轮启动记一个开始时间，失败记录带着它自己的时间，早于本轮开始时间的当残留丢掉。这里不用「启动流是否还在跑」这个布尔量，因为流收尾那几秒，本轮的真实失败已经落库、流却还是 active，布尔量会把它当残留吞掉，用户只能看到转圈。
 
 <details><summary>🔴 深挖（点击展开）</summary>
 
-状态机的价值是把「隐式时序」变成「显式转移」。具体边界情况几类。第一是并发启动：用户连点两次刷新，或者代码快速变化触发多次启动，老的 starting promise 还没 resolve 新的就来了——usePreviewStore 用 inflight token 加 AbortController，新启动直接 abort 老的，避免 ready 事件错位。第二是 origin 校验：iframe 加载的预览 URL 在用户的子域名下，postMessage 的来源必须严格匹配那个子域名，不能用 `*` 也不能用 `parent.origin` 这种宽松配置，不然恶意页面就能伪造预览事件。第三是 HMR 感知：后端 h5-preview.service 推送文件变更，前端 useH5PreviewRefresh 把变更映射到 iframe 的 HMR 通道，能局部更新就不全量刷新；HMR 失败（比如改了入口文件结构）才升级到 full reload。第四是错误回流：iframe 内的 runtime 错误通过 postMessage 回主控台，要带 frame id 和 origin，避免不同 session 的错误串台。代价方面，状态机让代码量增加，但调试成本下降，有问题直接看 store 当前状态，不用从一堆 setInterval 反推。早期没做 inflight 保护时，用户连点两次「重新启动」会出现「显示 ready 但其实是老 iframe」的不一致状态，所以现在所有异步交互都按「最近一次 win」的语义统一处理。状态机也让单测变直观——按状态转移列举测试用例，覆盖率比原来散在 useEffect 里的逻辑容易做。每条转移的入口和出口都加了一行 console.debug，需要排查时直接 grep 时序，不用再插临时日志。
+几个边界值得展开。第一是**预览面板不能被卸载**：工作区切换 Tab 时，其他页是条件渲染、切走就销毁，只有预览页一直渲染，靠 `hidden` 收起；右侧整个工作区收起时也是宽度折叠而不是卸载。目的是避免切回来时 iframe 重建、重新挂载再发一次启动请求，导致服务被重复启动。
+
+第二是**后端的「是否在对话」有盲区**。它先筛进程内的活跃流表，再用数据库的 RUNNING 状态做校正——数据库是「校验候选」，不是独立数据源，内存表为空时数据库根本不会被查。所以请求落到另一个实例时，会误判成「没在对话」。能这么写是因为后面的兜底够硬：自动启动有入口白名单（轮询不能触发）、启动流幂等查的是 Redis（跨实例有效）、真正建执行体之前还有一道数据库会话锁，重复请求会返回 423 并被前端翻译成「当前对话正在进行中」。所以最坏结果是一次被拒绝的请求，不是两个任务同时跑。
+
+第三是**失败字段必须整组返回**。前端只要看到「有失败原因」就短路到重试态，所以失败步骤、原因、日志、时间这六个字段要么一起来、要么一起不来，不能只改状态字段。
+
+第四是**代价**。九态不是一次设计出来的，是每修一个坑加一个状态长出来的；代价是每加一个状态都要回到同一个函数里改，好处是所有判断都能单测和回放。另外三份本地上下文都不持久化，刷新会清零，靠后端的启动流幂等闸兜底。
 
 </details>
 
@@ -589,14 +599,14 @@ sandbox-warm-pool.service.ts 的类注释写明它是 no-op stub。initialize �
   - [ ] XState 文档 - Statecharts in 15 Minutes（状态机思维入门）
 - 🛠️ 动手
   - [ ] 把一个含三个 setInterval + 多 useEffect 的小组件重构成 useReducer 状态机
-  - [ ] 写一个 iframe 预览 demo，加 origin 校验和 inflight token 保护
+  - [ ] 给一个预览状态写 3 条单测：单点决策、旧失败丢弃、常驻挂载不重建
 - ⚠️ 常见踩坑
   - postMessage 用 `*` 或不校验 origin，等于把 iframe 当不可信源
-  - 并发启动没有取消老任务，老的 ready 事件覆盖新状态
+  - 只靠「流还在不在」判断状态，把本轮刚写出的失败当成上一轮残留
   - HMR 失败时不降级到 full reload，预览静默不更新
 - 🤔 自测题（合上文档自答）
   - [ ] 如果 HMR 频繁失败，你怎么定位是 vite 还是网络的问题？
-  - [ ] 状态机的转移用 reducer 还是单独的 action 函数？为什么？
+  - [ ] 为什么后端要返回「状态 + 原因」，只返回状态行不行？
   - [ ] iframe 内的 console.error 是怎么收集回主控台的？
 - ⏱️ 预估学习时长：**1–2 天**
 
