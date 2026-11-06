@@ -590,6 +590,8 @@ Third, the failure fields must be returned as a group, because the client short-
 
 Fourth, the cost: the nine states grew one bug at a time rather than being designed up front, so every new state means going back to the same function — but that is also why the decisions can be unit-tested and replayed. None of the three local contexts is persisted; a refresh clears them and the backend idempotency check covers it.
 
+Fifth, the two health probes are not the same thing. The probe exists because the state used to be read from a record rather than measured: as long as the record said running and a URL existed, the endpoint reported healthy — but a dev server started in the foreground dies with the start conversation, a stale process may survive a restart, and a user can ask the model to kill the service; none of those write the record, so the endpoint kept reporting running while the page was blank with no hint. The status endpoint now measures: two attempts, one second apart, either success counts as healthy. A first failure never surfaces — the request is still inside one HTTP call and the UI stays as it was; only when both fail does it return the error state and the client unmount the iframe for the error panel. The start finaliser is a different mechanism: up to thirty attempts, one second apart, exiting early on fatal log lines.
+
 </details>
 
 #### Learning plan
