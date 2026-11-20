@@ -1,8 +1,7 @@
 # 卡 13 · React 渲染与 Hooks（上）
 
-> 定级：L2+（S1 已过，机制能推演；待 S2 补 hooks 全量）｜ 2026-11-18
-> 本卡覆盖：渲染模型与两阶段、setState 与批处理、Fiber、hooks 顺序、useEffect、stale closure、useMemo/useCallback、key
-> **待补**（S2）：useRef 三用途、useReducer、forwardRef / useImperativeHandle、自定义 hook 设计原则
+> 定级：L3（S1+S2 已过，渲染机制与 hooks 能推演；待 S3/S4 补性能与工程）｜ 2026-11-18
+> 本卡覆盖：渲染模型与两阶段、setState 与批处理、Fiber、hooks 顺序、useEffect、useRef、useReducer、forwardRef、自定义 hook、useMemo/useCallback、key
 
 ## 3 句骨架
 
@@ -258,6 +257,79 @@ console.log(dom.textContent)             // 0（还在事件处理里，commit �
 | 双缓冲 | 第 ⑩ 步：算完再切 |
 | 错误边界 | 第 3 层（渲染期）能接；事件/异步接不住 |
 
+## 十、S2：Hooks 全量（2026-11-18）
+
+### useRef 的本质：为什么不能用 `let`
+
+**函数组件没有记忆，任何"记住"都必须存在函数外面（Fiber 上）。**
+
+| 方式 | 跨渲染记住 | 改了触发渲染 | 每个实例独立 |
+|---|---|---|---|
+| 组件内 `let a` | ❌（每次重来）| — | — |
+| 模块顶层 `let a` | ✅ | ❌ | ❌ **全局共享，所有实例一个** |
+| **`useRef`** | ✅ | ❌ | ✅ |
+| `useState` | ✅ | ✅ | ✅ |
+
+> **`useRef` 完整定义**：一个「挂在组件实例上、跨渲染存活、改了不触发渲染」的盒子。
+> 「改了不触发渲染」只是它一个特性，不是全部——它还得"记得住"和"隔离"。
+
+**三种用途**：① 拿 DOM 节点 ② 存跨渲染值（定时器 id / AbortController / 上一次的值）③ latest ref（给回调读最新值）。
+**判据一句话**：**这个值变了界面要不要跟着变？不要 → useRef；要 → useState。**
+
+⚠️ **别和 useCallback 混**：`useRef` = 改了不触发渲染；`useCallback` = 让**函数引用**稳定（给 memo/依赖做比较用）。
+
+### useLayoutEffect vs useEffect（用"第几步"记）
+
+```
+commit：mutation（改 DOM）→ layout 子阶段（useLayoutEffect，同步）→ 结束
+浏览器绘制
+useEffect（异步）
+```
+
+**什么时候必须用 useLayoutEffect**：**要在用户看见之前，根据 DOM 测量结果再改一次 DOM**——tooltip 定位、自动滚底、避免"先错后对"的闪烁。
+**用 useEffect 会怎样**：先绘制一帧错误位置 → 再改 → 用户看到闪一下。
+**不该用**：请求/订阅/日志；它会**阻塞绘制**；SSR 会警告（没有 DOM）。
+
+### useReducer：三个该上的信号
+
+| 信号 | 例子 |
+|---|---|
+| 一个动作要同时改多个字段（**联动**）| 提交成功：清 error + 关 loading + 记时间 |
+| 下一个状态依赖上一个状态（**状态机**）| 九态流转，不能从 A 直跳 C |
+| 更新逻辑要复用/测试 | 同一份逻辑多组件用 |
+
+> 判据是「**联动**」不是「字段多」——6 个独立字段用 6 个 useState 完全没问题。
+> 挂点：**案例 3 的九态状态机 + 单点决策纯函数，就是 useReducer 的典型形态。**
+
+### forwardRef / useImperativeHandle
+
+- `ref` 不是普通 prop，函数组件默认拿不到
+- **父组件正常 `<Child ref={x} />`；子组件用 `forwardRef` 接收并转发**（`forwardRef` 是子组件端的机制）
+- `useImperativeHandle`：**按需暴露**方法（`focus`/`clear`），而不是把整个 DOM 交给父组件
+- 什么时候用：父组件需要**命令式**操作子组件（focus/scrollTo/play）
+- **能用 props 表达就别用 ref**——命令式是逃生口，破坏数据驱动模型
+
+### 自定义 hook 设计原则
+
+**判据（三条都满足才抽）**：① 里面用了 hook（state/effect/ref）② 被 2 处以上使用 ③ 一句话说得清。
+**纯计算永远抽普通函数，不抽 hook。**
+
+**过度抽象的信号**：只 2 行且用一处 / 一个 hook 干 3 件事 / **返回对象但调用方没包 useMemo**（引用不稳 → 上层 memo 全废；要么内部 useMemo，要么返回元组）。
+
+### useDebouncedValue（标准实现，串起 state+effect+cleanup）
+
+```js
+function useDebouncedValue(value, delay = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(timer)        // ← cleanup 清掉上一次的定时器
+  }, [value])
+  return debouncedValue
+}
+```
+> 首次渲染 `debouncedValue = value` 是**立即返回**；若首轮也要防抖，初始值设 `undefined`。
+
 ## 我的理解（原话 · 2026-11-18）
 
 > 「因为 React 的组件实际是个函数，每次状态更新都会用最新状态重新计算一次组件，拿到虚拟 DOM，所以说 useState 返回的不是变量，而是最新状态的快照。」
@@ -273,9 +345,7 @@ console.log(dom.textContent)             // 0（还在事件处理里，commit �
 - 以为闭包是 `return` 造成的（实际：引用外层变量就是闭包）
 - 以为 React 有 `emit`（那是 Vue；React 一律函数当 prop）
 
-## 待补（S2）
-- `useRef` 三种用途（DOM / 跨渲染值 / 存上一次的值）
-- `useReducer` 什么时候比 `useState` 好
-- `forwardRef` / `useImperativeHandle`
-- 自定义 hook 的设计原则（何时该抽、何时过度抽象）
+## 待补（S3 / S4）
 - 错误边界（捕获范围已讲，缺"该放在哪一层" → S4）
+- S3：重渲染五原因、Profiler 怎么用、虚拟列表、Context 拆分、memo 决策树
+- S4：状态四层归属、受控 vs 非受控、状态库选型、可配置化组件设计
