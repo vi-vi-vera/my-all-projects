@@ -117,7 +117,89 @@ await asyncio.gather(*tasks, return_exceptions=True)   # ② 一个失败不拖�
 
 > 「async with sem = 拿到许可才进去，出来自动还，异常也还。」
 
-## 待补（D4 · Python ②）
-- FastAPI 跑通 SSE demo（路由 / Pydantic / StreamingResponse）
-- LangGraph StateGraph 概念（节点 / 边 / checkpointer）
-- Python 写反转链表、两数之和（算法变体）
+## 七、FastAPI（对照 Express，2026-11-20 实跑）
+
+| Express | FastAPI |
+|---|---|
+| `app.get('/x', handler)` | `@app.get("/x")` + `async def` |
+| `app.use(express.json())` | **内置** |
+| 手写 swagger | **`/docs` 自动生成**（OpenAPI）|
+| zod 校验 + 自己返 400 | **Pydantic 自动返 422**（带字段路径和原因）|
+| `res.write` 流式 | `StreamingResponse(async gen)` |
+
+### Pydantic = zod，但自动
+
+```python
+class ChatReq(BaseModel):
+    prompt: str
+    limit: int = 3           # 有默认值 = 可选
+
+@app.post("/chat")
+async def chat(req: ChatReq):
+    return {"echo": req.prompt, "limit": req.limit}
+```
+实测：合法 → 200；缺 `limit` → 默认 3；`limit="abc"` → **422 + `detail[0].loc = ['body','limit']`**。
+
+> **关键认知**：Python 类型注解默认只是建议，**但 FastAPI 路由参数上它会真校验**——这是框架做的，不是语言做的。
+
+### SSE = StreamingResponse + async generator
+
+```python
+@app.get("/stream")
+async def stream():
+    async def gen():
+        for i in range(3):
+            yield f"data: {json.dumps({'chunk': i})}\n\n"   # ← 双换行
+            await asyncio.sleep(0.5)
+        yield "data: [DONE]\n\n"
+    return StreamingResponse(gen(), media_type="text/event-stream")
+```
+实测到达时间 `+0.00 / +0.50 / +1.00 / +1.51` —— 证明真流式。
+
+**三个要点**：`async generator` 每次 yield 就 flush 一块；`\n\n` 是消息分隔；`media_type` 少了浏览器不当 SSE。
+
+⚠️ **`yield` vs `return` 的准确说法**：`yield` 产出一块就 flush；**`return` 必须等函数执行完、body 完整，框架才发第一个字节**（不是"结束循环"）。
+
+### async def vs def 路由（高级考点）
+
+| 写法 | 行为 |
+|---|---|
+| `async def` | 直接跑在事件循环上 → **里面不能有阻塞调用**（`time.sleep`、`requests`）|
+| `def` | FastAPI **自动丢进线程池** → 用同步库时反而安全 |
+
+补充：**线程池有容量上限（默认 40）**，大量同步阻塞路由会排队。
+
+## 八、LangGraph 定位（概念级）
+
+### 三层框架，别混
+
+| 层 | 代表 | 给你什么 |
+|---|---|---|
+| 组件库 | LangChain | chain/tool/retriever 零件 |
+| **编排层** | **LangGraph** | **图 + 状态 + 检查点，流程自己画** |
+| 运行时 | Claude / OpenAI Agents SDK | 循环、工具、会话都给你 |
+
+**LangGraph 的抽象是「图」，不是「agent」**——能画 ReAct 循环，也能编排无 LLM 的业务流程。
+> **它就是把 Agent 循环显式化成状态机的编排框架。** 你的九态状态机 + 单点决策，本质是手写了一个 LangGraph。
+
+### 概念对应
+
+| LangGraph | 你已经会的 |
+|---|---|
+| StateGraph 共享 state | 九态状态机 |
+| 节点 | 一次工具/模型调用 |
+| 条件边 | 「要不要继续调工具」的判断 |
+| checkpointer | session-first 落库（同构，不同粒度）|
+
+### checkpointer vs 你们的 append-only（关键差异）
+
+| | LangGraph checkpointer | 你们 |
+|---|---|---|
+| 形态 | **状态快照**（每节点后完整 state）| **append-only 事件日志** |
+| 回滚到任意节点 | ✅ | ❌ 只能从头 replay |
+| 写入成本 | 全量序列化 state | 只追加增量 |
+
+> 一句话：**都是解决中断恢复，但「快照」能回滚、只能「日志」能回放。别说成"同一个东西"。**
+
+## 待补
+- Python 写反转链表 / 两数之和（算法变体）
