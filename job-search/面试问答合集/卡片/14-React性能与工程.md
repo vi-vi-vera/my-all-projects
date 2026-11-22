@@ -1,6 +1,6 @@
 # 卡 14 · React 性能与工程
 
-> 定级：L2（有主场案例，理论待 S3/S4 补）｜ 2026-11-19
+> 定级：L3（主场案例 + S3/S4 理论已补全）｜ 2026-11-22
 > 主场案例 = yuheng「FormRender memo 比较函数漏比字段清单」，**你的真货**；308ms 级联是 albertmo 的，不归你。
 > 完整取证见 `面试问答合集/React-memo与useMemo踩坑复盘.md`，本卡是浓缩口述版。
 
@@ -241,6 +241,104 @@ isEqual(prev.editData, next.editData) && isEqual(prev.defaultData, next.defaultD
 
 **红线**：`0aea7d0` 是 albertmo 的，不认领。
 
-## 待补（S4）
+---
 
-- 状态四层归属、受控 vs 非受控、错误边界位置、状态库选型（Context / Zustand / Redux）、可配置化组件设计
+# S4 · 工程与设计（2026-11-22 补）
+
+## 一、状态四层归属（第一个问题，最重要）
+
+| 层 | 什么状态 | 放哪 |
+|---|---|---|
+| L1 局部 | 一次交互内、只有这组件用：展开收起、输入草稿、hover | `useState` |
+| L2 单页共享 | 多个兄弟组件要读、不跨路由 | 提升到最近公共父组件 |
+| L3 跨页全局 | 用户/权限/主题/菜单 | Context（低频）/ Zustand（高频 + 精细订阅） |
+| L4 服务端状态 | 列表/详情数据 | **React Query / SWR（是缓存，不是状态）** |
+| 额外：URL | 要分享/刷新还在/能回退的 | query param |
+
+**六句归层口诀**：
+
+1. 要分享 / 回退 / 刷新还在 → **URL**
+2. 会过期、要重试、要缓存 → **React Query**（不是 state）
+3. 只有这组件用、一次交互内 → **useState**
+4. 几个兄弟要读、同页 → **提升**
+5. 跨页、低频 → **Context**；跨页、高频 + 精细订阅 → **Zustand**
+6. 任何地方都可能触发 → 全局单例/Context，组件只做渲染壳
+
+**关键观念**：服务端数据是**缓存**（会过期、要重试、要合并），不是 state。用 `useState` 管它 = 用抄写本冒充账本。
+
+## 二、受控 vs 非受控
+
+**核心一句话**：区别在“事实来源（single source of truth）”是谁——React state 还是 DOM。
+
+| | 受控 | 非受控 |
+|---|---|---|
+| 事实来源 | state | DOM |
+| 拿值 | 读 state | `ref.current.value` |
+| 每次输入 | 重渲染 | 不重渲染 |
+| 能做什么 | 实时校验/格式化/联动/回填/禁用 | 提交时取一次值 |
+| 代价 | 渲染开销 | 值“感知不到”、程序化改值别扭 |
+
+**判据**：
+```
+value + onChange            → 受控
+defaultValue + onChange     → 非受控（事实来源在组件内部）
+```
+
+**口诀**：要“边输入边反应” → 受控；只在提交取一次、表单巨大 → 非受控（react-hook-form 就是这么做的）。
+
+**我的 FormRender**：`editData + defaultData + onChange`、无 value 回传 → **偏非受控**（form-render 内部自己维护值，对外暴露非受控接口）。注意：运营后台代码不在当前仓库，说“从 API 形状看”，别说“读源码确认过”。
+
+## 三、错误边界
+
+**问题**：组件渲染时抛错 → React 默认**卸载整棵树 → 白屏**，且 `try/catch` 包不住（组件是 React 自己调的）。
+
+**解法**：ErrorBoundary（`getDerivedStateFromError`）包住子组件，崩了显示备用 UI。
+
+```jsx
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return <div>这块挂了，请刷新</div>;
+    return this.props.children;
+  }
+}
+```
+
+**抓不住**：事件处理器、异步（setTimeout/fetch 回调）、SSR 的错误。
+
+**位置（必考）**：**别只放顶层**——那样一个小模块崩，整页白屏。正确 = 顶层一个（总闸）+ 关键模块各一个（分闸）。
+
+## 四、状态库选型：Context / Zustand / React Query
+
+| | Context | Zustand | React Query |
+|---|---|---|---|
+| 管什么 | 跨层级传值 | 全局状态 | **服务端数据缓存** |
+| 在哪 | 组件树里 | React 之外（模块级） | —— |
+| 用法 | 要 Provider 包裹 | 直接 import | `useQuery` |
+| 重渲染 | **一变全变**（value 按引用比较） | **按 selector 订阅**，只订阅的字段变才重渲染 | 按 key 缓存/去重/重试 |
+| 适合 | 低频、小、简单 | 高频、大、精细订阅、组件外要访问 | 会过期、要重试、要合并的数据 |
+
+**Context 最大短板**：一变，所有 consumer 全重渲染。**Zustand 的价值**：`useStore(s => s.user)` 只订阅 user，别的字段变它不重渲染。
+
+**选型结论**：服务端数据永远 React Query，不进 store；低频全局 Context 就够；高频 + 精细订阅才 Zustand。Redux（RTK）定位类似 Zustand，但样板更多，能说清“为什么选轻的”即可。
+
+## 五、可配置化组件设计
+
+**核心**：把“描述”和“渲染”分开。配置 = 纯数据（描述有什么），引擎 = 读配置画 UI（怎么画，只写一次）。
+
+```js
+const columns = [
+  { key: 'name',   title: '名称', type: 'text' },
+  { key: 'status', title: '状态', type: 'tag' },   // type 决定怎么画
+];
+<Table config={columns} data={data} />
+```
+
+**三个关键点**：
+
+1. **默认值合并**：只填和默认不一样的，其余走默认
+2. **配置校验**：错误配置在渲染前报出来，别渲染到一半炸
+3. **可扩展**：新类型 = 注册渲染器，引擎不动
+
+**挂我的案例**：FormRender 就是 schema 驱动的可配置表单——`editData`（字段清单）= 配置，引擎读它画表单；我那个 bug = 配置（结构）变了、引擎的 memo 比较没感知。
