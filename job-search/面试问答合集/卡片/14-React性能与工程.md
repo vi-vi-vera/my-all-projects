@@ -122,7 +122,125 @@ isEqual(prev.editData, next.editData) && isEqual(prev.defaultData, next.defaultD
 - **308ms 级联（0aea7d0）是 albertmo 的，不是你的** → 讲成团队案例需先核实
 - 没有量化数据，不报数字
 
-## 待补（S3 / S4 讲完补理论）
+---
 
-- S3：重渲染五原因、Profiler 怎么用、虚拟列表原理、Context 拆分、memo/useMemo 决策树
-- S4：状态四层归属、受控 vs 非受控、错误边界位置、状态库选型（Context / Zustand / Redux）、可配置化组件设计
+# S3 · 性能与排查（2026-11-21 补）
+
+## 总纲（这句定生死）
+
+> **"卡"不是一个问题，是四类问题。先定位它在哪一类，再谈优化——一上来就开 Profiler 是最常见的错误。**
+
+因为 Profiler **只看得到 React 那一段**。瓶颈在别处时，你会查两小时得出"React 没问题"。
+
+## 四类卡
+
+| 类型 | 表现 | 瓶颈在哪 |
+|---|---|---|
+| ① 渲染太多次 | 敲一个字一堆组件跟着跑 | JS 执行 / 反复 diff |
+| ② 单次渲染太贵 | 一次渲染 100ms+，几千行 DOM | 单次工作量大、DOM 节点多 |
+| ③ 主线程被别的活占了 | 流式消息、轮询、大 JSON 解析 | 非 React 的长任务 |
+| ④ 布局 / 绘制 | JS 很快但滑动卡 | CSS：重排、阴影滤镜、无合成层 |
+
+## 诊断顺序（三步，别跳）
+
+1. **Performance 录一段火焰图**，看主线程时间花在哪：
+   - 一片黄/橙 → JS 为主 → 再看是不是 React
+   - JS 少、Layout/Paint 长 → ④ 样式
+   - 有长任务但火焰里没 React → ③ 第三方/解析/定时器
+   - React 占大头 + 很多小短块 → ① 重渲染
+   - React 占大头 + 单块特别宽 → ② 单次太重
+2. **确认是重渲染**：React DevTools Profiler / React Scan 高亮
+3. **定位原因**（五原因表）→ 再选手段
+
+## Profiler 只看三个数
+
+| 看什么 | 判据 |
+|---|---|
+| 哪些组件亮了 | 亮 = 这次更新渲染了；**范围超预期 = 有问题** |
+| 每个组件渲染**次数** | 敲一个字，500 个列表项都渲染 → 实锤 |
+| 每个组件**每次耗时** | 次数多但 0.1ms 可能不值得优化；一次 20ms 才是重点 |
+
+外加 **Why did this render** 一列：`Props changed` / `State changed` / `Parent rendered`（最多）/ `Hooks changed`。看到 `Props changed` 而内容没变 = 引用问题。
+
+**最好用的判据**：改一个最局部的 state，看有多少组件跟着跑。只该动一个输入框却整列表都跑 → 引用不稳 / Context / 状态太高。
+
+## 重渲染五原因（背下来）
+
+| # | 原因 | 症状 | 修法 |
+|---|---|---|---|
+| 1 | 父渲染，子没 `memo` | Profiler 全是 `Parent rendered` | `React.memo`（前提 props 稳） |
+| 2 | props 引用每次新建（内联对象/数组/箭头函数） | 加了 memo 还渲染，`Props changed` 但值一样 | `useMemo`/`useCallback` 稳引用，或**只传原始值** |
+| 3 | Context value 每次新建 | Provider 一变，**所有** consumer 全渲染 | `useMemo` 包 value；按频率**拆 Context** |
+| 4 | 状态放太高 | 输入一个字整页重渲染 | **状态下沉**：输入值放输入框自己组件 / 非受控 + ref |
+| 5 | Hooks 依赖不稳 | effect 反复跑、useMemo 不生效 | 依赖写对；函数式 `setState` 减依赖 |
+
+> 加分第 6 条：**selector 不精确**（Redux/Zustand 订阅整个 store）。
+
+**精确性提醒**：`useEffect` 依赖变化 → effect 重跑，**这本身不会导致列表重渲染**，除非 effect 里 `setState`。别说混。
+
+## 一道标准场景的完整答案："搜索框打字，500 行列表全重渲染"
+
+分层修，每层一句代价：
+
+| 层 | 手段 | 代价 |
+|---|---|---|
+| 1 切断触发源 | 输入值**下沉**到搜索框组件（或非受控 + `useRef`） | 需要把"要用搜索词的地方"改成回调/订阅，结构改动 |
+| 2 切断传播 | 列表项 `React.memo` + props 引用稳定（回调 `useCallback`、过滤结果 `useMemo`） | 多一层比较开销；比较函数写错就是正确性 bug（**FormRender 案例**） |
+| 3 让输入不被列表拖累 | `useDeferredValue` / `startTransition`（输入优先，列表更新降级） | 列表可能短暂显示旧结果 |
+| 4 减少 DOM 数量 | **虚拟列表**（只渲染可视区） | 动态高度难做；滚动定位、锚点、Ctrl+F 都变复杂 |
+
+## memo / useMemo / useCallback 决策树
+
+```
+先测：这里真的慢吗？（Profiler 有数才谈优化）
+├─ 没测 → 不要加。memo 自己也要比较、也要存缓存
+└─ 测到了
+   ├─ 慢在"子组件被爹带着渲染"
+   │   ├─ props 能稳定（只传原始值 / 稳定的回调）→ React.memo 有效
+   │   └─ props 天然不稳定 → memo 白搭，先解决引用（useCallback/useMemo）或改传参形状
+   ├─ 慢在"组件内部每次重算"（排序、过滤、解析）→ useMemo
+   ├─ 慢在"effect 反复执行导致重复请求/重复 setState" → useCallback 稳函数 + 依赖写对
+   └─ 慢在"DOM 太多" → memo 无效，要虚拟列表 / 分页
+```
+
+一句话边界：**`memo` 是跳过工作的优化，不是正确性保证**。它写错**不报错**，只会"该更新不更新"。
+
+## Context 拆分
+
+问题：Context 的 value **按引用比较**，Provider 每次渲染新建对象 → 所有 consumer 全渲染，哪怕用到的字段没变。
+
+三种拆法：
+
+| 拆法 | 做法 | 适合 |
+|---|---|---|
+| 按**变化频率**拆 | 高频的（输入/滚动）和低频的（用户信息/主题）分成两个 Context | 最常用 |
+| 按**消费方**拆 | 只有某几个组件要的数据单独一个 Provider | 局部共享 |
+| 加 **selector 层** | 用 `use-context-selector` 之类，只订阅用到的字段 | 字段多、消费方分散 |
+
+还有一条更根本的：**能不下沉到 Context 的就别放**（状态四层归属，S4 讲）。
+
+## 虚拟列表原理（30 秒能讲清）
+
+核心只有三步：
+
+1. **算窗口**：`scrollTop` + 容器高度 → 当前该显示第几项到第几项（`startIndex / endIndex`）
+2. **只渲染这一段**：外面套一个总高度 = `总条数 × 单项高度` 的占位容器，撑出滚动条
+3. **用 `transform: translateY(offset)` 把可见段推到正确位置**
+
+难点（面试官爱追）：
+- **动态高度**：先按估算值渲染，渲染后测量真实高度回填，并修正滚动位置
+- **流式场景**：最后一条在持续变高 → 只更新它，其他项保持引用稳定，别整个列表重渲染
+- **用户往上翻历史时不要强行滚到底**
+
+## 308ms 级联案例（**albertmo 的，团队案例讲法**）
+
+数据（React Scan）：FPS 80，主线程阻塞约 308ms（React 渲染 124ms + hook/effect 184ms），`AssistantMessageInner` 重渲染 20 次、`CheckpointCard` 10 次、`ChatInput` 2 次、`TooltipProvider` **124 次**。
+
+**讲法**：只讲"我们团队怎么定位的"，不讲"我改的"。
+> "我们 web 端有个 chat 页，点文件树里的文件会明显卡。用 React Scan 一看，一个 `TooltipProvider` 重渲染了 124 次——原因是上层传下来的对象每次新建，引用不稳，一层层把整棵子树带跑了。这类问题的共性就是：**根因是一个引用，症状是一百次重渲染**。"
+
+**红线**：`0aea7d0` 是 albertmo 的，不认领。
+
+## 待补（S4）
+
+- 状态四层归属、受控 vs 非受控、错误边界位置、状态库选型（Context / Zustand / Redux）、可配置化组件设计
