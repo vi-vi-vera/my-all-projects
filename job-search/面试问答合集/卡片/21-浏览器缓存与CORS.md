@@ -100,3 +100,43 @@
 | 预检结果能缓存吗？ | 能，`Access-Control-Max-Age` |
 | 为什么带 Cookie 时不能用 `*`？ | 等于允许任意站点带用户凭证读响应 |
 | CSRF 和 XSS 区别？ | CSRF 借用户的浏览器发请求（不偷数据）；XSS 在页面里执行脚本（能偷数据） |
+
+## 四、iframe 隔离与预览原理（2026-11-26 补）
+
+**三层隔离，是叠加不是选一个**：
+
+| 层 | 作用 | 边界 |
+|---|---|---|
+| **同源策略** | 跨域就隔离（协议+域名+端口任一不同） | 同源 iframe **等于没有隔离** |
+| **`sandbox` 属性** | 同源也隔：默认全禁，只还给你写的能力 | `sandbox="allow-scripts allow-same-origin"` ≈ **没加 sandbox**（能自己摘属性） |
+| **独立域名** | 直接让它跨域 | 最硬，浏览器层面绕不过 |
+
+**关键认知**：同源 iframe 能 `contentDocument.body.innerHTML = ...`、能读 `localStorage`/`cookie`。把 AI 生成的代码放在同源 iframe 里 = 把 XSS 放进来了。
+
+**postMessage**：
+
+```js
+// 发：targetOrigin 别写 '*'
+iframe.contentWindow.postMessage({ type: 'reload' }, 'https://preview.example.com');
+
+// 收：必须校验两样
+window.addEventListener('message', (e) => {
+  if (e.origin !== 'https://preview.example.com') return;   // 谁发的
+  if (e.source !== iframe.contentWindow) return;            // 是不是我这个 iframe
+});
+```
+
+不校验 → 任何页面都能往你窗口塞指令。参数只能是**结构化克隆**（不能传函数/DOM）。
+
+**项目的预览链路（代码事实）**：
+
+```
+代码在沙箱容器里跑 dev server，监听容器内端口
+  → 平台把端口映射成 URL，域名是独立的预览域（preview.*）
+  → 请求经 CLB 监听器 → 中转服务 → 沙箱内服务
+  → 前端用 iframe 加载该 URL
+```
+
+**因为域名不同，天然跨域 → AI 代码读不到主站 cookie/token**，父子只能用 postMessage 通信。
+
+**加分说法**：「独立域已经很硬了，但 `sandbox` 我仍会加——能收的能力就收掉，万一预览域和主站被配成同站，sandbox 还在兜底。」
