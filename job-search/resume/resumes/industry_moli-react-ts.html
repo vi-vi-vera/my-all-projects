@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>刘奕晨 - 资深前端开发工程师 React/TypeScript（投递版）</title>
+<style>
+@font-face { font-family: "Noto Sans SC"; src: url("../_assets/fonts/NotoSansSC-VF.ttf"); font-weight: 100 900; }
+:root { --text:#111827; --line:#9ca3af; --base:12.4px; }
+* { margin:0; padding:0; box-sizing:border-box; }
+@page { size:A4; margin:9mm 12mm 9mm; }
+body { font-family:"Noto Sans SC",sans-serif; color:var(--text); font-size:var(--base); line-height:1.33; width:100%; }
+.header { margin-bottom:4px; }
+h1 { font-size:1.38em; font-weight:700; padding-bottom:2px; border-bottom:1px solid var(--line); }
+.interest { margin:3px 0 2px; font-size:0.9em; font-weight:500; }
+.contact-links { display:flex; flex-wrap:wrap; gap:3px 1.25em; font-size:0.9em; }
+.section { margin-bottom:4px; }
+.section:last-child { margin-bottom:0; }
+h2 { font-size:1.1em; font-weight:700; margin-bottom:2px; padding-bottom:2px; border-bottom:1.5px solid var(--line); }
+.item { margin-bottom:3px; }
+.item:last-child { margin-bottom:0; }
+.line { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+.date { opacity:0.88; font-size:0.88em; white-space:nowrap; }
+.org { margin:2px 0 1px; font-weight:600; display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+ul { padding-left:17px; }
+li { margin:1.2px 0; }
+.skills { font-size:0.96em; }
+* { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+h1, h2, .item { page-break-inside:avoid; }
+@media screen { body { max-width:186mm; margin:24px auto; padding:0 2px; } }
+</style>
+</head>
+<body>
+<header class="header">
+  <h1>刘奕晨</h1>
+  <p class="interest">应聘：资深前端开发工程师（React / TypeScript）· 深圳茉莉语境</p>
+  <div class="contact-links"><span>17610118517</span><span>微信 l18473851822</span><span>3063448714@qq.com</span></div>
+</header>
+
+<section class="section">
+  <h2>教育</h2>
+  <div class="line"><span><strong>中国传媒大学</strong>　软件工程　本科（211）　英语六级，能读英文文档</span><span class="date">2017.09 – 2021.06</span></div>
+</section>
+
+<section class="section">
+  <h2>工作经历</h2>
+  <div class="org">深圳市腾娱互动科技有限公司　前端开发工程师（2026.03 起转全栈）<span class="date">2024.07 – 至今</span></div>
+
+  <div class="item">
+    <div class="line"><span><strong>QPilot Code</strong>　AI 编程平台前端工作台｜两名主力开发之一</span><span class="date">2026.03 – 至今</span></div>
+    <ul>
+      <li><strong>React 工作台与工程化：</strong>交付首页项目列表（按会话维度查询、置顶、按权限分 Tab）、内部代码仓库导入、部署前确认框、复制模型输出、统一会话页 URL；前端 API 地址改用环境变量，正式环境 CI 迁到 TKE。同时负责后端 Node.js / Express 接口与联调，覆盖前后端交界链路。</li>
+      <li><strong>复杂状态与线上定位：</strong>预览状态由对话是否还在输出、沙箱是否存活、是否有可预览项目、端口是否健康共同决定；修复端口泄漏、沙箱回收后判成无项目、重试时状态跳变，缺文件复现场景从约 60 秒降到约 6 秒。导入完成通知只在执行任务的那台机器上广播导致页面卡在导入中，改为读数据库状态并在完成后同步文件树。</li>
+      <li><strong>AI 驱动的开发方式：</strong>作为企业内部 AI 编程平台的主力开发，后端实现 Agent 会话上下文管理、Skills 渐进式加载与受控工具调用，前端交付消息截断后编辑重发、模型输出期间可继续输入的持久化队列、约 3507 个历史会话按需迁移，以及模型输出一键复制。</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="line"><span><strong>技术债治理后台</strong>　独立负责，从空仓库到上线</span><span class="date">2025.02 – 2025.10</span></div>
+    <ul>
+      <li><strong>组件化与可配置：</strong>React 18 + Vite + TDesign + Redux Toolkit 搭建；菜单由专项接口生成，未知类型进兜底页、接口失败进错误页；多个专项共用一张可配置表格，页面只传查询条件、列和按钮；Excel 单独页面校验表头后导入导出；登录过期与缺少权限按两个返回码分开处理。</li>
+      <li><strong>构建与发布：</strong>Nginx 单页回退；测试分支推送后自动更新测试环境，正式分支只构建镜像、人工确认后上线，分环境发布流程由我搭建。</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="line"><span><strong>QQ 频道</strong>　SSR / Hybrid 页面与多端交付｜存量大仓库</span><span class="date">2024.08 – 2026.03</span></div>
+    <ul>
+      <li><strong>页面迁移与适配：</strong>负责 Nuxt 3 Web 的作者主页、帖子恢复页迁移与适配并替换帖子组件；在 Next.js 15 Hybrid H5 重构屏蔽词页、适配深色模式、直播/钱包/签约页宽屏显示，以及 iOS 键盘弹起时的半屏弹窗；Vue 3 多页 H5 交付成员选择器、提醒设置重构与帖子拦截管理。</li>
+      <li><strong>小程序与运营后台：</strong>作者资料卡改为按用户拆分状态，解决扫码看到上一个人资料、分享卡片缺头像、标题被原生按钮遮挡、侧滑返回绕过屏蔽确认、跨分包引用不到组件；搜索运营后台做频道排序、热议话题动态表单与官方频道按搜索词召回。</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="line"><span><strong>多服务资源整合迁移</strong>　交付链路段｜与同事分工</span><span class="date">2026.07 – 2026.08</span></div>
+    <ul>
+      <li>负责代码仓库、CI/CD 流水线、配置与环境变量迁移，按优先级分级、测试环境跑通才动正式环境，9 个服务跨 4 条业务线两周完成，发布从构建完直接更新镜像改为走审批流；定位存储服务跨环境网络策略限制并选自建，上线后采集失效用日志表 TTL + 专用盘修复。</li>
+    </ul>
+  </div>
+
+  <div class="org">深圳华侨城文化旅游建设有限公司　前端开发工程师<span class="date">2022.06 – 2024.07</span></div>
+  <div class="item">
+    <ul>
+      <li><strong>组件沉淀：</strong>独立负责创想学堂学习系统，封装 Axios 与表单、表格、上传组件并负责打包发布；独立负责会员一卡通（Vant / Element UI，微信内登录支付）与黄石游乐园游客小程序；参与整理公共组件和开发规范。</li>
+    </ul>
+  </div>
+  <div class="org">中国联通有限公司北京分公司　前端开发工程师<span class="date">2021.08 – 2022.06</span></div>
+  <div class="item"><ul><li>培训轮岗期间协助开发基层管理人员选任系统页面。</li></ul></div>
+</section>
+
+<section class="section">
+  <h2>专业技能</h2>
+  <div class="skills"><strong>技术栈：</strong>React 18、TypeScript、Next.js 15、Nuxt 3、Vue 3、Redux Toolkit、TDesign / Element UI / Vant</div>
+  <div class="skills"><strong>服务端与联调：</strong>Node.js、Express、RESTful API、PostgreSQL、SSE 流式交互，能独立完成接口与前后端联调</div>
+  <div class="skills"><strong>工程与发布：</strong>Vite、Webpack、Nginx、Docker、TKE 部署、CI/CD 分环境发布、流水线迁移与发布审批流、监控上报与线上问题定位</div>
+  <div class="skills"><strong>多端与体验：</strong>微信小程序（多分包、Skyline）、深色模式、宽屏适配、响应式与跨浏览器兼容、结构化分享卡片</div>
+</section>
+</body>
+</html>

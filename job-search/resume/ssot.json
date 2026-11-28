@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "schema_version": "2.1.0",
+    "version": "1.0.0",
+    "updated_at": "2026-11-28",
+    "owner": "刘奕晨",
+    "locale": "zh-CN",
+    "purpose": "全量事实知识库；不含 JD 选材与包装话术。事实来源为 career_profile.md，简历只从这里挑内容"
+  },
+  "person": {
+    "name": { "zh": "刘奕晨" },
+    "contacts": [
+      { "type": "phone", "value": "17610118517" },
+      { "type": "wechat", "value": "l18473851822" },
+      { "type": "email", "value": "3063448714@qq.com" },
+      { "type": "location", "value": "深圳" }
+    ],
+    "education": [
+      {
+        "degree": "本科（211）",
+        "school": "中国传媒大学",
+        "major": "软件工程",
+        "dates": { "start": "2017-09", "end": "2021-06" },
+        "note": "大学英语六级，能读英文文档"
+      }
+    ],
+    "job_target": [
+      { "track": "AI 应用 / Agent 全栈开发", "priority": "主攻", "ask": "28–32K", "expected": "25–28K" },
+      { "track": "高级前端开发", "priority": "保底", "expected": "23–26K" }
+    ],
+    "notes": "个人技术岗，不走管理岗；地点深圳或远程；底线 22K；无公开 GitHub / 博客 / 作品集；无奖项；没有带人，也没有常规做代码评审"
+  },
+  "engagements": [
+    {
+      "id": "emp-tengyu",
+      "kind": "fulltime",
+      "title": "前端开发工程师（2026.03 起转全栈）",
+      "org": "深圳市腾娱互动科技有限公司",
+      "dates": { "start": "2024-07", "end": null },
+      "activities": ["QQ 频道多端前端与运营后台交付", "2026.03 起负责 QPilot Code 前后端", "2026.07 多服务资源整合迁移", "2026.10 起 QQ OKR 的 AI 调用链可观测接入"],
+      "tools": ["TypeScript", "React", "Vue 3", "Node.js", "Express"],
+      "role_and_boundary": "公司只写全称；项目名写 QQ 频道、QPilot Code；不写驻场。转全栈是活来了发现接得住，不是先转岗再干活",
+      "source_ids": ["src-profile"],
+      "results": []
+    },
+    {
+      "id": "emp-huaqiucheng",
+      "kind": "fulltime",
+      "title": "前端开发工程师",
+      "org": "深圳华侨城文化旅游建设有限公司",
+      "dates": { "start": "2022-06", "end": "2024-07" },
+      "activities": ["园区业务的 Web、桌面端和微信小程序开发"],
+      "tools": ["Vue", "Element UI", "Vant", "Electron", "WebSocket"],
+      "role_and_boundary": "离职时间按 2024 年 7 月写，以离职证明为准；公共组件与开发规范只是参与，不是主导",
+      "source_ids": ["src-profile"],
+      "results": []
+    },
+    {
+      "id": "emp-unicom",
+      "kind": "fulltime",
+      "title": "前端开发工程师",
+      "org": "中国联通有限公司北京分公司",
+      "dates": { "start": "2021-08", "end": "2022-06" },
+      "activities": ["培训轮岗期间协助开发基层管理人员选任系统页面"],
+      "tools": [],
+      "role_and_boundary": "轮岗结束后被分配至地方电话局，因发展空间有限离开；起止月份以离职证明为准",
+      "source_ids": ["src-profile"],
+      "results": []
+    },
+    {
+      "id": "proj-qpilot",
+      "kind": "project",
+      "title": "QPilot Code · 企业内部 AI 编程平台",
+      "org": "深圳市腾娱互动科技有限公司",
+      "dates": { "start": "2026-03", "end": null },
+      "activities": [
+        "负责沙箱 Git 集成：冲突处理、AI 提交信息、推送前预检、远程领先预警、临时文件清理",
+        "负责预览启动与状态判断：端口清理、致命错误提前终止、LISTEN 状态判定、快照读取、按轮次区分失败",
+        "负责部署链路：请求体与 base 修复、存储预检、来源版本记录、部署 MCP 工具接入",
+        "负责上传与身份：统一上传 API、附件转存 COS、Origin 白名单前置校验、太湖统一认证接入",
+        "负责 Skills 与 Agent 运行时：内置 Skills 同步进沙箱并改为 SDK 原生渐进式加载、会话链路收口",
+        "负责会话与协作：消息截断与编辑后重发、输入队列、历史会话按需迁移、项目管理员设置与转让",
+        "负责前端工作台：项目列表、仓库导入、部署前确认、复制模型输出、统一会话页 URL、CI 迁 TKE",
+        "负责监控：部署、Git 提交与推送、首页核心接口的结构化上报"
+      ],
+      "tools": ["TypeScript", "Node.js", "Express", "React", "PostgreSQL", "SSE", "Claude Agent SDK", "DeepAgents", "MCP", "OpenSandbox", "Git", "腾讯云 COS", "TKE", "Docker", "Nginx", "伽利略监控", "Skills"],
+      "role_and_boundary": "与另一名同事平级分工，作为两名主力开发之一；我后端 208 次、前端 166 次提交（不含合并提交），约占四成；仓库 2025-11 由其他同事创建，我 2026-03 加入。不能写成我一个人主导或创建整个平台",
+      "source_ids": ["src-profile", "src-qpilot", "src-qpilot-web", "src-code-agent"],
+      "results": [
+        { "text": "沙箱 Git 7 个接口合并为一次往返：状态检查从十多次降到 1 次，提交推送 6→1，拉取前检查 5→1，远程 diff 4→1，分支列表 4→1", "confidence": "verified", "canon": "backagent 提交 e101587" },
+        { "text": "设计并实现 AI Git 写入的受控令牌工作流：后端签发 30 分钟带签名与载荷哈希的令牌，验签后预检再执行；该 git-write 工作流未从界面接入", "confidence": "verified", "canon": "代码与对话 trace 核对 2026-11-05" },
+        { "text": "预览缺文件复现场景从约 60 秒降到约 6 秒（启动前与失败时清理目标端口、日志出现致命错误时提前结束健康检查）", "confidence": "verified", "canon": "预览启动改动" },
+        { "text": "修复三处预览误判：模型访问网关的出站连接被当成端口占用、沙箱回收后判成无项目、重试时状态在启动中与失败间跳变；另修复导入 Git 项目后无限重试", "confidence": "verified", "canon": "2026-08-10 提交" },
+        { "text": "部署前做存储预检，只有数据会随容器丢失时才弹确认框并说明原因；部署成功记录来源版本，版本历史可显示已发布版本", "confidence": "verified", "canon": "前后端 2026-08-31—09-01" },
+        { "text": "部署流程从模型手写 curl 调接口改为接入受控的部署 MCP 工具，令牌与本次操作绑定", "confidence": "verified", "canon": "2026-09-16，含设计文档" },
+        { "text": "接入太湖统一认证，预览和部署共用一套身份方案，密钥不进沙箱；/auth/me 返回员工完整信息", "confidence": "verified", "canon": "2026-09-08—09-14" },
+        { "text": "上传统一走 COS、单文件上限 1GB、聊天附件转存 COS；上传门禁改为按 Origin 域名白名单校验并放在解析请求体之前", "confidence": "verified", "canon": "2026-08" },
+        { "text": "重构 DeepAgents 沙箱外 Skills：内置 Skills 同步进沙箱，改用 SDK 原生的渐进式加载，去掉手工往提示词里塞 Skills 列表；接入官方 Skills 并做 Skill 详情页", "confidence": "verified", "canon": "2026-06-23" },
+        { "text": "会话链路统一收口到 Claude Agent SDK，OpenAI Agents SDK 与 DeepAgents 的会话都改走同一后端并保持对旧数据兼容；默认全栈模板改为 python-static", "confidence": "verified", "canon": "2026-08-12" },
+        { "text": "历史会话按需迁移：新增迁移接口，后端返回信号、前端据此迁移一次，修复约 3507 个老会话打开空白，只读协作者也能看到历史对话", "confidence": "verified", "canon": "2026-08-21，含设计文档" },
+        { "text": "对话输入队列：模型输出期间可继续输入，前后端都实现，队列持久化；消息截断接口支持编辑后重发并同步清理模型侧上下文", "confidence": "verified", "canon": "2026-09-21" },
+        { "text": "前端工作台交付首页项目列表（按会话维度查询、置顶、按权限分 Tab）、内部代码仓库导入、部署前确认框、复制模型输出；修多实例下导入卡片卡住与文件树空白；前端 API 地址改环境变量，正式环境 CI 迁到 TKE", "confidence": "verified", "canon": "qpilot-web 提交" },
+        { "text": "部署、Git 提交和推送、首页核心接口接入结构化监控上报（P0/P1），并做部署代理日志降噪", "confidence": "verified", "canon": "伽利略接入" },
+        { "text": "修复部署代理丢 POST body（FastAPI 422 / Express body=null）、部署到子域名后白屏（部署时强制 vite base 为 /）、老部署代理失败提示重新部署；白名单用户可自定义 Pod 内存", "confidence": "verified", "canon": "部署链路改动" },
+        { "text": "项目管理员的设置和转让，处理并发和校验；统一会话页 URL", "confidence": "verified", "canon": "会话与协作改动" }
+      ]
+    },
+    {
+      "id": "proj-migration",
+      "kind": "project",
+      "title": "多服务资源整合迁移",
+      "org": "深圳市腾娱互动科技有限公司",
+      "dates": { "start": "2026-07", "end": "2026-08" },
+      "activities": [
+        "按仓库 → 流水线 → 配置与环境变量的固定顺序逐服务迁移",
+        "按 P0 / P1 / P2 分级推进，测试环境跑通才动正式环境，正式环境逐项确认发布",
+        "顺带下线一个已不再需要的服务",
+        "排查 Langfuse 依赖的 ClickHouse 跨环境连不通及上线后上报失效"
+      ],
+      "tools": ["CI/CD 流水线", "配置中心", "ClickHouse", "Langfuse", "统一发布平台", "Docker"],
+      "role_and_boundary": "两人分工：同事负责基础配置、应用新建、机器归属、数据卷；我只负责交付链路这一段（仓库、流水线、配置与环境变量关联）。DNS、CLB、网络转发不是我做的。不能说「我主导了这次迁移」",
+      "source_ids": ["src-profile", "src-projects-mgmt"],
+      "results": [
+        { "text": "9 个服务、跨 4 条业务线的交付链路迁移，2026-07-27 至 07-30 集中完成、一项延到 08-10；切换动作本身零事故，资源有了统一归属", "confidence": "verified", "canon": "2026-07 迁移任务表" },
+        { "text": "发布从「流水线构建完直接去负载上更新镜像」改为走统一发布平台的审批流，审批通过才更新镜像", "confidence": "verified", "canon": "迁移任务表" },
+        { "text": "Langfuse 依赖的 ClickHouse 跨环境连不通，定位为云上环境到 IDC 的网络策略限制（acl 拦截）；权衡白名单开通、复用现成实例、自建三个选项后选自建", "confidence": "verified", "canon": "迁移排障记录" },
+        { "text": "Langfuse 上线后上报失效，定位为 ClickHouse 磁盘被历史数据写满；清历史数据、给 trace 日志表加 1 天 TTL、挂 100G 专用盘独立存储后未再出现", "confidence": "verified", "canon": "迁移排障记录" }
+      ]
+    },
+    {
+      "id": "proj-qqokr",
+      "kind": "project",
+      "title": "QQ OKR · AI 调用链可观测接入",
+      "org": "深圳市腾娱互动科技有限公司",
+      "dates": { "start": "2026-10", "end": null },
+      "activities": [
+        "与伽利略共用同一个 TracerProvider，把 LangfuseSpanProcessor 挂到已建立的全局 provider 上",
+        "手动插桩 Claude Agent SDK：浅拷贝 ESM 命名空间对象后 manuallyInstrument()，接住返回的 patched 对象",
+        "补 OTel v1 / v2 兼容层，用 Proxy 补齐 instrumentationLibrary / parentSpanId 与 instrumentationScope / parentSpanContext",
+        "按 Abandoned 语义识别业务拦截，status 置 UNSET、过滤 exception 事件、写 WARNING 与 status_message",
+        "从请求级 AsyncLocalStorage 注入 user.id 与 projectId 并广播到每个 span；HTTP 与 worker 场景分别补维度",
+        "在 AGENT span 补回 cache 读写、换算 prompt 与 total、删掉 SDK 透传的 cost 让平台按缓存感知价目表重算",
+        "实现降级与优雅退出：配置缺失或初始化失败跳过上报，退出前先 forceFlush 再 shutdown"
+      ],
+      "tools": ["Langfuse", "OpenTelemetry", "OpenInference", "Claude Agent SDK", "NestJS", "Next.js", "AsyncLocalStorage"],
+      "role_and_boundary": "只承担「AI 调用链接入 Langfuse 上报」这一块，2026-10-13 首次提交 4b25138c8，到 10-22 共 7 次改动；OKR 业务建模、权限体系、前端工作台都不是我做的",
+      "source_ids": ["src-profile", "src-qq-okr"],
+      "results": [
+        { "text": "AI span 一份两发，伽利略与 Langfuse 是同一个 trace_id，不需要任何透传逻辑", "confidence": "verified", "canon": "4b25138c8 起，2026-10" },
+        { "text": "修正业务拦截污染错误率：发布确认、用户追问等 canUseTool deny 的工具未执行，插桩包兜底打 ERROR + Abandoned 导致整条 trace 标红；改为按单一语义标志识别并降级为 WARNING", "confidence": "verified", "canon": "4b25138c8 起，2026-10" },
+        { "text": "修正 cache token 与成本口径：插桩包不映射 cache 字段且 Anthropic 与 OpenInference 输入口径不同，直接塞给 prompt 会倒推出负数；补采换算并删除透传 cost", "confidence": "verified", "canon": "4b25138c8 起，2026-10" },
+        { "text": "关键版本：@langfuse/otel ^5.13.1、@arizeai/openinference-instrumentation-claude-agent-sdk ^0.3.4、@anthropic-ai/claude-agent-sdk 0.3.251（精确锁版本）；该组合不受官方 peer 支持，升级依赖必须跑真实上报冒烟", "confidence": "verified", "canon": "依赖清单" }
+      ]
+    },
+    {
+      "id": "proj-guild-fe",
+      "kind": "project",
+      "title": "QQ 频道 · 多端前端",
+      "org": "深圳市腾娱互动科技有限公司",
+      "dates": { "start": "2024-08", "end": "2026-03" },
+      "activities": [
+        "Vue 3 多页 H5：成员选择器、提醒设置重构、帖子拦截管理（图片、链接、表情、群组、游戏卡片）",
+        "Nuxt 3 Web：作者主页、帖子恢复页的迁移与适配，替换帖子组件",
+        "微信小程序（多分包）：成员选择、屏蔽、Ark 分享、作者资料卡、关注",
+        "Next.js 15 Hybrid H5：重构屏蔽词页、适配深色模式、直播/钱包/签约页宽屏适配、iOS 键盘遮挡半屏弹窗",
+        "QQ 搜索运营后台：频道 Tab 排序、热议话题动态表单、官方频道定向召回、垂搜改造"
+      ],
+      "tools": ["Vue 3", "Nuxt 3", "Next.js", "微信小程序", "Skyline", "Ark 分享", "vite", "TypeScript"],
+      "role_and_boundary": "大前端团队里的普通开发，按需求在多个存量仓库里交付；仓库提交者多（guild_web 41 人、guild_mp 34 人），不能写成主导架构。提交数含合并提交，只能说明投入大；迁移类工作写「负责迁移和适配」",
+      "source_ids": ["src-profile", "src-guild-h5", "src-guild-web", "src-guild-mp", "src-next-guild", "src-yuheng"],
+      "results": [
+        { "text": "小程序作者资料卡：全局只有一份作者状态导致扫码进入看到上一个人的资料，改为按用户拆分状态；区分普通成员/访客/作者入口，解决分享卡片缺头像、标题被原生按钮遮挡、侧滑返回绕过屏蔽确认、跨分包引用不到组件", "confidence": "verified", "canon": "career_profile 5.4" },
+        { "text": "搜索运营后台：频道排序直接加在原有干预任务上；热议话题表单按跳转方式和内容来源显示不同字段；官方频道定向召回是新业务，支持按搜索词配置频道头卡并带测试白名单", "confidence": "verified", "canon": "career_profile 5.4" },
+        { "text": "在 H5、小程序、Nuxt 3 Web、Next.js Hybrid、运营后台五套技术栈里持续交付需求并上线", "confidence": "verified", "canon": "提交统计：guild_h5 658、guild_web 698、guild_mp 150、next-guild 115、yuheng-monorepo 190（含合并提交）" }
+      ]
+    },
+    {
+      "id": "proj-tech-debt",
+      "kind": "project",
+      "title": "技术债治理后台",
+      "org": "深圳市腾娱互动科技有限公司",
+      "dates": { "start": "2025-02", "end": "2025-10" },
+      "activities": [
+        "从空仓库搭建到上线，独立负责方案、实现与发布",
+        "专项列表接口生成菜单，未知类型进兜底页、接口失败进错误页",
+        "多个专项共用一张可配置表格，页面只传查询条件、列和按钮",
+        "Excel 导入导出，导入前先校验表头",
+        "登录过期（100001）与缺少权限（100002）分开处理，Nginx 单页回退",
+        "测试分支推送后自动更新测试环境，正式分支只构建镜像、人工确认后上线"
+      ],
+      "tools": ["React 18", "Vite", "TDesign", "Redux Toolkit", "SheetJS", "Nginx", "Docker", "CI/CD 流水线"],
+      "role_and_boundary": "仓库初始提交就是我；不算合并提交我提交 321 次、另一位同事 5 次。2026 年的移动端适配是别人做的，不算我的",
+      "source_ids": ["src-profile", "src-tech-debt"],
+      "results": [
+        { "text": "从空仓库独立做到上线：菜单由接口驱动且有兜底/错误页，多个专项共用一张可配置表格，支持 Excel 表头校验后导入导出", "confidence": "verified", "canon": "career_profile 5.5" },
+        { "text": "测试环境自动发布、正式环境构建镜像后人工确认上线，分环境发布流程由我搭建", "confidence": "verified", "canon": "career_profile 5.5" }
+      ]
+    },
+    {
+      "id": "proj-oqc",
+      "kind": "project",
+      "title": "园区业务 Web / 桌面端 / 微信小程序",
+      "org": "深圳华侨城文化旅游建设有限公司",
+      "dates": { "start": "2022-06", "end": "2024-07" },
+      "activities": [
+        "创想学堂内部学习系统（2023.05–2024.01）独立负责：课程、专题、考试、调研；封装 Axios 和表单、表格、上传组件，负责打包发布",
+        "会员一卡通（2022.09–2023.01）独立负责：会员端、商户配置、业务管理、权限管理；移动端 Vant、Web 端 Element UI，微信内完成登录和支付",
+        "黄石游乐园游客小程序（2024.05–2024.07）独立开发：游乐项目、表演指引、园区服务、手绘地图导航",
+        "票务系统参与管理后台、自助售卖机与人工窗口开发：用 WebSocket 打印门票、控制设备"
+      ],
+      "tools": ["Vue", "Element UI", "Vant", "Electron", "WebSocket", "Axios"],
+      "role_and_boundary": "三个系统由我独立负责；票务系统与公共组件/开发规范只是参与，不是主导",
+      "source_ids": ["src-profile"],
+      "results": [
+        { "text": "独立交付学习系统、会员一卡通、游客小程序三个系统，覆盖课程考试、微信登录支付、园区导航等业务", "confidence": "verified", "canon": "career_profile 5.6" },
+        { "text": "票务桌面端用 WebSocket 对接售卖机与窗口打印设备", "confidence": "verified", "canon": "career_profile 5.6" }
+      ]
+    }
+  ],
+  "outputs": [
+    { "id": "doc-1", "type": "report", "citation": "孤儿会话线程迁移方案（历史会话按需迁移）", "status": "internal" },
+    { "id": "doc-2", "type": "report", "citation": "平台上传统一到 COS 规划", "status": "internal" },
+    { "id": "doc-3", "type": "report", "citation": "TOF 身份统一方案", "status": "internal" },
+    { "id": "doc-4", "type": "report", "citation": "auth/me 员工信息整合方案", "status": "internal" },
+    { "id": "doc-5", "type": "report", "citation": "平台域名收归方案", "status": "internal" },
+    { "id": "doc-6", "type": "report", "citation": "部署 MCP 接入设计文档", "status": "internal" },
+    { "id": "doc-7", "type": "report", "citation": "DeepAgents Skills 重构方案", "status": "internal" },
+    { "id": "doc-8", "type": "report", "citation": "Git 集成增强方案", "status": "internal" },
+    { "id": "doc-9", "type": "report", "citation": "多服务资源整合迁移文档", "status": "internal" }
+  ],
+  "metrics": [
+    { "id": "m-git-roundtrips", "text": "沙箱 Git 7 个接口降为一次往返：状态检查十多次→1，提交推送 6→1", "condition": "收益是往返次数，没有做全量耗时对比" },
+    { "id": "m-preview-recovery", "text": "预览缺文件复现场景约 60 秒→约 6 秒", "condition": "只是缺文件这一个复现场景，不是线上整体预览耗时" },
+    { "id": "m-session-migration", "text": "约 3507 个历史会话受多线程模型上线影响，按需迁移后打开不再空白", "condition": "方案文档统计值" },
+    { "id": "m-upload-limit", "text": "统一上传 API 单文件上限 1GB" },
+    { "id": "m-migration-scale", "text": "9 个服务、跨 4 条业务线，2026-07-27 至 07-30 集中完成、一项延到 08-10", "condition": "切换动作本身零事故；Langfuse 两个问题是迁移后暴露的，分开讲" },
+    { "id": "m-clickhouse", "text": "trace 日志表 1 天 TTL + 100G 专用盘" },
+    { "id": "m-tech-debt-commits", "text": "技术债后台 321 次提交 vs 同事 5 次（不含合并提交）" },
+    { "id": "m-qpilot-commits", "text": "QPilot 后端 208 次、前端 166 次提交（不含合并提交），约占四成" },
+    { "id": "m-token-ttl", "text": "AI Git 写入受控令牌有效期 30 分钟" },
+    { "id": "m-qqokr-changes", "text": "QQ OKR 上报接入 2026-10-13 至 10-22 共 7 次改动" }
+  ],
+  "constraints": [
+    { "id": "c-01", "type": "false_if_claimed", "text": "没有用户量、调用量、PV 等规模数据，简历只写定性描述" },
+    { "id": "c-02", "type": "false_if_claimed", "text": "60 秒→6 秒只是缺文件这一个复现场景，不是线上整体预览耗时" },
+    { "id": "c-03", "type": "false_if_claimed", "text": "Git 优化的收益是往返次数，没有做全量耗时对比" },
+    { "id": "c-04", "type": "false_if_claimed", "text": "QPilot 不是我创建的；两人平级分工，不能写成我一个人主导整个平台" },
+    { "id": "c-05", "type": "false_if_claimed", "text": "进程内预热池现在是空实现，功能白名单和沙箱代理服务已经删掉，这三项不当成果讲" },
+    { "id": "c-06", "type": "false_if_claimed", "text": "QQ 频道是在存量仓库里交付，迁移类工作写「负责迁移和适配」，不写「设计架构」" },
+    { "id": "c-07", "type": "false_if_claimed", "text": "华侨城的组件库和开发规范只是参与，不是主导" },
+    { "id": "c-08", "type": "false_if_claimed", "text": "技术债后台 2026 年的移动端适配不是我做的" },
+    { "id": "c-09", "type": "false_if_claimed", "text": "资源整合迁移是两人分工，DNS、CLB、网络转发不是我做的；不能说「我主导了这次迁移」" },
+    { "id": "c-10", "type": "false_if_claimed", "text": "QPilot Code 走 stream CI，没有接入统一发布平台；不能说成「9 个服务全部接入了审批流」" },
+    { "id": "c-11", "type": "false_if_claimed", "text": "QQ OKR 我只做 AI 调用链上报这一块，OKR 业务建模、权限、前端都不是我做的" },
+    { "id": "c-12", "type": "statement", "text": "Langfuse 上报里被拦截 span 的 status_message 目前写死 business-intercept，区分不了取消发布/用户追问/事件代理三种场景，讲的时候作为已知局限主动说" },
+    { "id": "c-13", "type": "statement", "text": "「切换零事故」指切换动作本身；Langfuse 的网络策略与磁盘写满是迁移之后暴露的，分开讲" },
+    { "id": "c-14", "type": "statement", "text": "Git 写入准确口径：仓库凭证在沙箱里；Git 面板链路经后端接口做冲突/分叉预检，LLM 对话链路靠提示词约束模型不要自作主张提交；受控令牌工作流设计实现过但未从界面接入。不讲「凭证不进沙箱 / 模型不再直接 push」" },
+    { "id": "c-15", "type": "true_if_claimed", "text": "公司只写「深圳市腾娱互动科技有限公司」，项目名写 QQ 频道、QPilot Code，不写驻场" },
+    { "id": "c-16", "type": "true_if_claimed", "text": "职位写「前端开发工程师（2026.03 起转全栈）」；QPilot 写「与另一名同事平级分工，作为两名主力开发之一，负责……模块」" },
+    { "id": "c-17", "type": "false_if_claimed", "text": "不提内网域名、账号、密钥和没有公开的业务数据" },
+    { "id": "c-18", "type": "false_if_claimed", "text": "没有公开作品、没有奖项、没有带人、没有常规做代码评审；不写团队技术培训与指导" },
+    { "id": "c-19", "type": "false_if_claimed", "text": "JD 高频但本人没有：RAG/知识库/向量检索、LangChain/LangGraph/Dify/Coze、模型训练微调与评测体系、熟练 Python/FastAPI、Redis/Kafka、微前端/低代码/TailwindCSS、自动化测试与灰度发布、公开 GitHub/博客" },
+    { "id": "c-20", "type": "false_if_claimed", "text": "华侨城离职时间按 2024 年 7 月写，具体起止月份以离职证明为准" }
+  ],
+  "term_registry": [
+    { "id": "t-qpilot", "term": "QPilot Code", "full_name_zh": "企业内部 AI 编程平台 QPilot Code", "plain_zh": "用户用自然语言描述需求，Agent 在云端沙箱写代码、预览、提交 Git 并部署成可访问应用", "disclosure": "essential", "external_plain_zh": "QPilot Code（企业内部 AI 编程平台）", "story_relevance": "high" },
+    { "id": "t-tengyu", "term": "腾娱", "full_name_zh": "深圳市腾娱互动科技有限公司", "plain_zh": "任职公司全称", "disclosure": "essential", "external_plain_zh": "深圳市腾娱互动科技有限公司", "story_relevance": "high" },
+    { "id": "t-tof", "term": "太湖 TOF", "full_name_zh": "太湖统一认证（公司内部单点登录）", "plain_zh": "公司统一身份认证服务", "disclosure": "plain_only", "external_plain_zh": "太湖统一认证", "aliases": ["TOF"], "story_relevance": "medium" },
+    { "id": "t-gongfeng", "term": "工蜂", "full_name_zh": "公司内部代码托管平台", "plain_zh": "内部 Git 仓库", "disclosure": "plain_only", "external_plain_zh": "内部代码仓库", "story_relevance": "low" },
+    { "id": "t-qicaishi", "term": "七彩石", "full_name_zh": "公司内部配置中心", "plain_zh": "配置项与环境变量管理", "disclosure": "internal", "story_relevance": "none" },
+    { "id": "t-orangeci", "term": "Orange CI", "full_name_zh": "公司内部 CI 平台", "plain_zh": "持续集成流水线", "disclosure": "internal", "story_relevance": "none" },
+    { "id": "t-streamci", "term": "stream CI", "full_name_zh": "构建完自动更新负载的流水线", "plain_zh": "自动发布流水线", "disclosure": "internal", "story_relevance": "none" },
+    { "id": "t-zhuchang", "term": "驻场", "full_name_zh": "驻场外包", "plain_zh": "内部用工表述", "disclosure": "internal", "story_relevance": "none" },
+    { "id": "t-e2b", "term": "e2b", "full_name_zh": "旧沙箱服务", "plain_zh": "迁移前的沙箱实现", "disclosure": "optional", "story_relevance": "low" },
+    { "id": "t-opensandbox", "term": "OpenSandbox", "full_name_zh": "OpenSandbox 沙箱执行环境", "plain_zh": "云端隔离沙箱，每条命令一次独立往返", "disclosure": "essential", "story_relevance": "high" },
+    { "id": "t-claude-sdk", "term": "Claude Agent SDK", "full_name_zh": "Claude Agent SDK", "plain_zh": "Agent 运行时与会话 SDK", "disclosure": "essential", "story_relevance": "high" },
+    { "id": "t-deepagents", "term": "DeepAgents", "full_name_zh": "DeepAgents", "plain_zh": "Agent 运行时之一，会话已收口到 Claude Agent SDK", "disclosure": "essential", "story_relevance": "medium" },
+    { "id": "t-mcp", "term": "MCP", "full_name_zh": "模型上下文协议（Model Context Protocol）", "plain_zh": "受控工具调用协议", "disclosure": "essential", "story_relevance": "high" },
+    { "id": "t-skills", "term": "Skills", "full_name_zh": "Agent 技能包", "plain_zh": "按需渐进式加载的能力说明", "disclosure": "essential", "story_relevance": "medium" },
+    { "id": "t-langfuse", "term": "Langfuse", "full_name_zh": "Langfuse LLM 可观测平台", "plain_zh": "记录 AI 调用链、token 与成本", "disclosure": "essential", "story_relevance": "high" },
+    { "id": "t-otel", "term": "OTel", "full_name_zh": "OpenTelemetry", "plain_zh": "链路追踪标准与 SpanProcessor", "disclosure": "essential", "external_plain_zh": "OpenTelemetry", "story_relevance": "medium" },
+    { "id": "t-galileo", "term": "伽利略", "full_name_zh": "公司链路监控平台（伽利略）", "plain_zh": "结构化监控上报平台", "disclosure": "essential", "story_relevance": "medium" },
+    { "id": "t-sse", "term": "SSE", "full_name_zh": "Server-Sent Events", "plain_zh": "服务端流式输出", "disclosure": "essential", "story_relevance": "medium" },
+    { "id": "t-cos", "term": "COS", "full_name_zh": "腾讯云对象存储", "plain_zh": "文件与附件存储", "disclosure": "essential", "story_relevance": "low" },
+    { "id": "t-tke", "term": "TKE", "full_name_zh": "腾讯云容器服务（Kubernetes）", "plain_zh": "容器化部署平台", "disclosure": "essential", "story_relevance": "medium" },
+    { "id": "t-ark", "term": "Ark 分享", "full_name_zh": "QQ 小程序 Ark 结构化分享卡片", "plain_zh": "小程序分享卡片", "disclosure": "essential", "story_relevance": "low" },
+    { "id": "t-skyline", "term": "Skyline", "full_name_zh": "微信小程序 Skyline 渲染引擎", "plain_zh": "小程序渲染引擎", "disclosure": "essential", "story_relevance": "low" },
+    { "id": "t-internal-fields", "term": "QPILOT_GIT_", "full_name_zh": "内部环境变量前缀", "plain_zh": "内部实现细节", "disclosure": "internal", "story_relevance": "none" },
+    { "id": "t-internal-span", "term": "langfuse.observation.level", "full_name_zh": "内部上报字段名", "plain_zh": "内部实现细节", "disclosure": "internal", "story_relevance": "none" },
+    { "id": "t-internal-status", "term": "status_message=business-intercept", "full_name_zh": "内部上报字段取值", "plain_zh": "内部实现细节", "disclosure": "internal", "story_relevance": "none" }
+  ],
+  "sources_index": {
+    "src-profile": "/data/workspace/my-all-projects/job-search/career_profile.md",
+    "src-resume-ai": "/data/workspace/my-all-projects/job-search/简历-AI应用.md",
+    "src-resume-fe": "/data/workspace/my-all-projects/job-search/简历-前端.md",
+    "src-jd": "/data/workspace/my-all-projects/job-search/resume/岗位JD调研.md",
+    "src-ledger": "/data/workspace/my-all-projects/job-search/投递台账.md",
+    "src-filter": "/data/workspace/my-all-projects/job-search/岗位筛选.md",
+    "src-qpilot": "/data/workspace/my-all-projects/qpilot-code/",
+    "src-qpilot-web": "/data/workspace/my-all-projects/qpilot-web/",
+    "src-code-agent": "/data/workspace/my-all-projects/code-agent/",
+    "src-qq-okr": "/data/workspace/my-all-projects/qq-okr/",
+    "src-projects-mgmt": "/data/workspace/my-all-projects/projects-management/",
+    "src-guild-h5": "/data/workspace/my-all-projects/guild_h5/",
+    "src-guild-web": "/data/workspace/my-all-projects/guild_web/",
+    "src-guild-mp": "/data/workspace/my-all-projects/guild-mp/",
+    "src-next-guild": "/data/workspace/my-all-projects/next-guild/",
+    "src-yuheng": "/data/workspace/my-all-projects/yuheng-monorepo/",
+    "src-tech-debt": "/data/workspace/my-all-projects/tech-debt-manage/"
+  },
+  "conflicts": [
+    { "id": "cf-1", "text": "中国联通北京分公司的起止月份记为 2021.08–2022.06，与华侨城 2022.06 入职之间无空档；具体起止月份以离职证明为准，写简历前核对一次", "status": "unresolved" },
+    { "id": "cf-2", "text": "华侨城离职时间按 2024 年 7 月写，以离职证明为准", "status": "unresolved" }
+  ],
+  "provenance": {
+    "init": "ssot-starter.json",
+    "notes": "2026-11-28 从 career_profile.md 全量结构化；事实不因 JD 改动；§18 不能说过头的地方映射到 constraints，§19 已确认说法映射到 constraints 与 term_registry"
+  },
+  "change_log": [
+    { "date": "2026-11-28", "version": "1.0.0", "summary": "初始化经历档案：3 段任职、7 个项目、9 份方案文档、10 条量化、20 条事实边界、24 条术语登记、2 项待确认" }
+  ]
+}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>刘奕晨 - AI 应用 / Agent 全栈开发</title>
+<style>
+@font-face { font-family: "Noto Sans SC"; src: url("../_assets/fonts/NotoSansSC-VF.ttf"); font-weight: 100 900; }
+:root { --text: #111827; --line: #9ca3af; --base: 12.6px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@page { size: A4; margin: 9mm 12mm 9mm; }
+body { font-family: "Noto Sans SC", sans-serif; color: var(--text); font-size: var(--base); line-height: 1.34; width: 100%; }
+.header { margin-bottom: 4px; }
+h1 { font-size: 1.38em; font-weight: 700; letter-spacing: 0.04em; padding-bottom: 2px; border-bottom: 1px solid var(--line); }
+.interest { margin: 3px 0 2px; font-size: 0.9em; font-weight: 500; }
+.contact-links { display: flex; flex-wrap: wrap; gap: 3px 1.25em; font-size: 0.9em; }
+.section { margin-bottom: 4px; }
+.section:last-child { margin-bottom: 0; }
+h2 { font-size: 1.1em; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 2px; padding-bottom: 2px; border-bottom: 1.5px solid var(--line); }
+.item { margin-bottom: 3px; }
+.item:last-child { margin-bottom: 0; }
+.line { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.date { opacity: 0.88; font-size: 0.88em; white-space: nowrap; }
+.org { margin: 2px 0 1px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+ul { padding-left: 17px; }
+li { margin: 1.2px 0; }
+.skills { font-size: 0.96em; }
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+h1, h2, .item { page-break-inside: avoid; }
+@media screen { body { max-width: 186mm; margin: 24px auto; padding: 0 2px; } }
+</style>
+</head>
+<body>
+<header class="header">
+  <h1>刘奕晨</h1>
+  <p class="interest">应聘：AI 应用 / Agent 全栈开发 · 深圳 / 远程</p>
+  <div class="contact-links"><span>17610118517</span><span>微信 l18473851822</span><span>3063448714@qq.com</span></div>
+</header>
+
+<section class="section">
+  <h2>教育</h2>
+  <div class="line"><span><strong>中国传媒大学</strong>　软件工程　本科（211）　英语六级</span><span class="date">2017.09 – 2021.06</span></div>
+</section>
+
+<section class="section">
+  <h2>工作经历</h2>
+  <div class="org">深圳市腾娱互动科技有限公司　前端开发工程师（2026.03 起转全栈）<span class="date">2024.07 – 至今</span></div>
+
+  <div class="item">
+    <div class="line"><span><strong>QPilot Code</strong>　企业内部 AI 编程平台｜两名主力开发之一，平级分工</span><span class="date">2026.03 – 至今</span></div>
+    <ul>
+      <li><strong>平台与职责：</strong>用户用自然语言描述需求，Agent 在云端沙箱写代码、启动预览、提交 Git 并部署成可访问应用。与另一名同事按模块平级分工，我负责沙箱 Git、预览、部署、上传与身份、Skills 和会话这些后端模块，以及对应的前端工作台，方案、实现与上线均由我完成。</li>
+      <li><strong>Agent 运行时与工具链：</strong>重构 DeepAgents 内置 Skills，使其同步进沙箱并改用 SDK 原生的渐进式加载；把会话链路统一收口到 Claude Agent SDK 并兼容旧运行时数据；部署流程从模型手写 curl 改为接入受控的部署 MCP 工具，令牌与本次操作绑定。</li>
+      <li><strong>Git 集成与写入控制：</strong>完成冲突处理、AI 提交信息、推送前预检和远程领先预警；页面 Git 写入经后端接口先做冲突/分叉检查再执行，另设计并实现过短期令牌 + 验签 + 后端代执行的 AI 受控写入工作流（未从界面接入）。沙箱换为 OpenSandbox 后把同一接口的多条命令合成一段脚本，7 个 Git 接口均降为一次往返，状态检查从十多次降到 1 次、提交推送从 6 次降到 1 次。</li>
+      <li><strong>预览与部署稳定性：</strong>处理端口泄漏、出站连接被误判为端口占用、沙箱回收后不启动、重试时状态跳变，缺文件复现场景从约 60 秒降到约 6 秒；修复部署代理丢请求体与子域名白屏，部署前只在数据可能随容器丢失时弹存储预检确认，并记录发布来源版本。</li>
+      <li><strong>平台能力与工作台：</strong>统一上传 API（单文件上限 1GB）、附件转存 COS，把 Origin 校验放在解析请求体之前；接入太湖统一认证让预览与部署共用身份方案，密钥不进沙箱；实现编辑后重发并清理模型侧上下文、模型输出期间可继续输入的持久化队列，以及约 3507 个历史会话的按需迁移；交付项目列表、仓库导入、部署前确认、复制模型输出，正式环境 CI 迁至 TKE。</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="line"><span><strong>QQ OKR</strong>　AI 调用链可观测接入｜负责该模块</span><span class="date">2026.10 – 至今</span></div>
+    <ul>
+      <li><strong>链路打通：</strong>把 Agent 调用上报到 Langfuse，复用公司链路平台已建立的 TracerProvider，两个平台共用同一个 trace_id、无需透传；手动插桩 Claude Agent SDK 并补 OTel v1/v2 兼容层，未启用时回落原始 SDK，业务代码零改动。</li>
+      <li><strong>口径与降级：</strong>业务拦截产生的 span 被兜底打成 ERROR 导致整条链标红，改为按「工具未执行」语义降级为 WARNING；补回 cache token 并换算 prompt 与 total，让平台按缓存感知价目表重算成本。配置缺失或初始化失败即降级为不上报，退出前先 flush 再 shutdown。</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="line"><span><strong>多服务资源整合迁移</strong>　交付链路段｜与同事分工</span><span class="date">2026.07 – 2026.08</span></div>
+    <ul>
+      <li><strong>迁移与发布规范化：</strong>接手其他项目组的业务，我负责代码仓库、CI/CD 流水线、配置与环境变量的重新关联；按 P0/P1/P2 分级，测试环境跑通才动正式环境，9 个服务跨 4 条业务线在两周内完成，发布从「构建完直接更新镜像」改为走审批流。</li>
+      <li><strong>排障：</strong>Langfuse 依赖的 ClickHouse 跨环境连不通，定位为网络策略限制，权衡白名单、复用、自建后选自建；上线后磁盘被历史数据写满导致上报失效，清数据、给 trace 日志表加 1 天 TTL 并挂 100G 专用盘修复。</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="line"><span><strong>技术债治理后台</strong>　独立负责</span><span class="date">2025.02 – 2025.10</span></div>
+    <ul>
+      <li><strong>从空仓库到上线：</strong>菜单由专项接口生成，未知类型进兜底页、接口失败进错误页；多个专项共用一张可配置表格，支持 Excel 表头校验后导入导出；测试分支自动更新测试环境，正式分支构建镜像后人工确认上线。</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="line"><span><strong>QQ 频道</strong>　多端前端｜存量大仓库交付</span><span class="date">2024.08 – 2026.03</span></div>
+    <ul>
+      <li>在 Vue 3 H5、Nuxt 3 Web、微信小程序、Next.js Hybrid H5 与搜索运营后台交付需求：小程序作者资料卡改为按用户拆分状态，解决扫码进入看到上一个人资料、分享缺头像、原生按钮遮挡、跨分包引用；运营后台做频道排序、热议话题动态表单与官方频道按搜索词召回。</li>
+    </ul>
+  </div>
+
+  <div class="org">深圳华侨城文化旅游建设有限公司　前端开发工程师<span class="date">2022.06 – 2024.07</span></div>
+  <div class="item">
+    <ul>
+      <li>独立负责创想学堂学习系统、会员一卡通、黄石游乐园游客小程序；票务系统参与 Electron 桌面端开发，用 WebSocket 控制售卖机与窗口打印门票。</li>
+    </ul>
+  </div>
+
+  <div class="org">中国联通有限公司北京分公司　前端开发工程师<span class="date">2021.08 – 2022.06</span></div>
+  <div class="item">
+    <ul><li>培训轮岗期间协助开发基层管理人员选任系统页面。</li></ul>
+  </div>
+</section>
+
+<section class="section">
+  <h2>专业技能</h2>
+  <div class="skills"><strong>AI / Agent：</strong>Claude Agent SDK、DeepAgents、MCP 工具接入、Skills 渐进式加载、OpenSandbox 沙箱、模型写操作的受控通道（面板预检 / 设计实现过的受控令牌工作流）</div>
+  <div class="skills"><strong>AI 可观测：</strong>Langfuse、OpenTelemetry（SpanProcessor、语义约定）、trace 维度建模、token 与成本口径</div>
+  <div class="skills"><strong>前后端：</strong>TypeScript、React、Vue 3、Next.js、Nuxt 3、微信小程序、Node.js、Express、PostgreSQL、SSE</div>
+  <div class="skills"><strong>工程：</strong>Docker、TKE、Nginx、CI/CD 分环境发布、统一发布平台审批流、监控上报</div>
+</section>
+</body>
+</html>

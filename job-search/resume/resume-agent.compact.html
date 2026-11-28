@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>刘奕晨 · 简历</title>
+<style>/*
+ * 所有模板共用的离线打印基线。
+ * 不加载 Google Fonts、CDN 或浏览器扩展资源，保证 WeasyPrint 在无网络环境下稳定渲染。
+ * 每个模板仍可覆盖字体、字号、页边距和颜色。
+ */
+:root {
+  --font-sans: "Microsoft YaHei", "Heiti SC", "Source Han Sans SC",
+    "Noto Sans CJK SC", "Hiragino Sans GB", sans-serif;
+  --font-serif: "Songti SC", "STSong", "Noto Serif CJK SC",
+    "Source Han Serif SC", serif;
+  --font-mono: "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
+  --text: #222;
+  --muted: #666;
+  --rule: #d7d7d7;
+}
+
+html {
+  font-size: 100%;
+}
+
+body {
+  overflow-wrap: anywhere;
+  text-rendering: optimizeLegibility;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+img {
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+strong {
+  font-weight: 700;
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+/*
+ * compact —— 本项目独立设计的紧凑单栏信息流与离线 CSS。
+ * 目标：少装饰、密度适中、分页可预测、ATS 友好。
+ */
+@page {
+  size: A4;
+  margin: 12mm 15mm;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --accent: #2f6f73;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--text);
+  font-size: 10pt;
+  line-height: 1.48;
+}
+
+.page {
+  width: 180mm;
+  margin: 0 auto;
+}
+
+.hd {
+  display: table;
+  width: 100%;
+  padding-bottom: 7px;
+  border-bottom: 1.5px solid var(--accent);
+}
+
+.identity,
+.contact,
+.photo {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.identity {
+  width: 48%;
+}
+
+.name {
+  font-family: var(--font-serif);
+  font-size: 21pt;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 1.5px;
+}
+
+.intent {
+  margin-top: 3px;
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.intent-detail {
+  margin-top: 1px;
+  font-size: 8.9pt;
+  color: var(--muted);
+}
+
+.contact {
+  padding-right: 6mm;
+  text-align: right;
+  color: #555;
+  font-size: 9pt;
+  line-height: 1.55;
+}
+
+.contact span {
+  display: block;
+}
+
+.photo {
+  width: 25mm;
+  height: 33mm;
+  margin-left: 6mm;
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
+
+.summary {
+  margin: 6px 0 2px;
+  color: #444;
+  font-size: 9.5pt;
+}
+
+.sec {
+  margin-top: 8px;
+}
+
+.sec-title {
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--accent);
+  font-family: var(--font-sans);
+  font-size: 11.5pt;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.entry {
+  margin-bottom: 5px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.entry-head {
+  display: table;
+  width: 100%;
+}
+
+.entry-title,
+.entry-meta {
+  display: table-cell;
+  vertical-align: baseline;
+}
+
+.entry-title strong {
+  font-size: 10.4pt;
+}
+
+.entry-sub {
+  margin-left: 5px;
+  color: #555;
+  font-size: 9.7pt;
+}
+
+.entry-meta {
+  width: 1%;
+  padding-left: 8px;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 8.9pt;
+}
+
+ul {
+  margin-top: 2px;
+  list-style: none;
+}
+
+li {
+  position: relative;
+  padding-left: 12px;
+  margin-bottom: 1px;
+}
+
+li::before {
+  content: "•";
+  position: absolute;
+  left: 1px;
+  color: var(--accent);
+}
+
+ul.plain li {
+  padding-left: 0;
+}
+
+ul.plain li::before {
+  content: "";
+}
+
+code {
+  padding: 0 2px;
+  background: #f3f3f3;
+  font-size: 9pt;
+}
+
+:root { --accent: #0a7d6b; }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="hd">
+    <div class="identity">
+      <h1 class="name">刘奕晨</h1>
+<div class="intent">AI 应用 / Agent 全栈开发</div><div class="intent-detail">期望地点：深圳 / 远程 · 5 年 Web 与多端开发，2026.03 起转全栈</div>    </div>
+    <div class="contact">
+<span>17610118517</span><span>3063448714@qq.com</span><span>深圳</span><span>l18473851822</span>    </div>
+  </header>
+
+
+  <section class="sec">
+    <h2 class="sec-title">工作经历</h2>
+    <article class="entry">
+      <div class="entry-head">
+        <div class="entry-title">
+<strong>深圳市腾娱互动科技有限公司</strong><span class="entry-sub">前端开发工程师（2026.03 起转全栈）</span>        </div>
+<div class="entry-meta">2024.07 – 至今</div>      </div>
+      <ul>
+<li><strong>QPilot Code · 平台与职责</strong>：企业内部 AI 编程平台，用户用自然语言提需求，Agent 在云端沙箱写代码、启动预览、提交 Git 并部署成可访问应用。与另一名同事平级分工，作为两名主力开发之一，负责沙箱 Git、预览、部署、上传与身份、Skills 和会话等后端模块及对应前端工作台，方案、实现与上线均由我完成。</li><li><strong>Agent 运行时与工具链</strong>：重构 DeepAgents 内置 Skills 同步进沙箱并改用 SDK 原生渐进式加载；会话链路统一收口到 Claude Agent SDK 并兼容旧运行时数据；部署从模型手写 curl 改为接入受控的部署 MCP 工具，令牌与本次操作绑定。</li><li><strong>沙箱 Git 与写入控制</strong>：完成冲突处理、AI 提交信息、推送前预检和远程领先预警；页面 Git 写入经后端接口先做冲突/分叉检查再执行，另设计并实现过短期令牌 + 验签 + 后端代执行的 AI 受控写入工作流（未从界面接入）。沙箱换为 OpenSandbox 后把同一接口的多条命令合成一段脚本，7 个 Git 接口均降为一次往返，状态检查从十多次降到 1 次、提交推送从 6 次降到 1 次。</li><li><strong>预览与部署稳定性</strong>：修复端口泄漏、出站连接被误判为端口占用、沙箱回收后不启动、重试时状态跳变，缺文件复现场景从约 60 秒降到约 6 秒；修复部署代理丢请求体与子域名白屏，部署前只在数据可能随容器丢失时弹存储预检确认，并记录发布来源版本。</li><li><strong>平台能力与工作台</strong>：统一上传 API（单文件上限 1GB）、附件转存 COS，把 Origin 校验放在解析请求体之前；接入太湖统一认证让预览与部署共用身份方案，密钥不进沙箱；实现编辑后重发、模型输出期间可继续输入的持久化队列、约 3507 个历史会话按需迁移；交付项目列表、仓库导入、复制模型输出，正式环境 CI 迁至 TKE。</li><li><strong>QQ OKR · AI 调用链可观测（只负责该模块）</strong>：Langfuse 上报复用已有 TracerProvider，两个平台共用同一 trace_id、无需透传；手动插桩 Claude Agent SDK 并补 OTel v1/v2 兼容层，业务零改动；把业务拦截 span 从 ERROR 降为 WARNING，补回 cache token 与成本口径；配置缺失或初始化失败即降级不上报，退出前先 flush。</li><li><strong>多服务资源整合迁移 · 交付链路段（两人分工）</strong>：负责仓库、CI/CD 流水线、配置与环境变量重新关联；9 个服务跨 4 条业务线两周完成，发布从构建完直接更新镜像改为走审批流；定位 ClickHouse 跨环境网络策略限制并选自建，上线后磁盘写满用 1 天 TTL + 100G 专用盘修复。</li><li><strong>技术债治理后台 · 独立负责</strong>：从空仓库到上线，菜单由专项接口生成且有兜底/错误页，多个专项共用一张可配置表格、Excel 表头校验后导入导出；测试环境自动发布、正式环境构建镜像后人工确认上线。</li><li><strong>QQ 频道 · 多端前端</strong>：在 Vue 3 H5、Nuxt 3 Web、微信小程序、Next.js Hybrid H5 与搜索运营后台交付需求；作者资料卡按用户拆分状态解决扫码串号，运营后台做频道排序、热议话题动态表单与官方频道按搜索词召回。</li>      </ul>
+    </article>
+    <article class="entry">
+      <div class="entry-head">
+        <div class="entry-title">
+<strong>深圳华侨城文化旅游建设有限公司</strong><span class="entry-sub">前端开发工程师</span>        </div>
+<div class="entry-meta">2022.06 – 2024.07</div>      </div>
+      <ul>
+<li>独立负责创想学堂学习系统、会员一卡通、黄石游乐园游客小程序；票务系统参与 Electron 桌面端开发，用 WebSocket 控制售卖机与窗口打印门票。</li>      </ul>
+    </article>
+    <article class="entry">
+      <div class="entry-head">
+        <div class="entry-title">
+<strong>中国联通有限公司北京分公司</strong><span class="entry-sub">前端开发工程师</span>        </div>
+<div class="entry-meta">2021.08 – 2022.06</div>      </div>
+      <ul>
+<li>培训轮岗期间协助开发基层管理人员选任系统页面。</li>      </ul>
+    </article>
+  </section>
+  <section class="sec">
+    <h2 class="sec-title">专业技能</h2>
+    <ul class="plain">
+<li><strong>AI / Agent</strong>：Claude Agent SDK、DeepAgents、MCP 工具接入、Skills 渐进式加载、OpenSandbox 沙箱、模型写操作的受控通道（面板预检 / 设计实现过的受控令牌工作流）</li><li><strong>AI 可观测</strong>：Langfuse、OpenTelemetry（SpanProcessor、语义约定）、trace 维度建模、token 与成本口径</li><li><strong>前后端</strong>：TypeScript、React、Vue 3、Next.js、Nuxt 3、微信小程序、Node.js、Express、PostgreSQL、SSE</li><li><strong>工程</strong>：Docker、TKE、Nginx、CI/CD 分环境发布、统一发布平台审批流、监控上报</li>    </ul>
+  </section>
+  <section class="sec">
+    <h2 class="sec-title">教育背景</h2>
+    <article class="entry">
+      <div class="entry-head">
+        <div class="entry-title">
+<strong>中国传媒大学</strong><span class="entry-sub">软件工程 · 本科（211）</span>        </div>
+<div class="entry-meta">2017.09 – 2021.06</div>      </div>
+      <ul>
+<li>英语六级，能读英文文档</li>      </ul>
+    </article>
+  </section>
+</main>
+</body>
+</html>
